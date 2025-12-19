@@ -1,10 +1,11 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { clerkMiddleware, getAuth } from "@clerk/express";
-import { shouldBeUser } from "./middleware/authMiddleware.js";
-import productRouter from "./routes/product.route";
-import categoryRouter from "./routes/category.route";
+import { shouldBeUser } from "@repo/auth-middleware/express";
+import spaceRouter from "./routes/space.route.js";
+import categoryRouter from "./routes/category.route.js";
+import amenityRouter from "./routes/amenity.route.js";
 import { consumer, producer } from "./utils/kafka.js";
+
 const app = express();
 app.use(
   cors({
@@ -13,40 +14,43 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(clerkMiddleware());
 
 app.get("/health", (req: Request, res: Response) => {
   return res.status(200).json({
     status: "ok",
+    service: "space-service",
     uptime: process.uptime(),
     timestamp: Date.now(),
   });
 });
 
 app.get("/test", shouldBeUser, (req, res) => {
-  res.json({ message: "Product service authenticated", userId: req.userId });
+  res.json({ message: "Space service authenticated", userId: req.userId });
 });
 
-app.use("/products", productRouter);
+// Routes
+app.use("/spaces", spaceRouter);
 app.use("/categories", categoryRouter);
+app.use("/amenities", amenityRouter);
 
+// Error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.log(err);
+  console.error(err);
   return res
     .status(err.status || 500)
-    .json({ message: err.message || "Inter Server Error!" });
+    .json({ message: err.message || "Internal Server Error!" });
 });
 
 const start = async () => {
   try {
-    Promise.all([await producer.connect(), await consumer.connect()]);
+    await Promise.all([producer.connect(), consumer.connect()]);
     app.listen(8000, () => {
-      console.log("Product service is running on 8000");
+      console.log("Space service is running on port 8000");
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     process.exit(1);
   }
 };
 
-start()
+start();

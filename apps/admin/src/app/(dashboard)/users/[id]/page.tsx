@@ -1,4 +1,8 @@
-import CardList from "@/components/CardList";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import useAuthStore from "@/stores/authStore";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -20,37 +24,62 @@ import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
-import { auth, User } from "@clerk/nextjs/server";
+import { User } from "@repo/types";
 
-const getData = async (id: string): Promise<User | null> => {
-  const { getToken } = await auth();
-  const token = await getToken();
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+const SingleUserPage = () => {
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+  const { isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useAuthStore();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !isAdmin)) {
+      router.push("/login");
+      return;
+    }
+
+    if (!authLoading && isAuthenticated && isAdmin && id) {
+      fetchUser();
+    }
+  }, [authLoading, isAuthenticated, isAdmin, router, id]);
+
+  const fetchUser = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        router.push("/login");
+        return;
       }
-    );
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.log(err);
-    return null;
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch user");
+      }
+
+      const data = await res.json();
+      setUser(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (authLoading || isLoading) {
+    return <div className="p-4">Loading...</div>;
   }
-};
 
-const SingleUserPage = async ({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) => {
-  const { id } = await params;
-  const data = await getData(id);
-
-  if (!data) {
+  if (!user) {
     return <div className="">User not found!</div>;
   }
 
@@ -68,7 +97,7 @@ const SingleUserPage = async ({
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage>
-              {data?.firstName + " " + data?.lastName || data?.username || "-"}
+              {user?.name || user?.username || "-"}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
@@ -95,21 +124,23 @@ const SingleUserPage = async ({
                   </p>
                 </HoverCardContent>
               </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Shield
-                    size={36}
-                    className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Admin</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Admin users have access to all features and can manage
-                    users.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
+              {user.role === "ADMIN" && (
+                <HoverCard>
+                  <HoverCardTrigger>
+                    <Shield
+                      size={36}
+                      className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
+                    />
+                  </HoverCardTrigger>
+                  <HoverCardContent>
+                    <h1 className="font-bold mb-2">Admin</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Admin users have access to all features and can manage
+                      users.
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
               <HoverCard>
                 <HoverCardTrigger>
                   <Candy
@@ -144,17 +175,15 @@ const SingleUserPage = async ({
           <div className="bg-primary-foreground p-4 rounded-lg space-y-2">
             <div className="flex items-center gap-2">
               <Avatar className="size-12">
-                <AvatarImage src={data.imageUrl} />
+                <AvatarImage src={user.image || undefined} />
                 <AvatarFallback>
-                  {data?.firstName?.charAt(0) ||
-                    data?.username?.charAt(0) ||
+                  {user?.name?.charAt(0) ||
+                    user?.username?.charAt(0) ||
                     "-"}
                 </AvatarFallback>
               </Avatar>
               <h1 className="text-xl font-semibold">
-                {data?.firstName + " " + data?.lastName ||
-                  data?.username ||
-                  "-"}
+                {user?.name || user?.username || "-"}
               </h1>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -185,30 +214,28 @@ const SingleUserPage = async ({
               <div className="flex items-center gap-2">
                 <span className="font-bold">Full name:</span>
                 <span>
-                  {data?.firstName + " " + data?.lastName ||
-                    data?.username ||
-                    "-"}
+                  {user?.name || user?.username || "-"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Email:</span>
-                <span>{data.emailAddresses[0]?.emailAddress || "-"}</span>
+                <span>{user.email || "-"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Phone:</span>
-                <span>{data.phoneNumbers[0]?.phoneNumber || "-"}</span>
+                <span className="font-bold">Username:</span>
+                <span>{user.username || "-"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Role:</span>
-                <span>{String(data.publicMetadata?.role) || "user"}</span>
+                <span>{user.role || "USER"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Status:</span>
-                <span>{data.banned ? "banned" : "active"}</span>
+                <span>{user.emailVerified ? "verified" : "unverified"}</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              Joined on {new Date(data.createdAt).toLocaleDateString("en-US")}
+              Joined on {new Date(user.createdAt).toLocaleDateString("en-US")}
             </p>
           </div>
         </div>

@@ -1,19 +1,18 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import { clerkMiddleware } from "@clerk/express";
-import { shouldBeAdmin } from "./middleware/authMiddleware.js";
-import userRoute from "./routes/user.route";
+import { shouldBeAdmin } from "@repo/auth-middleware/express";
+import userRoute from "./routes/user.route.js";
+import authRoute from "./routes/auth.route.js";
 import { producer } from "./utils/kafka.js";
 
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:3003"],
+    origin: ["http://localhost:3002", "http://localhost:3003"],
     credentials: true,
   })
 );
 app.use(express.json());
-app.use(clerkMiddleware());
 
 app.get("/health", (req: Request, res: Response) => {
   return res.status(200).json({
@@ -23,13 +22,17 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
+// Auth routes (public)
+app.use("/auth", authRoute);
+
+// User management routes (admin only)
 app.use("/users", shouldBeAdmin, userRoute);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.log(err);
   return res
     .status(err.status || 500)
-    .json({ message: err.message || "Inter Server Error!" });
+    .json({ message: err.message || "Internal Server Error!" });
 });
 
 const start = async () => {

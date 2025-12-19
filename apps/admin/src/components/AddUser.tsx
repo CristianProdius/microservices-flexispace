@@ -19,35 +19,37 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "./ui/button";
-import { useAuth } from "@clerk/nextjs";
+import useAuthStore from "@/stores/authStore";
 import { useMutation } from "@tanstack/react-query";
-import { UserFormSchema } from "@repo/types";
 import { toast } from "react-toastify";
 
+const AddUserSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["USER", "HOST", "ADMIN"]),
+});
+
+type AddUserFormData = z.infer<typeof AddUserSchema>;
+
 const AddUser = () => {
-  const form = useForm<z.infer<typeof UserFormSchema>>({
-    resolver: zodResolver(UserFormSchema),
+  const form = useForm<AddUserFormData>({
+    resolver: zodResolver(AddUserSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      emailAddress: [],
+      name: "",
       username: "",
+      email: "",
       password: "",
+      role: "USER",
     },
   });
 
-  const { getToken } = useAuth();
+  const { getToken } = useAuthStore();
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof UserFormSchema>) => {
+    mutationFn: async (data: AddUserFormData) => {
       const token = await getToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users`,
@@ -61,11 +63,13 @@ const AddUser = () => {
         }
       );
       if (!res.ok) {
-        throw new Error("Failed to create user!");
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create user!");
       }
     },
     onSuccess: () => {
       toast.success("User created successfully");
+      form.reset();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -84,28 +88,14 @@ const AddUser = () => {
             >
               <FormField
                 control={form.control}
-                name="firstName"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>Enter user first name.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>Enter user last name.</FormDescription>
+                    <FormDescription>Enter user full name.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -126,25 +116,15 @@ const AddUser = () => {
               />
               <FormField
                 control={form.control}
-                name="emailAddress"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Addresses</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="email1@gmail.com, email2@gmail.com"
-                        onChange={(e) => {
-                          const emails = e.target.value
-                            .split(",")
-                            .map((email) => email.trim())
-                            .filter((email) => email);
-                          field.onChange(emails);
-                        }}
-                      />
+                      <Input {...field} type="email" />
                     </FormControl>
                     <FormDescription>
-                      Only admin can see your email.
+                      Only admin can see user email.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

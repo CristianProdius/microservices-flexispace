@@ -1,14 +1,13 @@
 {
   "name": "@repo/types",
   "version": "0.0.1",
-  "main": "src/index/ts",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/product-db": "workspace:*",
-    "@repo/order-db": "workspace:*",
+    "@repo/db": "workspace:*",
     "zod": "^4.1.9"
   },
   "devDependencies": {

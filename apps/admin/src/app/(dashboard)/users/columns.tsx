@@ -11,19 +11,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { User } from "@clerk/nextjs/server";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-// export type User = {
-//   id: string;
-//   avatar: string;
-//   fullName: string;
-//   email: string;
-//   status: "active" | "inactive";
-// };
+interface User {
+  id: string;
+  email: string;
+  username: string;
+  name: string | null;
+  role: string;
+  image: string | null;
+  createdAt: string;
+}
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -51,22 +52,28 @@ export const columns: ColumnDef<User>[] = [
       const user = row.original;
       return (
         <div className="w-9 h-9 relative">
-          <Image
-            src={user.imageUrl}
-            alt={user.firstName || user.username || "-"}
-            fill
-            className="rounded-full object-cover"
-          />
+          {user.image ? (
+            <Image
+              src={user.image}
+              alt={user.name || user.username || "-"}
+              fill
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+              {user.name?.charAt(0) || user.username?.charAt(0) || "-"}
+            </div>
+          )}
         </div>
       );
     },
   },
   {
-    accessorKey: "firstName",
+    accessorKey: "name",
     header: "User",
     cell: ({ row }) => {
       const user = row.original;
-      return <div className="">{user.firstName || user.username || "-"}</div>;
+      return <div className="">{user.name || user.username || "-"}</div>;
     },
   },
   {
@@ -84,25 +91,23 @@ export const columns: ColumnDef<User>[] = [
     },
     cell: ({ row }) => {
       const user = row.original;
-      return <div className="">{user.emailAddresses[0]?.emailAddress}</div>;
+      return <div className="">{user.email}</div>;
     },
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "role",
+    header: "Role",
     cell: ({ row }) => {
-      const user = row.original
-      const status = user.banned ? "banned" : "active"
-
+      const user = row.original;
       return (
         <div
           className={cn(
             `p-1 rounded-md w-max text-xs`,
-            status === "active" && "bg-green-500/40",
-            status === "banned" && "bg-red-500/40"
+            user.role === "ADMIN" && "bg-purple-500/40",
+            user.role === "USER" && "bg-blue-500/40"
           )}
         >
-          {status as string}
+          {user.role}
         </div>
       );
     },

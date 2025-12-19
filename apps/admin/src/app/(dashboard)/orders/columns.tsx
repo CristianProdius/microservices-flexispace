@@ -11,21 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { OrderType } from "@repo/types";
+import { Booking } from "@repo/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 
-// export type Payment = {
-//   id: string;
-//   amount: number;
-//   fullName: string;
-//   userId: string;
-//   email: string;
-//   status: "pending" | "processing" | "success" | "failed";
-// };
-
-export const columns: ColumnDef<OrderType>[] = [
+export const columns: ColumnDef<Booking>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -45,18 +36,22 @@ export const columns: ColumnDef<OrderType>[] = [
     ),
   },
   {
-    accessorKey: "_id",
+    accessorKey: "id",
     header: "ID",
+    cell: ({ row }) => {
+      const id = row.getValue("id") as string;
+      return <span className="font-mono text-xs">{id.slice(0, 8)}...</span>;
+    },
   },
   {
-    accessorKey: "email",
+    accessorKey: "guestEmail",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Email
+          Guest Email
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -66,31 +61,34 @@ export const columns: ColumnDef<OrderType>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status");
+      const status = row.getValue("status") as string;
 
       return (
         <div
           className={cn(
             `p-1 rounded-md w-max text-xs`,
-            status === "pending" && "bg-yellow-500/40",
-            status === "success" && "bg-green-500/40",
-            status === "failed" && "bg-red-500/40"
+            status === "PENDING" && "bg-yellow-500/40",
+            status === "APPROVED" && "bg-blue-500/40",
+            status === "DEPOSIT_PAID" && "bg-purple-500/40",
+            status === "COMPLETED" && "bg-green-500/40",
+            status === "CANCELLED" && "bg-red-500/40",
+            status === "REJECTED" && "bg-red-500/40"
           )}
         >
-          {status as string}
+          {status}
         </div>
       );
     },
   },
   {
-    accessorKey: "amount",
+    accessorKey: "totalAmount",
     header: () => <div className="text-right">Amount</div>,
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"));
+      const amount = parseFloat(row.getValue("totalAmount"));
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
-      }).format(amount/100);
+      }).format(amount / 100);
 
       return <div className="text-right font-medium">{formatted}</div>;
     },
@@ -98,7 +96,7 @@ export const columns: ColumnDef<OrderType>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const order = row.original;
+      const booking = row.original;
 
       return (
         <DropdownMenu>
@@ -111,15 +109,15 @@ export const columns: ColumnDef<OrderType>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order._id)}
+              onClick={() => navigator.clipboard.writeText(booking.id)}
             >
-              Copy order ID
+              Copy booking ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link href={`/users/${order.userId}`}>View customer</Link>
+              <Link href={`/users/${booking.userId}`}>View guest</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>View order details</DropdownMenuItem>
+            <DropdownMenuItem>View booking details</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

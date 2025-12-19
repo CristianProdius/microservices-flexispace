@@ -10,25 +10,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { ProductType } from "@repo/types";
+import { Space } from "@repo/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-// export type Product = {
-//   id: string | number;
-//   price: number;
-//   name: string;
-//   shortDescription: string;
-//   description: string;
-//   sizes: string[];
-//   colors: string[];
-//   images: Record<string, string>;
-// };
+// Parse images field - handles both array and stringified array
+const parseImages = (images: unknown): string[] => {
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
-export const columns: ColumnDef<ProductType>[] = [
+export const columns: ColumnDef<Space>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -51,19 +53,22 @@ export const columns: ColumnDef<ProductType>[] = [
     accessorKey: "image",
     header: "Image",
     cell: ({ row }) => {
-      const product = row.original;
+      const space = row.original;
+      const images = parseImages(space.images);
       return (
-        <div className="w-9 h-9 relative">
-          <Image
-            src={
-              (product.images as Record<string, string>)?.[
-                product.colors[0] || ""
-              ] || ""
-            }
-            alt={product.name}
-            fill
-            className="rounded-full object-cover"
-          />
+        <div className="w-12 h-9 relative">
+          {images[0] ? (
+            <Image
+              src={images[0]}
+              alt={space.name}
+              fill
+              className="rounded object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">
+              No img
+            </div>
+          )}
         </div>
       );
     },
@@ -73,27 +78,43 @@ export const columns: ColumnDef<ProductType>[] = [
     header: "Name",
   },
   {
-    accessorKey: "price",
+    accessorKey: "spaceType",
+    header: "Type",
+    cell: ({ row }) => {
+      const type = row.getValue("spaceType") as string;
+      return <span className="text-xs">{type.replace("_", " ")}</span>;
+    },
+  },
+  {
+    accessorKey: "city",
+    header: "City",
+  },
+  {
+    accessorKey: "pricePerHour",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Price
+          Price/Hr
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
+    cell: ({ row }) => {
+      const price = row.getValue("pricePerHour") as number | null;
+      return price ? `$${(price / 100).toFixed(0)}` : "-";
+    },
   },
   {
-    accessorKey: "shortDescription",
-    header: "Description",
+    accessorKey: "capacity",
+    header: "Capacity",
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const product = row.original;
+      const space = row.original;
 
       return (
         <DropdownMenu>
@@ -107,14 +128,14 @@ export const columns: ColumnDef<ProductType>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() =>
-                navigator.clipboard.writeText(product.id.toString())
+                navigator.clipboard.writeText(space.id.toString())
               }
             >
-              Copy product ID
+              Copy space ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <Link href={`/products/${product.id}`}>View product</Link>
+              <Link href={`/products/${space.id}`}>View space</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

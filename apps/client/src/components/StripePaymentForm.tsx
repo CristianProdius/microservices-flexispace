@@ -2,14 +2,15 @@
 
 import { loadStripe } from "@stripe/stripe-js";
 import { CheckoutProvider } from "@stripe/react-stripe-js";
-import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { CartItemsType, ShippingFormInputs } from "@repo/types";
 import CheckoutForm from "./CheckoutForm";
 import useCartStore from "@/stores/cartStore";
+import useAuthStore from "@/stores/authStore";
 
 const stripe = loadStripe(
-  "pk_test_51MdCLkDhkeDdZct5FkM9qMlMvAzsJpObS6eUy44jYLuVMhUFjYjzr4VLodA0GiUj0WBaOSzm38QJ8ju3SAYhdNkF00myyAyh6M"
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    "pk_test_51MdCLkDhkeDdZct5FkM9qMlMvAzsJpObS6eUy44jYLuVMhUFjYjzr4VLodA0GiUj0WBaOSzm38QJ8ju3SAYhdNkF00myyAyh6M"
 );
 
 const fetchClientSecret = async (cart: CartItemsType, token: string) => {
@@ -37,11 +38,11 @@ const StripePaymentForm = ({
 }) => {
   const { cart } = useCartStore();
   const [token, setToken] = useState<string | null>(null);
-  const { getToken } = useAuth();
+  const { getToken } = useAuthStore();
 
   useEffect(() => {
     getToken().then((token) => setToken(token));
-  }, []);
+  }, [getToken]);
 
   if (!token) {
     return <div className="">Loading...</div>;

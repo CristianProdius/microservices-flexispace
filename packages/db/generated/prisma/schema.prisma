@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  USER
+  HOST
+  ADMIN
+}
+
+enum SpaceType {
+  OFFICE_DESK
+  PRIVATE_OFFICE
+  MEETING_ROOM
+  EVENT_VENUE
+  WEDDING_VENUE
+  COWORKING_SPACE
+}
+
+enum PricingType {
+  HOURLY
+  DAILY
+  BOTH
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  DEPOSIT_PAID
+  COMPLETED
+  CANCELLED
+  REJECTED
+  EXPIRED
+}
+
+enum CancellationPolicy {
+  FLEXIBLE
+  MODERATE
+  STRICT
+  NON_REFUNDABLE
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// ==================== AUTH ====================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  name          String?
+  password      String
+  role          Role     @default(USER)
+  emailVerified Boolean  @default(false)
+  image         String?
+  phone         String?
+  bio           String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Host-specific fields
+  hostVerified    Boolean   @default(false)
+  hostingSince    DateTime?
+  stripeAccountId String?
+
+  // Relations
+  sessions Session[]
+  spaces   Space[] // Spaces hosted by this user
+  bookings Booking[] // Bookings made by this user
+  reviews  Review[] // Reviews written by this user
+  payouts  Payout[] // Payouts for hosts
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ==================== SPACES ====================
+
+model Space {
+  id               Int         @id @default(autoincrement())
+  name             String
+  shortDescription String
+  description      String
+  spaceType        SpaceType
+  pricingType      PricingType
+  pricePerHour     Int? // In cents
+  pricePerDay      Int? // In cents
+  depositPercent   Int         @default(30)
+  capacity         Int
+  minBookingHours  Int?
+  maxBookingHours  Int?
+  images           Json // Array of image URLs
+
+  // Location
+  address    String
+  city       String
+  state      String?
+  country    String
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+
+  // Settings
+  isActive           Boolean            @default(true)
+  instantBook        Boolean            @default(false)
+  cancellationPolicy CancellationPolicy @default(MODERATE)
+  houseRules         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  hostId       String
+  host         User           @relation(fields: [hostId], references: [id])
+  categorySlug String
+  category     SpaceCategory  @relation(fields: [categorySlug], references: [slug])
+  amenities    SpaceAmenity[]
+  availability Availability[]
+  blockedDates BlockedDate[]
+  bookings     Booking[]
+  reviews      Review[]
+
+  @@index([hostId])
+  @@index([categorySlug])
+  @@index([spaceType])
+  @@index([city])
+  @@index([isActive])
+}
+
+model SpaceCategory {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  description String?
+  icon        String?
+
+  spaces Space[]
+}
+
+model Amenity {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  icon     String?
+  category String?
+
+  spaces SpaceAmenity[]
+}
+
+model SpaceAmenity {
+  id        Int @id @default(autoincrement())
+  spaceId   Int
+  amenityId Int
+
+  space   Space   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  amenity Amenity @relation(fields: [amenityId], references: [id])
+
+  @@unique([spaceId, amenityId])
+}
+
+model Availability {
+  id        Int     @id @default(autoincrement())
+  spaceId   Int
+  dayOfWeek Int // 0-6 (Sunday-Saturday)
+  startTime String // "09:00" format
+  endTime   String // "18:00" format
+  isOpen    Boolean @default(true)
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, dayOfWeek])
+}
+
+model BlockedDate {
+  id      Int      @id @default(autoincrement())
+  spaceId Int
+  date    DateTime
+  reason  String?
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, date])
+}
+
+// ==================== BOOKINGS ====================
+
+model Booking {
+  id String @id @default(cuid())
+
+  // Guest info
+  userId         String
+  guestEmail     String
+  guestName      String
+  guestPhone     String?
+  numberOfGuests Int     @default(1)
+
+  // Space reference
+  spaceId Int
+
+  // Booking details
+  startDateTime DateTime
+  endDateTime   DateTime
+  isHourly      Boolean // true = hourly, false = daily
+
+  // Pricing (all in cents)
+  subtotal        Int
+  serviceFee      Int
+  totalAmount     Int
+  depositAmount   Int
+  remainingAmount Int
+
+  // Payment tracking
+  depositPaid              Boolean   @default(false)
+  depositPaidAt            DateTime?
+  remainingPaid            Boolean   @default(false)
+  remainingPaidAt          DateTime?
+  depositSessionId         String?
+  remainingSessionId       String?
+  depositPaymentIntentId   String?
+  remainingPaymentIntentId String?
+
+  // Status
+  status    BookingStatus @default(PENDING)
+  hostNote  String?
+  guestNote String?
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  approvedAt  DateTime?
+  cancelledAt DateTime?
+  completedAt DateTime?
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id])
+  space  Space   @relation(fields: [spaceId], references: [id])
+  review Review?
+
+  @@index([userId])
+  @@index([spaceId])
+  @@index([status])
+  @@index([startDateTime])
+  @@index([createdAt])
+}
+
+// ==================== REVIEWS ====================
+
+model Review {
+  id      Int     @id @default(autoincrement())
+  rating  Int // 1-5
+  comment String?
+
+  // Relations
+  userId    String
+  spaceId   Int
+  bookingId String @unique
+
+  // Host response
+  hostResponse    String?
+  hostRespondedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  space   Space   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([spaceId])
+  @@index([userId])
+}
+
+// ==================== PAYOUTS ====================
+
+model Payout {
+  id String @id @default(cuid())
+
+  hostId      String
+  amount      Int
+  platformFee Int
+  netAmount   Int
+
+  status     PayoutStatus @default(PENDING)
+  bookingIds String[]
+
+  stripeTransferId String?
+  processedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  host User @relation(fields: [hostId], references: [id])
+
+  @@index([hostId])
+  @@index([status])
+}

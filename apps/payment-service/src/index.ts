@@ -1,52 +1,36 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { clerkMiddleware } from "@hono/clerk-auth";
 import sessionRoute from "./routes/session.route.js";
+import payoutRoute from "./routes/payout.route.js";
 import { cors } from "hono/cors";
 import { consumer, producer } from "./utils/kafka.js";
-import { runKafkaSubscriptions } from "./utils/subscriptions.js";
 import webhookRoute from "./routes/webhooks.route.js";
 
 const app = new Hono();
-app.use("*", clerkMiddleware());
-app.use("*", cors({ origin: ["http://localhost:3002"] }));
+app.use(
+  "*",
+  cors({
+    origin: ["http://localhost:3002", "http://localhost:3003"],
+    credentials: true,
+  })
+);
 
 app.get("/health", (c) => {
   return c.json({
     status: "ok",
+    service: "payment-service",
     uptime: process.uptime(),
     timestamp: Date.now(),
   });
 });
 
 app.route("/sessions", sessionRoute);
+app.route("/payouts", payoutRoute);
 app.route("/webhooks", webhookRoute);
-
-// app.post("/create-stripe-product", async (c) => {
-//   const res = await stripe.products.create({
-//     id: "123",
-//     name: "Test Product",
-//     default_price_data: {
-//       currency: "usd",
-//       unit_amount: 10 * 100,
-//     },
-//   });
-
-//   return c.json(res);
-// });
-
-// app.get("/stripe-product-price", async (c) => {
-//   const res = await stripe.prices.list({
-//     product: "123",
-//   });
-
-//   return c.json(res);
-// });
 
 const start = async () => {
   try {
-    Promise.all([await producer.connect(), await consumer.connect()]);
-    await runKafkaSubscriptions()
+    await Promise.all([producer.connect(), consumer.connect()]);
     serve(
       {
         fetch: app.fetch,
@@ -57,8 +41,9 @@ const start = async () => {
       }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     process.exit(1);
   }
 };
+
 start();

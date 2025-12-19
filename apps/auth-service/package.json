@@ -12,10 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clerk/express": "^1.7.30",
     "cors": "^2.8.5",
     "express": "^5.0.3",
-    "@repo/kafka": "workspace:*"
+    "@repo/kafka": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/auth-middleware": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

@@ -21,11 +21,20 @@ import {
 import { DataTablePagination } from "@/components/TablePagination";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import { useAuth } from "@clerk/nextjs";
+import useAuthStore from "@/stores/authStore";
 import { useMutation } from "@tanstack/react-query";
-import { User } from "@clerk/nextjs/server";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+
+interface User {
+  id: string;
+  email: string;
+  username: string;
+  name: string | null;
+  role: string;
+  image: string | null;
+  createdAt: string;
+}
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -53,18 +62,18 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  const { getToken } = useAuth();
-  const router = useRouter()
+  const { getToken } = useAuthStore();
+  const router = useRouter();
 
   const mutation = useMutation({
     mutationFn: async () => {
       const token = await getToken();
       const selectedRows = table.getSelectedRowModel().rows;
 
-      Promise.all(
+      await Promise.all(
         selectedRows.map(async (row) => {
           const userId = (row.original as User).id;
-          const res = await fetch(
+          await fetch(
             `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${userId}`,
             {
               method: "DELETE",
@@ -78,7 +87,8 @@ export function DataTable<TData, TValue>({
     },
     onSuccess: () => {
       toast.success("User(s) deleted successfully");
-      router.refresh()
+      setRowSelection({});
+      router.refresh();
     },
     onError: (error) => {
       toast.error(error.message);

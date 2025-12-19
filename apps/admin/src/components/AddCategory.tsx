@@ -20,10 +20,16 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { CategoryFormSchema } from "@repo/types";
 import { useMutation } from "@tanstack/react-query";
-import { useAuth } from "@clerk/nextjs";
+import useAuthStore from "@/stores/authStore";
 import { toast } from "react-toastify";
+
+const CategoryFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+});
 
 const AddCategory = () => {
   const form = useForm<z.infer<typeof CategoryFormSchema>>({
@@ -34,7 +40,7 @@ const AddCategory = () => {
     },
   });
 
-  const { getToken } = useAuth();
+  const { getToken } = useAuthStore();
 
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof CategoryFormSchema>) => {
@@ -56,6 +62,7 @@ const AddCategory = () => {
     },
     onSuccess: () => {
       toast.success("Category created successfully");
+      form.reset();
     },
     onError: (error) => {
       toast.error(error.message);

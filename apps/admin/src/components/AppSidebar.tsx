@@ -7,9 +7,9 @@ import {
   User2,
   ChevronUp,
   Plus,
-  Shirt,
+  Building2,
   User,
-  ShoppingBasket,
+  CalendarCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +28,6 @@ import {
   SidebarSeparator,
 } from "./ui/sidebar";
 import Link from "next/link";
-import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,8 +76,8 @@ const AppSidebar = () => {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href="/">
-                <Image src="/logo.svg" alt="logo" width={20} height={20} />
-                <span>Lama Dev</span>
+                <Building2 className="w-5 h-5" />
+                <span>FlexiSpace Admin</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -107,7 +106,7 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Products</SidebarGroupLabel>
+          <SidebarGroupLabel>Spaces</SidebarGroupLabel>
           <SidebarGroupAction>
             <Plus /> <span className="sr-only">Add Product</span>
           </SidebarGroupAction>
@@ -116,8 +115,8 @@ const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link href="/products">
-                    <Shirt />
-                    See All Products
+                    <Building2 />
+                    See All Spaces
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -188,7 +187,7 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Orders / Payments</SidebarGroupLabel>
+          <SidebarGroupLabel>Bookings</SidebarGroupLabel>
           <SidebarGroupAction>
             <Plus /> <span className="sr-only">Add Order</span>
           </SidebarGroupAction>
@@ -197,8 +196,8 @@ const AppSidebar = () => {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link href="/orders">
-                    <ShoppingBasket />
-                    See All Transactions
+                    <CalendarCheck />
+                    See All Bookings
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

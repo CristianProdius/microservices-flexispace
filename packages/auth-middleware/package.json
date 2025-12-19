@@ -1,0 +1,49 @@
+{
+  "name": "@repo/auth-middleware",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^24.3.1",
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.8.3",
+    "hono": "^4.7.10",
+    "express": "^5.1.0",
+    "@types/express": "^5.0.0",
+    "fastify": "^5.3.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "peerDependencies": {
+    "hono": ">=4.0.0",
+    "express": ">=4.0.0 || >=5.0.0",
+    "fastify": ">=4.0.0 || >=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    }
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./jwt": "./src/jwt.ts",
+    "./password": "./src/password.ts",
+    "./express": "./src/express.ts",
+    "./fastify": "./src/fastify.ts",
+    "./hono": "./src/hono.ts",
+    "./types": "./src/types.ts"
+  }
+}

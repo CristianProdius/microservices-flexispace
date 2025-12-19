@@ -1,5 +1,5 @@
 {
-  "name": "product-service",
+  "name": "space-service",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.ts",
@@ -12,11 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clerk/express": "^1.7.30",
     "cors": "^2.8.5",
     "express": "^5.0.3",
-    "@repo/product-db": "workspace:*",
-    "@repo/kafka": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@repo/kafka": "workspace:*",
+    "@repo/auth-middleware": "workspace:*"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

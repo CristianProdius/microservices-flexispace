@@ -1,6 +1,6 @@
 import { createConsumer, createKafkaClient, createProducer } from "@repo/kafka";
 
-const kafkaClient = createKafkaClient("order-service");
+const kafkaClient = createKafkaClient("booking-service");
 
 export const producer = createProducer(kafkaClient);
-export const consumer = createConsumer(kafkaClient, "order-group");
+export const consumer = createConsumer(kafkaClient, "booking-group");
