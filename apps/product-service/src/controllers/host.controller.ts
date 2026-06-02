@@ -1,5 +1,18 @@
 import { Request, Response } from "express";
+import { Prisma } from "@repo/db";
 import { prisma } from "@repo/db";
+
+type HostOrderBy = Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
+type HostSortKey = "featured" | "mostVenues" | "newest";
+
+const HOST_SORT_ORDER_BY: Record<HostSortKey, HostOrderBy> = {
+  featured: [{ hostVerified: "desc" }, { hostingSince: "asc" }],
+  mostVenues: { venues: { _count: "desc" } },
+  newest: { hostingSince: "desc" },
+};
+
+const parseSort = (raw: unknown): HostSortKey =>
+  raw === "mostVenues" || raw === "newest" ? raw : "featured";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -77,21 +90,36 @@ const toHostSummary = (host: HostRow) => {
 
 export const getHosts = async (req: Request, res: Response) => {
   const { page, limit, skip } = parsePagination(req.query);
-  const city = typeof req.query.city === "string" ? req.query.city : undefined;
+  const city = typeof req.query.city === "string" && req.query.city.length > 0
+    ? req.query.city
+    : undefined;
+  const verifiedOnly = req.query.verified === "true";
+  const searchRaw = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const search = searchRaw.length > 0 ? searchRaw : undefined;
+  const sort = parseSort(req.query.sort);
 
-  const where = {
+  const where: Prisma.UserWhereInput = {
     venues: {
       some: {
         isActive: true,
         ...(city ? { city } : {}),
       },
     },
+    ...(verifiedOnly ? { hostVerified: true } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
   };
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, cityRows] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: [{ hostVerified: "desc" }, { hostingSince: "asc" }],
+      orderBy: HOST_SORT_ORDER_BY[sort],
       skip,
       take: limit,
       select: {
@@ -114,7 +142,17 @@ export const getHosts = async (req: Request, res: Response) => {
       },
     }),
     prisma.user.count({ where }),
+    prisma.venue.findMany({
+      where: { isActive: true },
+      distinct: ["city"],
+      select: { city: true },
+      orderBy: { city: "asc" },
+    }),
   ]);
+
+  const availableCities = cityRows
+    .map((v) => v.city)
+    .filter((c): c is string => typeof c === "string" && c.length > 0);
 
   res.status(200).json({
     hosts: (rows as HostRow[]).map(toHostSummary),
@@ -124,6 +162,7 @@ export const getHosts = async (req: Request, res: Response) => {
       total,
       totalPages: Math.max(Math.ceil(total / limit), 1),
     },
+    availableCities,
   });
 };
 

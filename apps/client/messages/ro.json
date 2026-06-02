@@ -525,6 +525,18 @@
       "viewVenue": "Vezi localul"
     },
     "empty": "Nu există gazde de afișat.",
-    "loadError": "Nu am putut încărca gazdele."
+    "loadError": "Nu am putut încărca gazdele.",
+    "filters": {
+      "searchPlaceholder": "Caută gazde",
+      "allCities": "Toate orașele",
+      "verifiedOnly": "Doar verificate",
+      "clear": "Șterge filtrele",
+      "sort": {
+        "label": "Sortează după",
+        "featured": "Recomandate",
+        "mostVenues": "Cele mai multe locale",
+        "newest": "Cele mai noi"
+      }
+    }
   }
 }

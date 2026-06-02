@@ -525,6 +525,18 @@
       "viewVenue": "View venue"
     },
     "empty": "No hosts to show yet.",
-    "loadError": "We couldn't load hosts."
+    "loadError": "We couldn't load hosts.",
+    "filters": {
+      "searchPlaceholder": "Search hosts",
+      "allCities": "All cities",
+      "verifiedOnly": "Verified only",
+      "clear": "Clear filters",
+      "sort": {
+        "label": "Sort by",
+        "featured": "Featured",
+        "mostVenues": "Most venues",
+        "newest": "Newest"
+      }
+    }
   }
 }
