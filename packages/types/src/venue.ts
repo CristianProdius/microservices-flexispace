@@ -83,6 +83,7 @@ export interface HostSummary {
   name: string | null;
   username: string;
   image: string | null;
+  coverImage: string | null;
   bio: string | null;
   hostingSince: string | null;
   hostVerified: boolean;

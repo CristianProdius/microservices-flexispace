@@ -13,15 +13,16 @@ const HostCard = ({ host }: { host: HostSummary }) => {
   const initials = displayName.slice(0, 1).toUpperCase();
   const hostingYear = host.hostingSince ? new Date(host.hostingSince).getFullYear() : null;
   const location = host.cities.slice(0, 2).join(", ");
+  const heroImage = host.image ?? host.coverImage;
 
   return (
     <div className="group">
       {/* IMAGE — links to the host profile */}
       <Link href={`/hosts/${host.id}`} className="block">
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-subtle">
-          {host.image ? (
+          {heroImage ? (
             <Image
-              src={host.image}
+              src={heroImage}
               alt={displayName}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"

@@ -13,6 +13,7 @@ const parsePagination = (query: Request["query"]) => {
 
 interface HostVenueRow {
   city: string;
+  images: unknown;
   _count: { spaces: number };
 }
 
@@ -26,6 +27,29 @@ interface HostRow {
   hostVerified: boolean;
   venues: HostVenueRow[];
 }
+
+const parseImageList = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) return raw.filter((url): url is string => typeof url === "string" && url.length > 0);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter((url): url is string => typeof url === "string" && url.length > 0)
+        : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const firstVenueImage = (venues: { images: unknown }[]): string | null => {
+  for (const venue of venues) {
+    const [first] = parseImageList(venue.images);
+    if (first) return first;
+  }
+  return null;
+};
 
 const toHostSummary = (host: HostRow) => {
   const cities = Array.from(
@@ -41,6 +65,7 @@ const toHostSummary = (host: HostRow) => {
     name: host.name,
     username: host.username,
     image: host.image,
+    coverImage: firstVenueImage(host.venues),
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
     hostVerified: host.hostVerified,
@@ -79,8 +104,10 @@ export const getHosts = async (req: Request, res: Response) => {
         hostVerified: true,
         venues: {
           where: { isActive: true, ...(city ? { city } : {}) },
+          orderBy: { createdAt: "asc" },
           select: {
             city: true,
+            images: true,
             _count: { select: { spaces: { where: { isActive: true } } } },
           },
         },
@@ -168,6 +195,7 @@ export const getHost = async (req: Request, res: Response) => {
     name: host.name,
     username: host.username,
     image: host.image,
+    coverImage: firstVenueImage(host.venues),
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
     hostVerified: host.hostVerified,
