@@ -4,7 +4,32 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Search, X } from "lucide-react";
+import { Popover } from "@base-ui/react/popover";
+import {
+  ArrowUpDown,
+  BadgeCheck,
+  ChevronDown,
+  MapPin,
+  Search,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/* ── Styling constants (mirror SpaceFilter) ───────────────── */
+
+const pillBase =
+  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors cursor-pointer shrink-0";
+const pillActive = "bg-primary-light border-primary/30 text-foreground";
+const pillInactive =
+  "border-border text-muted hover:bg-subtle hover:text-foreground";
+const popoverPanel =
+  "min-w-[200px] bg-white border border-border rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] p-2 z-50";
+const optionBase =
+  "w-full text-left px-3 py-2 text-sm rounded-md transition-colors cursor-pointer";
+const optionActive = "bg-primary-light text-foreground font-medium";
+const optionInactive = "text-foreground hover:bg-subtle";
+
+/* ── Sort options ─────────────────────────────────────────── */
 
 const SORT_KEYS = ["featured", "mostVenues", "newest"] as const;
 type SortKey = (typeof SORT_KEYS)[number];
@@ -25,9 +50,8 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
 
   const activeCity = searchParams.get("city") ?? "";
   const activeVerified = searchParams.get("verified") === "true";
-  const activeSort: SortKey = isSortKey(searchParams.get("sort"))
-    ? (searchParams.get("sort") as SortKey)
-    : DEFAULT_SORT;
+  const activeSortRaw = searchParams.get("sort");
+  const activeSort: SortKey = isSortKey(activeSortRaw) ? activeSortRaw : DEFAULT_SORT;
   const activeSearch = searchParams.get("search") ?? "";
 
   const [searchDraft, setSearchDraft] = useState(activeSearch);
@@ -37,9 +61,12 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
     setSearchDraft(activeSearch);
   }, [activeSearch]);
 
-  useEffect(() => () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    []
+  );
 
   const writeParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -62,11 +89,16 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
     router.replace(pathname);
   };
 
-  const hasAnyFilter = Boolean(activeCity || activeVerified || activeSearch || activeSort !== DEFAULT_SORT);
+  const hasAnyFilter =
+    Boolean(activeCity) ||
+    activeVerified ||
+    Boolean(activeSearch) ||
+    activeSort !== DEFAULT_SORT;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-6">
-      <label className="relative flex-1 min-w-[200px] max-w-md">
+    <div className="mb-6 flex flex-wrap items-center gap-2 p-2 bg-white border border-border rounded-[var(--radius-md)] shadow-[var(--shadow-sm)]">
+      {/* Search */}
+      <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted pointer-events-none" />
         <input
           type="search"
@@ -74,59 +106,110 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t("searchPlaceholder")}
           aria-label={t("searchPlaceholder")}
-          className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-foreground/40"
+          className="w-full pl-9 pr-3 py-2 text-sm bg-transparent border-none outline-none placeholder:text-muted"
         />
-      </label>
+      </div>
 
-      <select
-        value={activeCity}
-        onChange={(e) => writeParam("city", e.target.value || null)}
-        aria-label={t("allCities")}
-        className="px-3 py-2 text-sm border border-border rounded-lg bg-white text-foreground hover:bg-subtle focus:outline-none focus:border-foreground/40 cursor-pointer"
-      >
-        <option value="">{t("allCities")}</option>
-        {availableCities.map((city) => (
-          <option key={city} value={city}>
-            {city}
-          </option>
-        ))}
-      </select>
+      {/* Divider */}
+      <div className="hidden md:block w-px h-8 bg-border shrink-0" />
 
+      {/* City pill */}
+      <Popover.Root>
+        <Popover.Trigger
+          aria-label={t("allCities")}
+          className={cn(pillBase, activeCity ? pillActive : pillInactive)}
+        >
+          <MapPin className="size-4" />
+          <span>{activeCity || t("allCities")}</span>
+          <ChevronDown className="size-3.5" />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner side="bottom" align="start" sideOffset={4}>
+            <Popover.Popup className={cn(popoverPanel, "max-h-72 overflow-auto")}>
+              <button
+                type="button"
+                onClick={() => writeParam("city", null)}
+                className={cn(optionBase, !activeCity ? optionActive : optionInactive)}
+              >
+                {t("allCities")}
+              </button>
+              {availableCities.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => writeParam("city", city)}
+                  className={cn(
+                    optionBase,
+                    activeCity === city ? optionActive : optionInactive
+                  )}
+                >
+                  {city}
+                </button>
+              ))}
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+
+      {/* Verified toggle */}
       <button
         type="button"
         onClick={() => writeParam("verified", activeVerified ? null : "true")}
         aria-pressed={activeVerified}
-        className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors cursor-pointer ${
-          activeVerified
-            ? "bg-success/10 border-success/30 text-foreground"
-            : "border-border text-muted hover:bg-subtle hover:text-foreground"
-        }`}
+        className={cn(pillBase, activeVerified ? pillActive : pillInactive)}
       >
-        <Check className="size-4" />
-        {t("verifiedOnly")}
+        <BadgeCheck className="size-4" />
+        <span>{t("verifiedOnly")}</span>
       </button>
 
-      <select
-        value={activeSort}
-        onChange={(e) => writeParam("sort", e.target.value === DEFAULT_SORT ? null : e.target.value)}
-        aria-label={t("sort.label")}
-        className="px-3 py-2 text-sm border border-border rounded-lg bg-white text-foreground hover:bg-subtle focus:outline-none focus:border-foreground/40 cursor-pointer"
-      >
-        {SORT_KEYS.map((key) => (
-          <option key={key} value={key}>
-            {t("sort." + key)}
-          </option>
-        ))}
-      </select>
+      {/* Spacer */}
+      <div className="hidden md:block flex-1" />
+
+      {/* Sort pill (right-aligned on desktop) */}
+      <Popover.Root>
+        <Popover.Trigger
+          aria-label={t("sort.label")}
+          className={cn(
+            pillBase,
+            activeSort !== DEFAULT_SORT ? pillActive : pillInactive
+          )}
+        >
+          <ArrowUpDown className="size-4" />
+          <span>{t("sort." + activeSort)}</span>
+          <ChevronDown className="size-3.5" />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner side="bottom" align="end" sideOffset={4}>
+            <Popover.Popup className={popoverPanel}>
+              {SORT_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() =>
+                    writeParam("sort", key === DEFAULT_SORT ? null : key)
+                  }
+                  className={cn(
+                    optionBase,
+                    activeSort === key ? optionActive : optionInactive
+                  )}
+                >
+                  {t("sort." + key)}
+                </button>
+              ))}
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
 
       {hasAnyFilter && (
         <button
           type="button"
           onClick={onClear}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors cursor-pointer"
+          aria-label={t("clear")}
+          className="inline-flex items-center gap-1 px-2 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors cursor-pointer shrink-0"
         >
           <X className="size-4" />
-          {t("clear")}
+          <span className="hidden md:inline">{t("clear")}</span>
         </button>
       )}
     </div>
