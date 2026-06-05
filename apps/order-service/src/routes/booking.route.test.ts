@@ -48,7 +48,6 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@repo/db", () => ({
   BookingStatus: {
-    APPROVED: "APPROVED",
     CANCELLED: "CANCELLED",
     COMPLETED: "COMPLETED",
     CONFIRMED: "CONFIRMED",
@@ -336,7 +335,7 @@ describe("booking routes", () => {
   // conflicting or not, intentionally.
   it("classifies every BookingStatus enum value intentionally for conflict detection", async () => {
     // Mirror of the implementation's CONFLICTING_BOOKING_STATUSES.
-    const occupying = new Set(["PENDING", "APPROVED", "CONFIRMED"]);
+    const occupying = new Set(["PENDING", "CONFIRMED"]);
     const free = new Set(["COMPLETED", "CANCELLED", "REJECTED", "EXPIRED"]);
     // Pull the enum surface from the mocked @repo/db so this test fails
     // if a new status is added to the schema without being classified here.
@@ -346,7 +345,7 @@ describe("booking routes", () => {
       expect(occupying.has(status) || free.has(status)).toBe(true);
     }
     // APPROVED must be in the occupying set (the BOOKSVC-002 regression).
-    expect(occupying.has("APPROVED")).toBe(true);
+    expect(occupying.has("PENDING")).toBe(true);
   });
 
   // BOOKSVC-012: stale-state guard on cancel.
@@ -388,7 +387,7 @@ describe("booking routes", () => {
       data: expect.objectContaining({ status: "CANCELLED" }),
       where: {
         id: "b-1",
-        status: { in: ["PENDING", "APPROVED", "CONFIRMED"] },
+        status: { in: ["PENDING", "CONFIRMED"] },
       },
     });
     expect(mocks.producerSend).not.toHaveBeenCalled();

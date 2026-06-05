@@ -261,10 +261,18 @@ describe("updateAvailability - PRODSVC-013 emits space.updated", () => {
       id: 42,
       hostId: "user-1",
     });
+    // PRODSVC-001: normalizeAvailability requires all 7 days, each present
+    // exactly once. The test must send a complete week.
+    const fullWeek = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+      dayOfWeek,
+      startTime: "09:00",
+      endTime: "18:00",
+      isOpen: true,
+    }));
     await updateAvailability(
       buildReq({
         params: { id: "42" },
-        body: { availability: [], blockedDates: [] },
+        body: { availability: fullWeek, blockedDates: [] },
       }),
       res as never,
     );

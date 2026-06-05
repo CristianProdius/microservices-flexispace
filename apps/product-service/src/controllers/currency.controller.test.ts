@@ -104,7 +104,11 @@ describe("updateRates", () => {
   });
 
   it("upserts every entry inside a single $transaction and invalidates cache on success", async () => {
-    const expectedResults = [{ id: "a" }, { id: "b" }];
+    // Each row carries a `rate` since the controller maps it through Number().
+    const expectedResults = [
+      { id: "a", rate: 0.92 },
+      { id: "b", rate: 17.4 },
+    ];
     mocks.$transaction.mockResolvedValue(expectedResults);
 
     const res = createResponse();
