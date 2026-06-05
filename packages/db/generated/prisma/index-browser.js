@@ -135,7 +135,8 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
-  hostingSince: 'hostingSince'
+  hostingSince: 'hostingSince',
+  hostApplicationPending: 'hostApplicationPending'
 };
 
 exports.Prisma.SessionScalarFieldEnum = {
@@ -144,6 +145,36 @@ exports.Prisma.SessionScalarFieldEnum = {
   token: 'token',
   expiresAt: 'expiresAt',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.RefreshTokenScalarFieldEnum = {
+  id: 'id',
+  jti: 'jti',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  usedAt: 'usedAt',
+  replacedBy: 'replacedBy',
+  revoked: 'revoked'
+};
+
+exports.Prisma.HostApplicationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  status: 'status',
+  applicationData: 'applicationData',
+  decisionBy: 'decisionBy',
+  decisionAt: 'decisionAt',
+  decisionNotes: 'decisionNotes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PasswordResetUseScalarFieldEnum = {
+  id: 'id',
+  jti: 'jti',
+  userId: 'userId',
+  usedAt: 'usedAt'
 };
 
 exports.Prisma.VenueScalarFieldEnum = {
@@ -356,6 +387,12 @@ exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN'
 };
 
+exports.HostApplicationStatus = exports.$Enums.HostApplicationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
 exports.Currency = exports.$Enums.Currency = {
   USD: 'USD',
   EUR: 'EUR',
@@ -409,6 +446,9 @@ exports.PayoutStatus = exports.$Enums.PayoutStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Session: 'Session',
+  RefreshToken: 'RefreshToken',
+  HostApplication: 'HostApplication',
+  PasswordResetUse: 'PasswordResetUse',
   Venue: 'Venue',
   ExchangeRate: 'ExchangeRate',
   Space: 'Space',

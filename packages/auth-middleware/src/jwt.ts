@@ -5,12 +5,16 @@ import type { JwtPayload, TokenPair, TokenUse } from "./types.js";
 
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "15m") as SignOptions["expiresIn"];
 const JWT_REFRESH_EXPIRES_IN = (process.env.JWT_REFRESH_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
+const JWT_PASSWORD_RESET_EXPIRES_IN =
+  (process.env.JWT_PASSWORD_RESET_EXPIRES_IN || "30m") as SignOptions["expiresIn"];
 
 const JWT_ALGORITHM = "HS256" as const;
 const JWT_ISSUER = "spacefly";
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "spacefly-api";
 
-const getRequiredEnv = (name: "JWT_SECRET" | "JWT_REFRESH_SECRET"): string => {
+const getRequiredEnv = (
+  name: "JWT_SECRET" | "JWT_REFRESH_SECRET" | "JWT_PASSWORD_RESET_SECRET",
+): string => {
   const value = process.env[name];
 
   if (!value) {
@@ -44,13 +48,14 @@ function signToken(
   tokenUse: TokenUse,
   secret: string,
   expiresIn: SignOptions["expiresIn"],
+  jti?: string,
 ): string {
   return jwt.sign({ ...payload, tokenUse }, secret, {
     algorithm: JWT_ALGORITHM,
     audience: JWT_AUDIENCE,
     issuer: JWT_ISSUER,
     expiresIn,
-    jwtid: randomUUID(),
+    jwtid: jti ?? randomUUID(),
   });
 }
 
@@ -58,14 +63,31 @@ export function signAccessToken(payload: SignablePayload): string {
   return signToken(payload, "access", getRequiredEnv("JWT_SECRET"), JWT_EXPIRES_IN);
 }
 
-export function signRefreshToken(payload: SignablePayload): string {
-  return signToken(payload, "refresh", getRequiredEnv("JWT_REFRESH_SECRET"), JWT_REFRESH_EXPIRES_IN);
+/**
+ * Sign a refresh token. Callers can supply a stable `jti` so the token can be
+ * tracked in a server-side rotation chain (AUTHSVC-006). When omitted, a random
+ * UUID is generated.
+ */
+export function signRefreshToken(
+  payload: SignablePayload,
+  options: { jti?: string } = {},
+): string {
+  return signToken(
+    payload,
+    "refresh",
+    getRequiredEnv("JWT_REFRESH_SECRET"),
+    JWT_REFRESH_EXPIRES_IN,
+    options.jti,
+  );
 }
 
-export function signTokenPair(payload: SignablePayload): TokenPair {
+export function signTokenPair(
+  payload: SignablePayload,
+  options: { refreshJti?: string } = {},
+): TokenPair {
   return {
     accessToken: signAccessToken(payload),
-    refreshToken: signRefreshToken(payload),
+    refreshToken: signRefreshToken(payload, { jti: options.refreshJti }),
   };
 }
 
@@ -103,6 +125,45 @@ export function verifyAccessToken(token: string): VerifyResult {
 
 export function verifyRefreshToken(token: string): VerifyResult {
   return verifyToken(token, getRequiredEnv("JWT_REFRESH_SECRET"), "refresh");
+}
+
+export interface PasswordResetTokenPayload {
+  userId: string;
+  email: string;
+  purpose: "password-reset";
+  jti?: string;
+  iat?: number;
+  exp?: number;
+}
+
+/**
+ * AUTHSVC-010: short-lived password-reset token. The `purpose` claim is
+ * checked on verify so an access/refresh token can never be substituted.
+ */
+export function signPasswordResetToken(
+  payload: Pick<PasswordResetTokenPayload, "userId" | "email">,
+  options: { jti: string },
+): string {
+  return jwt.sign(
+    { ...payload, purpose: "password-reset" as const },
+    getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
+    { expiresIn: JWT_PASSWORD_RESET_EXPIRES_IN, jwtid: options.jti },
+  );
+}
+
+export function verifyPasswordResetToken(
+  token: string,
+): PasswordResetTokenPayload | null {
+  try {
+    const decoded = jwt.verify(
+      token,
+      getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
+    ) as PasswordResetTokenPayload & { jti?: string };
+    if (decoded.purpose !== "password-reset") return null;
+    return decoded;
+  } catch {
+    return null;
+  }
 }
 
 // AUTHMW-002: RFC 6750 says the Bearer scheme is case-insensitive. Reject

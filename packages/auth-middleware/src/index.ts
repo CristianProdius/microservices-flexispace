@@ -8,16 +8,21 @@ export {
   signTokenPair,
   verifyAccessToken,
   verifyRefreshToken,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
   extractTokenFromHeader,
   extractTokenFromCookieHeader,
   extractAccessToken,
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
 } from "./jwt.js";
-export type { VerifyResult, VerifyFailureReason } from "./jwt.js";
+export type { VerifyResult, VerifyFailureReason, PasswordResetTokenPayload } from "./jwt.js";
 
 // Password utilities
 export { hashPassword, comparePassword, InvalidPasswordError } from "./password.js";
+
+// Email normalization (AUTHMW-003)
+export { normalizeEmail } from "./email.js";
 
 // Express middleware
 export {

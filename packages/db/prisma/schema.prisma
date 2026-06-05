@@ -55,6 +55,12 @@ enum PayoutStatus {
   FAILED
 }
 
+enum HostApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum Currency {
   USD
   EUR
@@ -91,17 +97,21 @@ model User {
   deletedAt        DateTime?
 
   // Host-specific fields
-  hostVerified     Boolean   @default(false)
-  hostingSince     DateTime?
+  hostVerified           Boolean   @default(false)
+  hostingSince           DateTime?
+  hostApplicationPending Boolean   @default(false)
 
   // Relations
-  sessions         Session[]
-  venues           Venue[]
-  spaces           Space[]          // Spaces hosted by this user
-  bookingsAsGuest  Booking[]  @relation("GuestBookings")
-  bookingsAsHost   Booking[]  @relation("HostBookings")
-  reviews          Review[]         // Reviews written by this user
-  payouts          Payout[]         // Payouts for hosts
+  sessions          Session[]
+  refreshTokens     RefreshToken[]
+  hostApplications  HostApplication[]
+  passwordResetUses PasswordResetUse[]
+  venues            Venue[]
+  spaces            Space[]          // Spaces hosted by this user
+  bookingsAsGuest   Booking[]  @relation("GuestBookings")
+  bookingsAsHost    Booking[]  @relation("HostBookings")
+  reviews           Review[]         // Reviews written by this user
+  payouts           Payout[]         // Payouts for hosts
 
   @@index([role])
   @@index([deletedAt])
@@ -113,6 +123,63 @@ model Session {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Refresh-token rotation chain with reuse detection.
+// One row per refresh-token jti issued; old rows are not deleted so we can
+// detect reuse of a token that was already exchanged for a new one.
+model RefreshToken {
+  id         String    @id @default(cuid())
+  jti        String    @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  // Set when the token has been exchanged for a new one. A second use of
+  // a token where usedAt is non-null is a reuse attempt -> revoke chain.
+  usedAt     DateTime?
+  // jti of the refresh token that replaced this one (rotation).
+  replacedBy String?
+  // True if the chain has been revoked (logout, password reset, reuse).
+  revoked    Boolean   @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([replacedBy])
+}
+
+// Host upgrade applications. Replaces the previous self-promotion flow:
+// users now create a PENDING application and an admin must approve via
+// the existing PUT /users/:id/role admin endpoint.
+model HostApplication {
+  id              String                @id @default(cuid())
+  userId          String
+  status          HostApplicationStatus @default(PENDING)
+  applicationData Json?                 // free-form data submitted with the application (phone, bio, etc.)
+  decisionBy      String?               // admin user id who decided
+  decisionAt      DateTime?
+  decisionNotes   String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Single-use enforcement table for password reset tokens. A row is inserted
+// when a reset token is consumed; subsequent attempts to use the same jti
+// are rejected.
+model PasswordResetUse {
+  id     String   @id @default(cuid())
+  jti    String   @unique
+  userId String
+  usedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -14,8 +14,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.0.3",
+    "express-rate-limit": "^7.5.0",
+    "uuid": "^10.0.0",
+    "zod": "^4.1.9",
     "@repo/kafka": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/auth-middleware": "workspace:*"
@@ -23,8 +27,10 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@repo/types": "workspace:*",
+    "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/uuid": "^10.0.0",
     "tsup": "^8.5.0"
   }
 }

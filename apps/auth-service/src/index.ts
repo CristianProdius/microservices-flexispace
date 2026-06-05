@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { shouldBeAdmin } from "@repo/auth-middleware/express";
 import userRoute from "./routes/user.route.js";
 import authRoute from "./routes/auth.route.js";
@@ -19,6 +20,14 @@ const configuredCorsOrigins = process.env.CORS_ORIGINS?.split(",")
 const corsOrigins = configuredCorsOrigins?.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
 
 const app = express();
+
+// AUTHSVC-001: behind nginx/caddy/cloud-run we need to trust the proxy so
+// req.ip reflects the real client IP — otherwise every request appears to
+// come from 127.0.0.1 and the rate limiter is useless. `loopback, linklocal,
+// uniquelocal` is the safe default that doesn't expose us to spoofed
+// X-Forwarded-For from the public internet.
+app.set("trust proxy", "loopback, linklocal, uniquelocal");
+
 app.use(
   cors({
     origin: corsOrigins,
@@ -26,6 +35,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/health", (req: Request, res: Response) => {
   return res.status(200).json({

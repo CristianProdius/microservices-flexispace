@@ -10,6 +10,8 @@ export interface JwtPayload {
   tokenUse?: TokenUse;
   iat?: number;
   exp?: number;
+  /** JWT id — set by `jsonwebtoken` when `jwtid` is provided at sign time. */
+  jti?: string;
 }
 
 export interface AuthUser {
