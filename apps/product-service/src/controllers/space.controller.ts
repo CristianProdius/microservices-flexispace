@@ -16,7 +16,13 @@ import {
 import {
   isDateOnlyOrIsoDate,
   parsePositiveInteger,
+  parsePositiveIntegerWithDefault,
 } from "../lib/validation.js";
+
+// PRODSVC-012: bound host-scoped lists so a host with thousands of spaces
+// can't OOM the API or blow the wire payload.
+const SPACE_LIST_DEFAULT_LIMIT = 50;
+const SPACE_LIST_MAX_LIMIT = 200;
 
 const venueInclude = {
   select: {
@@ -777,6 +783,19 @@ export const deleteSpace = async (req: Request, res: Response) => {
 export const getMySpaces = async (req: Request, res: Response) => {
   const hostId = req.userId!;
 
+  const limit = parsePositiveIntegerWithDefault(
+    req.query.limit,
+    SPACE_LIST_DEFAULT_LIMIT,
+    SPACE_LIST_MAX_LIMIT
+  );
+  if (limit === null) {
+    return res.status(400).json({ message: "Invalid limit" });
+  }
+  const page = parsePositiveIntegerWithDefault(req.query.page, 1);
+  if (page === null) {
+    return res.status(400).json({ message: "Invalid page" });
+  }
+
   const spaces = await prisma.space.findMany({
     where: { hostId },
     include: {
@@ -791,6 +810,8 @@ export const getMySpaces = async (req: Request, res: Response) => {
       },
     },
     orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
   });
 
   res.status(200).json(spaces.map(flattenVenue));

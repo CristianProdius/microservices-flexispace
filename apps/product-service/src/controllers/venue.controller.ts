@@ -2,13 +2,35 @@ import { Request, Response } from "express";
 import { prisma } from "@repo/db";
 import { producer } from "../utils/kafka.js";
 import { resolveTranslations, VENUE_TRANSLATION_FIELDS } from "../lib/translations.js";
+import { parsePositiveIntegerWithDefault } from "../lib/validation.js";
+
+// PRODSVC-012: cap host-scoped lists so a host with thousands of venues can't
+// blow up memory/CPU or generate huge payloads. Allow client-provided paging.
+const VENUE_LIST_DEFAULT_LIMIT = 50;
+const VENUE_LIST_MAX_LIMIT = 200;
 
 export const getMyVenues = async (req: Request, res: Response) => {
   const hostId = req.userId!;
+
+  const limit = parsePositiveIntegerWithDefault(
+    req.query.limit,
+    VENUE_LIST_DEFAULT_LIMIT,
+    VENUE_LIST_MAX_LIMIT
+  );
+  if (limit === null) {
+    return res.status(400).json({ message: "Invalid limit" });
+  }
+  const page = parsePositiveIntegerWithDefault(req.query.page, 1);
+  if (page === null) {
+    return res.status(400).json({ message: "Invalid page" });
+  }
+
   const venues = await prisma.venue.findMany({
     where: { hostId },
     include: { _count: { select: { spaces: true } } },
     orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
   });
   res.status(200).json(venues);
 };
@@ -50,7 +72,12 @@ export const getVenue = async (req: Request, res: Response) => {
       },
     },
   });
-  if (!venue) return res.status(404).json({ message: "Venue not found" });
+  // PRODSVC-015: this route is public; a soft-deleted (isActive=false) venue
+  // should be hidden so its name/address/lat-long/host PII don't leak via a
+  // direct link or cached URL.
+  if (!venue || !venue.isActive) {
+    return res.status(404).json({ message: "Venue not found" });
+  }
 
   const lang = req.query.lang as string | undefined;
   res.status(200).json(resolveTranslations(venue, lang, VENUE_TRANSLATION_FIELDS));

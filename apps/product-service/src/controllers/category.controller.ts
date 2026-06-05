@@ -82,6 +82,15 @@ export const updateCategory = async (req: Request, res: Response) => {
   const categoryId = parsePositiveInteger(id);
   if (categoryId === null) return res.status(400).json({ message: "Invalid ID" });
 
+  // PRODSVC-008: existence check so a missing id becomes 404 instead of a
+  // Prisma P2025 -> opaque 500 from the global error handler.
+  const existing = await prisma.spaceCategory.findUnique({
+    where: { id: categoryId },
+  });
+  if (!existing) {
+    return res.status(404).json({ message: "Category not found" });
+  }
+
   const category = await prisma.spaceCategory.update({
     where: { id: categoryId },
     data: buildCategoryUpdateInput(req.body),
@@ -123,6 +132,10 @@ export const deleteCategory = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Category deleted" });
 };
 
+// PRODSVC-012: cap taxonomy lists at the DB layer even though cardinality is
+// currently bounded — protects against an attacker who can create many rows.
+const CATEGORY_HARD_CAP = 500;
+
 export const getCategories = async (req: Request, res: Response) => {
   const grouped = req.query.grouped === "true";
 
@@ -139,6 +152,7 @@ export const getCategories = async (req: Request, res: Response) => {
         },
       },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      take: CATEGORY_HARD_CAP,
     });
 
     return res.status(200).json(groups);
@@ -152,6 +166,7 @@ export const getCategories = async (req: Request, res: Response) => {
       group: true,
     },
     orderBy: [{ group: { sortOrder: "asc" } }, { sortOrder: "asc" }, { name: "asc" }],
+    take: CATEGORY_HARD_CAP,
   });
 
   return res.status(200).json(categories);

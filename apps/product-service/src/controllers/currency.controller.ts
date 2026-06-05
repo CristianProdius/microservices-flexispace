@@ -2,9 +2,13 @@ import { Request, Response } from "express";
 import { prisma } from "@repo/db";
 import { invalidateRateCache } from "../lib/currency.js";
 
+// PRODSVC-012: cap exchange-rate list at the DB layer to bound payload size.
+const EXCHANGE_RATE_HARD_CAP = 1000;
+
 export const getRates = async (_req: Request, res: Response) => {
   const rates = await prisma.exchangeRate.findMany({
     orderBy: [{ fromCurrency: "asc" }, { toCurrency: "asc" }],
+    take: EXCHANGE_RATE_HARD_CAP,
   });
   // rate is Prisma.Decimal — serialise as a plain number so existing
   // consumers (admin UI, mobile clients) keep their `typeof rate === "number"` contract.
