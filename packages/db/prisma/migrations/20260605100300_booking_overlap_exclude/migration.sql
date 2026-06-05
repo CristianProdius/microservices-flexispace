@@ -5,7 +5,8 @@
 -- only covers PENDING/CONFIRMED and is racy under high concurrency.
 --
 -- We add an EXCLUDE constraint that catches overlapping multi-day bookings
--- for the same Space when status is one of PENDING/APPROVED/CONFIRMED.
+-- for the same Space when status is one of PENDING/CONFIRMED.
+-- (APPROVED was dropped from BookingStatus in 20260605000000_fix_types_drift.)
 -- Hourly bookings are intentionally left to the application layer because the
 -- per-day time-of-day window cannot be expressed against the (startDate,
 -- endDate) timestamps without a generated column — and the app test suite
@@ -21,5 +22,5 @@ ALTER TABLE "public"."Booking"
   )
   WHERE (
     "isHourly" = false
-    AND "status" IN ('PENDING', 'APPROVED', 'CONFIRMED')
+    AND "status" IN ('PENDING', 'CONFIRMED')
   );
