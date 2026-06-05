@@ -196,10 +196,16 @@ router.post("/refresh", async (req, res) => {
     }
 
     // Verify refresh token
-    const payload = verifyRefreshToken(refreshToken);
+    const result = verifyRefreshToken(refreshToken);
 
-    if (!payload) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+    if (!result.ok) {
+      const message =
+        result.reason === "expired"
+          ? "Refresh token expired"
+          : result.reason === "wrong_token_use"
+            ? "Wrong token type"
+            : "Invalid refresh token";
+      return res.status(401).json({ message });
     }
 
     // Check if session exists

@@ -1,21 +1,40 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
-import type { AuthUser } from "./types.js";
+import type { VerifyFailureReason } from "./jwt.js";
+import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 
-export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
+function authenticate(req: Request, res: Response): JwtPayload | null {
   const token = extractTokenFromHeader(req.headers.authorization);
 
   if (!token) {
-    return res.status(401).json({ message: "No token provided" });
+    res.status(401).json({ message: "No token provided" });
+    return null;
   }
 
-  const payload = verifyAccessToken(token);
+  const result = verifyAccessToken(token);
 
-  if (!payload) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+  if (!result.ok) {
+    res.status(401).json({ message: messageForReason(result.reason) });
+    return null;
   }
 
+  return result.payload;
+}
+
+function messageForReason(reason: VerifyFailureReason): string {
+  switch (reason) {
+    case "expired":
+      return "Access token expired";
+    case "wrong_token_use":
+      return "Wrong token type";
+    case "invalid":
+    default:
+      return "Invalid token";
+  }
+}
+
+function attachUser(req: Request, payload: JwtPayload): void {
   const user: AuthUser = {
     userId: payload.userId,
     email: payload.email,
@@ -25,96 +44,48 @@ export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
 
   req.user = user;
   req.userId = payload.userId;
+}
 
+export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
+  const payload = authenticate(req, res);
+  if (!payload) return;
+
+  attachUser(req, payload);
   return next();
 }
 
 export function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
-
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
+  const payload = authenticate(req, res);
+  if (!payload) return;
 
   if (payload.role !== "ADMIN") {
     return res.status(403).json({ message: "Admin access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  req.user = user;
-  req.userId = payload.userId;
-
+  attachUser(req, payload);
   return next();
 }
 
 export function shouldBeHost(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
-
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
+  const payload = authenticate(req, res);
+  if (!payload) return;
 
   if (!hasVerifiedHostAccess(payload)) {
     return res.status(403).json({ message: "Verified host access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  req.user = user;
-  req.userId = payload.userId;
-
+  attachUser(req, payload);
   return next();
 }
 
 export function shouldBeHostOrAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
-
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
+  const payload = authenticate(req, res);
+  if (!payload) return;
 
   if (!hasVerifiedHostAccess(payload)) {
     return res.status(403).json({ message: "Verified host or Admin access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  req.user = user;
-  req.userId = payload.userId;
-
+  attachUser(req, payload);
   return next();
 }
