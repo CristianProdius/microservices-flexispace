@@ -125,7 +125,6 @@ export type PricingType = (typeof PricingType)[keyof typeof PricingType]
 
 export const BookingStatus: {
   PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
   CONFIRMED: 'CONFIRMED',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',

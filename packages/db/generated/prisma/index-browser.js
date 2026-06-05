@@ -386,7 +386,6 @@ exports.CancellationPolicy = exports.$Enums.CancellationPolicy = {
 
 exports.BookingStatus = exports.$Enums.BookingStatus = {
   PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
   CONFIRMED: 'CONFIRMED',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',

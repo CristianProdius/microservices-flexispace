@@ -323,7 +323,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // APPROVED is included even though the current flow goes PENDING -> CONFIRMED directly,
       // because the enum still permits it and any APPROVED-but-not-yet-CONFIRMED booking
       // must reserve its window. EXPIRED bookings are released and intentionally excluded.
-      const conflictingStatuses: BookingStatus[] = ["PENDING", "APPROVED", "CONFIRMED"];
+      const conflictingStatuses: BookingStatus[] = ["PENDING", "CONFIRMED"];
       const conflictWhere = {
         spaceId,
         status: {
@@ -854,7 +854,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           revenue: monthBookings
             .filter((b) => b.status === "COMPLETED")
             .reduce(
-              (sum, b) => sum + b.totalAmount * (b.exchangeRate ?? 1),
+              (sum, b) => sum + b.totalAmount * Number(b.exchangeRate ?? 1),
               0
             ),
           currency: "USD",
