@@ -91,7 +91,11 @@ const BookingForm = ({ space }: BookingFormProps) => {
     router.push("/bookings/checkout");
   };
 
-  const minDate = new Date().toISOString().split("T")[0];
+  // CLIENT-004: derive today's date from local components so users in any
+  // timezone can still book "today". `toISOString()` returns UTC, which can
+  // flip the date forward or backward relative to the user's local calendar.
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   return (
     <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
@@ -193,12 +197,20 @@ const BookingForm = ({ space }: BookingFormProps) => {
                     const newStart = parseInt(e.target.value.split(":")[0]!);
                     const currentEnd = parseInt(endTime.split(":")[0]!);
                     if (currentEnd <= newStart) {
-                      setEndTime(`${(newStart + 1).toString().padStart(2, "0")}:00`);
+                      // CLIENT-014: when starting at 23:00 the only valid end
+                      // option is the 23:59 end-of-day sentinel.
+                      setEndTime(
+                        newStart >= 23
+                          ? "23:59"
+                          : `${(newStart + 1).toString().padStart(2, "0")}:00`
+                      );
                     }
                   }}
                   className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
                 >
-                  {Array.from({ length: 23 }, (_, i) => (
+                  {/* CLIENT-014: start can be up to 23:00 so users can book a
+                      late-evening slot that ends at midnight (23:59). */}
+                  {Array.from({ length: 24 }, (_, i) => (
                     <option key={i} value={`${i.toString().padStart(2, "0")}:00`}>
                       {i.toString().padStart(2, "0")}:00
                     </option>
@@ -219,7 +231,9 @@ const BookingForm = ({ space }: BookingFormProps) => {
                   onChange={(e) => setEndTime(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
                 >
-                  {Array.from({ length: 24 - startHour - 1 }, (_, i) => {
+                  {/* CLIENT-014: include a 23:59 sentinel so a 22:00 or 23:00
+                      start can end at midnight without crossing days. */}
+                  {Array.from({ length: 23 - startHour }, (_, i) => {
                     const hour = startHour + 1 + i;
                     return (
                       <option key={hour} value={`${hour.toString().padStart(2, "0")}:00`}>
@@ -227,6 +241,9 @@ const BookingForm = ({ space }: BookingFormProps) => {
                       </option>
                     );
                   })}
+                  <option key="end-of-day" value="23:59">
+                    23:59
+                  </option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
               </div>

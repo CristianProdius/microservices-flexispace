@@ -40,10 +40,34 @@ const minutesFromTime = (value: string) => {
   return hours * 60 + minutes;
 };
 
+// CLIENT-009: Parse `YYYY-MM-DD` strings as a date-only value anchored at
+// UTC midnight, then round the diff. Using `new Date(str)` works for ISO dates
+// but is brittle for partial strings; the explicit parser avoids any DST or
+// locale drift between two timestamps that should be exact-day-aligned.
+//
+// The "+1" is intentional: backend pricing (apps/order-service booking route)
+// uses the same `differenceInDays(end, start) + 1` convention, so a single
+// overnight stay (Jan 1 -> Jan 2) bills as 2 calendar days. If product later
+// switches to a "nights" model both sides must change together.
 const inclusiveDayCount = (startDate: string, endDate: string) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const days = Math.ceil((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  const parseDateOnly = (value: string) => {
+    const [year, month, day] = value.split("-").map(Number);
+    if (
+      typeof year !== "number" ||
+      typeof month !== "number" ||
+      typeof day !== "number" ||
+      Number.isNaN(year) ||
+      Number.isNaN(month) ||
+      Number.isNaN(day)
+    ) {
+      return new Date(value).getTime();
+    }
+    return Date.UTC(year, month - 1, day);
+  };
+
+  const startMs = parseDateOnly(startDate);
+  const endMs = parseDateOnly(endDate);
+  const days = Math.round((endMs - startMs) / DAY_MS) + 1;
   return days > 0 ? days : 1;
 };
 
