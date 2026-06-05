@@ -8,13 +8,17 @@ import {
   Currency,
 } from "@repo/db";
 import { producer } from "../utils/kafka.js";
-import { buildCategoryPayload } from "../lib/space-taxonomy.js";
+import {
+  buildCategoryPayload,
+  normalizeCategorySlug,
+} from "../lib/space-taxonomy.js";
 import {
   resolveTranslations,
   SPACE_TRANSLATION_FIELDS,
 } from "../lib/translations.js";
 import {
   isDateOnlyOrIsoDate,
+  isValidYouTubeUrl,
   parsePositiveInteger,
 } from "../lib/validation.js";
 
@@ -392,11 +396,13 @@ export const getSpace = async (req: Request, res: Response) => {
     include: {
       category: true,
       venue: venueInclude,
+      // PRODSVC-002: public endpoint must not leak host PII (email/phone).
+      // Mirror the projection used by GET /spaces. Authenticated host/admin
+      // surfaces that need the richer payload should use a separate endpoint.
       host: {
         select: {
           id: true,
           name: true,
-          email: true,
           image: true,
           bio: true,
           hostingSince: true,
@@ -468,16 +474,11 @@ export const createSpace = async (req: Request, res: Response) => {
     return res.status(400).json({ message: availabilityResult.message });
   }
 
-  if (spaceData.videoUrl && typeof spaceData.videoUrl === "string") {
-    if (
-      !/^https:\/\/(www\.)?youtube\.com\/|^https:\/\/youtu\.be\//.test(
-        spaceData.videoUrl,
-      )
-    ) {
-      return res
-        .status(400)
-        .json({ message: "videoUrl must be a valid YouTube URL" });
-    }
+  // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
+  if (!isValidYouTubeUrl(spaceData.videoUrl)) {
+    return res
+      .status(400)
+      .json({ message: "videoUrl must be a valid YouTube URL" });
   }
 
   if (!venueId) {
@@ -489,6 +490,26 @@ export const createSpace = async (req: Request, res: Response) => {
   }
   if (venue.hostId !== hostId) {
     return res.status(403).json({ message: "Venue does not belong to you" });
+  }
+
+  // PRODSVC-009: pre-validate categorySlug so Prisma doesn't 500 on unknown
+  // slugs and the client gets an actionable error.
+  if (spaceData.categorySlug !== undefined) {
+    if (typeof spaceData.categorySlug !== "string") {
+      return res
+        .status(400)
+        .json({ message: "categorySlug must be a string" });
+    }
+    const normalizedSlug = normalizeCategorySlug(spaceData.categorySlug);
+    const category = await prisma.spaceCategory.findUnique({
+      where: { slug: normalizedSlug },
+      select: { slug: true },
+    });
+    if (!category) {
+      return res
+        .status(400)
+        .json({ message: `Unknown categorySlug: ${spaceData.categorySlug}` });
+    }
   }
 
   const space = await prisma.space.create({
@@ -600,16 +621,11 @@ export const updateSpace = async (req: Request, res: Response) => {
     if (body[key] !== undefined) allowed[key] = body[key];
   }
 
-  if (allowed.videoUrl && typeof allowed.videoUrl === "string") {
-    if (
-      !/^https:\/\/(www\.)?youtube\.com\/|^https:\/\/youtu\.be\//.test(
-        allowed.videoUrl,
-      )
-    ) {
-      return res
-        .status(400)
-        .json({ message: "videoUrl must be a valid YouTube URL" });
-    }
+  // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
+  if (!isValidYouTubeUrl(allowed.videoUrl)) {
+    return res
+      .status(400)
+      .json({ message: "videoUrl must be a valid YouTube URL" });
   }
 
   // If venueId is being changed, validate ownership
@@ -632,14 +648,32 @@ export const updateSpace = async (req: Request, res: Response) => {
     allowed.longitude = venue.longitude;
   }
 
-  // Handle categorySlug → spaceType resolution
-  if (allowed.categorySlug) {
+  // PRODSVC-009 + PRODSVC-018: validate categorySlug exists, and pass ONLY
+  // whitelisted keys to buildCategoryPayload (which previously received the
+  // full untouched body, allowing attackers to inject category-side fields).
+  if (allowed.categorySlug !== undefined) {
+    if (typeof allowed.categorySlug !== "string") {
+      return res
+        .status(400)
+        .json({ message: "categorySlug must be a string" });
+    }
+    const normalizedSlug = normalizeCategorySlug(allowed.categorySlug);
+    const category = await prisma.spaceCategory.findUnique({
+      where: { slug: normalizedSlug },
+      select: { slug: true },
+    });
+    if (!category) {
+      return res
+        .status(400)
+        .json({ message: `Unknown categorySlug: ${allowed.categorySlug}` });
+    }
     const resolved = buildCategoryPayload({
-      ...body,
       categorySlug: allowed.categorySlug,
     });
     allowed.categorySlug = resolved.categorySlug;
-    allowed.spaceType = resolved.spaceType;
+    if (resolved.spaceType) {
+      allowed.spaceType = resolved.spaceType;
+    }
   }
 
   const space = await prisma.space.update({
@@ -818,28 +852,69 @@ export const updateAvailability = async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Not authorized" });
   }
 
+  // PRODSVC-001: validate availability the same way create/update do, so
+  // verified hosts can't corrupt the availability table with bogus
+  // dayOfWeek/time payloads that break subsequent bookings.
+  let normalizedAvailability: AvailabilityInput[] | null = null;
+  if (availability !== undefined) {
+    const availabilityResult = normalizeAvailability(availability);
+    if ("message" in availabilityResult) {
+      return res.status(400).json({ message: availabilityResult.message });
+    }
+    normalizedAvailability = availabilityResult.availability;
+  }
+
+  // PRODSVC-001: validate blocked dates before writing — `new Date("bogus")`
+  // silently produces an Invalid Date and Prisma would reject (500) or, worse,
+  // store NaN. Reject with 400 on any malformed date entry.
+  let normalizedBlockedDates: { date: Date; reason: string | null }[] | null =
+    null;
+  if (blockedDates !== undefined) {
+    if (!Array.isArray(blockedDates)) {
+      return res
+        .status(400)
+        .json({ message: "blockedDates must be an array" });
+    }
+    const out: { date: Date; reason: string | null }[] = [];
+    for (const entry of blockedDates) {
+      if (!entry || typeof entry !== "object") {
+        return res
+          .status(400)
+          .json({ message: "blockedDates entries must be objects" });
+      }
+      const rawDate = (entry as { date?: unknown }).date;
+      if (!isDateOnlyOrIsoDate(rawDate)) {
+        return res
+          .status(400)
+          .json({ message: "blockedDates.date must be a valid date" });
+      }
+      const rawReason = (entry as { reason?: unknown }).reason;
+      out.push({
+        date: new Date(rawDate as string),
+        reason: typeof rawReason === "string" ? rawReason : null,
+      });
+    }
+    normalizedBlockedDates = out;
+  }
+
   // Update availability
-  if (availability) {
+  if (normalizedAvailability) {
     await prisma.$transaction([
       prisma.availability.deleteMany({ where: { spaceId } }),
-      ...(availability.length > 0
-        ? [
-            prisma.availability.createMany({
-              data: availability.map((a: any) => ({
-                spaceId,
-                dayOfWeek: a.dayOfWeek,
-                startTime: a.startTime,
-                endTime: a.endTime,
-                isOpen: a.isOpen ?? true,
-              })),
-            }),
-          ]
-        : []),
+      prisma.availability.createMany({
+        data: normalizedAvailability.map((a) => ({
+          spaceId,
+          dayOfWeek: a.dayOfWeek,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          isOpen: a.isOpen,
+        })),
+      }),
     ]);
   }
 
   // Update blocked dates
-  if (blockedDates) {
+  if (normalizedBlockedDates) {
     await prisma.$transaction([
       prisma.blockedDate.deleteMany({
         where: {
@@ -847,12 +922,12 @@ export const updateAvailability = async (req: Request, res: Response) => {
           date: { gte: new Date() },
         },
       }),
-      ...(blockedDates.length > 0
+      ...(normalizedBlockedDates.length > 0
         ? [
             prisma.blockedDate.createMany({
-              data: blockedDates.map((d: any) => ({
+              data: normalizedBlockedDates.map((d) => ({
                 spaceId,
-                date: new Date(d.date),
+                date: d.date,
                 reason: d.reason,
               })),
             }),
