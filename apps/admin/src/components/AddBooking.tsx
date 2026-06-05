@@ -31,7 +31,7 @@ import { Button } from "./ui/button";
 const formSchema = z.object({
   amount: z.number().min(1, { message: "Amount must be at least 1!" }),
   userId: z.string().min(1, { message: "User Id is required!" }),
-  status: z.enum(["PENDING", "APPROVED", "CONFIRMED", "COMPLETED", "CANCELLED", "REJECTED"]),
+  status: z.enum(["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED", "REJECTED"]),
 });
 
 const AddBooking = () => {
@@ -91,7 +91,6 @@ const AddBooking = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="PENDING">Pending</SelectItem>
-                          <SelectItem value="APPROVED">Approved</SelectItem>
                           <SelectItem value="CONFIRMED">Confirmed</SelectItem>
                           <SelectItem value="COMPLETED">Completed</SelectItem>
                           <SelectItem value="CANCELLED">Cancelled</SelectItem>

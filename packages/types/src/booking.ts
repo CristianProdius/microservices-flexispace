@@ -1,6 +1,7 @@
 import z from "zod";
 import type { Space } from "./space";
 import type { User } from "./auth";
+import type { Currency } from "./currency";
 
 const dateOnlySchema = z
   .string()
@@ -17,9 +18,11 @@ const minutesFromTime = (value: string) => {
   return hours! * 60 + minutes!;
 };
 
+// NOTE: `APPROVED` was removed (it was a dead enum value — no code path ever set
+// it; the approve handler transitions PENDING -> CONFIRMED directly). Keep this
+// union in sync with the Prisma `BookingStatus` enum.
 export type BookingStatus =
   | "PENDING"
-  | "APPROVED"
   | "CONFIRMED"
   | "COMPLETED"
   | "CANCELLED"
@@ -47,7 +50,7 @@ export interface Booking {
   cleaningFee: number;
   serviceFee: number;
   totalAmount: number;
-  currency: string;
+  currency: Currency;
   exchangeRate: number;
 
   // Status
@@ -73,11 +76,21 @@ export interface BookingWithDetails extends Booking {
   host: Pick<User, "id" | "name" | "email" | "image">;
 }
 
+/**
+ * Aggregated booking data for dashboard charts.
+ *
+ * `revenue` MUST be expressed in a single currency. The server is responsible
+ * for normalizing booking totals to USD (multiply each booking's amount by its
+ * stored `exchangeRate` before summing) so that multi-currency bookings do not
+ * produce nonsense aggregates. The `currency` field records the currency that
+ * `revenue` is denominated in (defaults to "USD" for the normalized series).
+ */
 export interface BookingChartType {
   month: string;
   total: number;
   confirmed: number;
   revenue: number;
+  currency: Currency;
 }
 
 // Zod Schemas

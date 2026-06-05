@@ -402,9 +402,9 @@ model Payout {
   id String @id @default(cuid())
 
   hostId      String
-  amount      Int
-  platformFee Int
-  netAmount   Int
+  amount      Float // In dollars (long-term target: Decimal(12, 2))
+  platformFee Float // In dollars (long-term target: Decimal(12, 2))
+  netAmount   Float // In dollars (long-term target: Decimal(12, 2))
   currency    Currency @default(USD)
 
   status     PayoutStatus @default(PENDING)

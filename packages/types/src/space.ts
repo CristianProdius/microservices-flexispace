@@ -1,5 +1,5 @@
 import z from "zod";
-import type { PricingTier } from "./currency";
+import type { Currency, PricingTier } from "./currency";
 
 export type { Currency, ExchangeRate, PricingTier } from "./currency";
 
@@ -126,7 +126,7 @@ export interface Space {
   pricePerHour: number | null;
   pricePerDay: number | null;
   cleaningFee: number;
-  currency: string;
+  currency: Currency;
   pricingTiers?: PricingTier[];
   capacity: number;
   minBookingHours: number | null;

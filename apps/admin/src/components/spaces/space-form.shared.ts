@@ -1,6 +1,7 @@
 import type {
   Availability,
   CancellationPolicy,
+  Currency,
   PricingType,
   Space,
   SpaceType,
@@ -80,7 +81,7 @@ export interface SpaceFormValues {
   amenityIds: number[];
   images: string[];
   videoUrl: string;
-  currency: string;
+  currency: Currency;
   pricingTiers: Array<{ minutes: number; label: string; price: string }>;
   availability: AvailabilityFormValue[];
 }
@@ -105,7 +106,7 @@ export interface SpaceFormPayload {
   amenityIds: number[];
   images: string[];
   videoUrl: string | null;
-  currency: string;
+  currency: Currency;
   pricingTiers: Array<{ minutes: number; label: string; price: number }>;
   availability: AvailabilityFormValue[];
 }

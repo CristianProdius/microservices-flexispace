@@ -1,3 +1,5 @@
+import type { Currency } from "@repo/types";
+
 export const PRODUCT_SERVICE_URL =
   process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL || "http://localhost:8000";
 
@@ -65,7 +67,7 @@ export interface VenueFormValues {
   longitude: number | null;
   images: string[];
   videoUrl: string;
-  currency: string;
+  currency: Currency;
   workingHours: WorkingHoursValue;
 }
 
@@ -85,7 +87,7 @@ export interface VenueFormPayload {
   longitude: number | null;
   images: string[];
   videoUrl: string | null;
-  currency: string;
+  currency: Currency;
   workingHours: WorkingHoursValue | null;
 }
 
@@ -143,7 +145,7 @@ export interface VenueResponse {
   images: string[];
   videoUrl?: string | null;
   workingHours?: WorkingHoursValue | null;
-  currency: string;
+  currency: Currency;
 }
 
 export const mapVenueToFormValues = (

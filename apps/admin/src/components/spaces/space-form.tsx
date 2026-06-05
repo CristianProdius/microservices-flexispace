@@ -630,7 +630,7 @@ const SpaceForm = ({
                 onChange={(event) =>
                   setFormData((prev) => ({
                     ...prev,
-                    currency: event.target.value,
+                    currency: event.target.value as SpaceFormValues["currency"],
                   }))
                 }
                 className={fieldClassName}

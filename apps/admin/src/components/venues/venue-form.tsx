@@ -262,7 +262,7 @@ const VenueForm = ({
                 onChange={(event) =>
                   setFormData((prev) => ({
                     ...prev,
-                    currency: event.target.value,
+                    currency: event.target.value as VenueFormValues["currency"],
                   }))
                 }
                 className={fieldClassName}

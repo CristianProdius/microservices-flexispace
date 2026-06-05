@@ -66,11 +66,6 @@ const BookingsPage = () => {
       color: "bg-yellow-100 text-yellow-700",
       icon: Loader2,
     },
-    APPROVED: {
-      label: tStatus("APPROVED"),
-      color: "bg-indigo-50 text-indigo-700",
-      icon: CheckCircle,
-    },
     CONFIRMED: {
       label: tStatus("CONFIRMED"),
       color: "bg-green-100 text-green-700",

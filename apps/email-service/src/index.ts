@@ -75,15 +75,17 @@ const subscriptions = [
     },
   },
   {
-    topicName: "booking.approved",
+    // TYPES-004: renamed from `booking.approved` to match the actual booking
+    // state transition (the approve handler sets status to CONFIRMED).
+    topicName: "booking.confirmed",
     topicHandler: async (message: EmailEventMessage) => {
       const { guestEmail, guestName, spaceName } = message.value || {};
 
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
-          subject: "Your Spacefly.ai booking was approved",
-          text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been approved.`,
+          subject: "Your Spacefly.ai booking was confirmed",
+          text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been confirmed.`,
         });
       }
     },
