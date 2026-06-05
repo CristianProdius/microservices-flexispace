@@ -6,7 +6,9 @@ export type PayoutStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 export interface Payout {
   id: string;
   hostId: string;
-  amount: number; // In dollars
+  // All amounts are in dollars (Float in Prisma), matching Booking pricing.
+  // Do not truncate to Int — booking totals may have cents.
+  amount: number;
   platformFee: number;
   netAmount: number;
   status: PayoutStatus;

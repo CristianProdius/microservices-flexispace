@@ -34,7 +34,6 @@ enum PricingType {
 
 enum BookingStatus {
   PENDING
-  APPROVED
   CONFIRMED
   COMPLETED
   CANCELLED
@@ -399,9 +398,9 @@ model Payout {
   id String @id @default(cuid())
 
   hostId      String
-  amount      Int
-  platformFee Int
-  netAmount   Int
+  amount      Float // In dollars, matches Booking.totalAmount precision
+  platformFee Float
+  netAmount   Float
 
   status     PayoutStatus @default(PENDING)
   bookingIds String[]

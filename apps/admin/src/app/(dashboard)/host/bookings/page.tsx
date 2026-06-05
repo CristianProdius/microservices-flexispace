@@ -54,13 +54,11 @@ const statusBadgeClassName = (status: string) =>
     "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset",
     status === "PENDING"
       ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-300"
-      : status === "APPROVED"
-        ? "bg-sky-500/10 text-sky-700 ring-sky-500/20 dark:text-sky-300"
-        : status === "CONFIRMED"
-          ? "bg-green-500/10 text-green-700 ring-green-500/20 dark:text-green-300"
-          : status === "COMPLETED"
-            ? "bg-muted text-muted-foreground ring-border/60"
-            : "bg-red-500/10 text-red-700 ring-red-500/20 dark:text-red-300"
+      : status === "CONFIRMED"
+        ? "bg-green-500/10 text-green-700 ring-green-500/20 dark:text-green-300"
+        : status === "COMPLETED"
+          ? "bg-muted text-muted-foreground ring-border/60"
+          : "bg-red-500/10 text-red-700 ring-red-500/20 dark:text-red-300"
   );
 
 const HostBookingsPage = () => {
@@ -77,7 +75,6 @@ const HostBookingsPage = () => {
   const statusFilters = [
     { value: "all", label: "All" },
     { value: "PENDING", label: "Pending" },
-    { value: "APPROVED", label: "Approved" },
     { value: "CONFIRMED", label: "Confirmed" },
     { value: "COMPLETED", label: "Completed" },
     { value: "CANCELLED", label: "Cancelled" },

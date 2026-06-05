@@ -1,3 +1,5 @@
+import type { Currency } from "./currency";
+
 export interface WorkingHoursDay {
   open: string;
   close: string;
@@ -32,7 +34,7 @@ export interface Venue {
   latitude: number | null;
   longitude: number | null;
   workingHours?: WorkingHours | null;
-  currency?: string;
+  currency?: Currency;
   hostId: string;
   isActive: boolean;
   createdAt: string;
@@ -61,7 +63,7 @@ export interface VenueSpaceSummary {
   pricePerHour: number | null;
   pricePerDay: number | null;
   pricingType: string;
-  currency?: string;
+  currency?: Currency;
   images: string[];
   isActive: boolean;
   city: string;

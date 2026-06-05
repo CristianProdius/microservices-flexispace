@@ -6,14 +6,13 @@ import {
 } from "@repo/auth-middleware/fastify";
 import { prisma, BookingStatus } from "@repo/db";
 import { startOfMonth, subMonths, differenceInDays } from "date-fns";
-import { CreateBookingSchema } from "@repo/types";
+import { CreateBookingSchema, type BookingChartType } from "@repo/types";
 import { producer } from "../utils/kafka.js";
 
 const roundCurrency = (amount: number) => Math.round(amount * 100) / 100;
 
 const BOOKING_STATUSES = new Set<BookingStatus>([
   "PENDING",
-  "APPROVED",
   "CONFIRMED",
   "COMPLETED",
   "CANCELLED",
@@ -562,7 +561,9 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         include: { space: true, guest: true },
       });
 
-      producer.send("booking.approved", {
+      // TYPES-004: topic renamed from `booking.approved` to `booking.confirmed`
+      // to match the actual state transition (PENDING -> CONFIRMED).
+      producer.send("booking.confirmed", {
         value: {
           bookingId: id,
           guestEmail: booking.guest.email,
@@ -811,7 +812,12 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         }),
         prisma.booking.findMany({
           where: { createdAt: { gte: sixMonthsAgo } },
-          select: { createdAt: true, status: true, totalAmount: true },
+          select: {
+            createdAt: true,
+            status: true,
+            totalAmount: true,
+            exchangeRate: true,
+          },
         }),
       ]);
 
@@ -821,7 +827,10 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         "July", "August", "September", "October", "November", "December",
       ];
 
-      const chartData = [];
+      // TYPES-002: chart `revenue` must be in a single currency. Normalize each
+      // booking to USD by multiplying by the exchange rate recorded at booking
+      // time, otherwise summing mixed currencies produces nonsense.
+      const chartData: BookingChartType[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = subMonths(now, i);
         const year = d.getFullYear();
@@ -833,12 +842,18 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
 
         chartData.push({
-          month: monthNames[month],
+          month: monthNames[month]!,
           total: monthBookings.length,
-          completed: monthBookings.filter((b) => b.status === "COMPLETED").length,
+          confirmed: monthBookings.filter(
+            (b) => b.status === "CONFIRMED" || b.status === "COMPLETED"
+          ).length,
           revenue: monthBookings
             .filter((b) => b.status === "COMPLETED")
-            .reduce((sum, b) => sum + b.totalAmount, 0),
+            .reduce(
+              (sum, b) => sum + b.totalAmount * (b.exchangeRate ?? 1),
+              0
+            ),
+          currency: "USD",
         });
       }
 
