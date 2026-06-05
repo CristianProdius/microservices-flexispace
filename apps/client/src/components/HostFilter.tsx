@@ -56,9 +56,19 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
 
   const [searchDraft, setSearchDraft] = useState(activeSearch);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks the most recent search value WE wrote to the URL, so we can
+  // distinguish self-initiated URL changes (which must NOT clobber the
+  // input mid-typing) from external ones like back/forward navigation.
+  const lastWrittenSearchRef = useRef(activeSearch);
 
   useEffect(() => {
-    setSearchDraft(activeSearch);
+    // Only sync from URL when the change wasn't triggered by our own
+    // debounced write. Otherwise we'd overwrite characters the user
+    // typed during the 300ms round-trip (CLIENT-003).
+    if (activeSearch !== lastWrittenSearchRef.current) {
+      lastWrittenSearchRef.current = activeSearch;
+      setSearchDraft(activeSearch);
+    }
   }, [activeSearch]);
 
   useEffect(
@@ -72,6 +82,9 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
     const next = new URLSearchParams(searchParams.toString());
     if (value && value.length > 0) next.set(key, value);
     else next.delete(key);
+    if (key === "search") {
+      lastWrittenSearchRef.current = value ?? "";
+    }
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   };
@@ -86,6 +99,7 @@ export default function HostFilter({ availableCities }: HostFilterProps) {
 
   const onClear = () => {
     setSearchDraft("");
+    lastWrittenSearchRef.current = "";
     router.replace(pathname);
   };
 
