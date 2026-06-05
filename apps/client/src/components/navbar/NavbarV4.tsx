@@ -7,6 +7,7 @@ import MobileMenu from "./MobileMenu";
 import useAuthStore from "@/stores/authStore";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { isHostRole } from "@/lib/roles";
 
 export const NavbarV4 = () => {
   const { isAuthenticated, isLoading, user } = useAuthStore();
@@ -64,7 +65,7 @@ export const NavbarV4 = () => {
                   {t("myBookings")}
                 </Link>
               )}
-              {isAuthenticated && user?.role === "HOST" && (
+              {isAuthenticated && isHostRole(user?.role) && (
                 <a
                   href={`${process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:5001"}/host`}
                   className="text-sm font-semibold text-foreground hover:text-primary transition-colors"

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { isHostRole } from "@/lib/roles";
 
 const BecomeHostPage = () => {
   const router = useRouter();
@@ -27,7 +28,7 @@ const BecomeHostPage = () => {
   const tCommon = useTranslations("common");
 
   useEffect(() => {
-    if (!authLoading && user?.role === "HOST") {
+    if (!authLoading && isHostRole(user?.role)) {
       window.location.href =
         process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:5001";
     }

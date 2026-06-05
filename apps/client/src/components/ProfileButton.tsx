@@ -6,6 +6,7 @@ import { Menu } from "@base-ui/react/menu";
 import useAuthStore from "@/stores/authStore";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { isHostRole } from "@/lib/roles";
 
 const ProfileButton = () => {
   const router = useRouter();
@@ -17,7 +18,7 @@ const ProfileButton = () => {
     router.push("/");
   };
 
-  const isHost = user?.role === "HOST" || user?.role === "ADMIN";
+  const isHost = isHostRole(user?.role);
 
   return (
     <Menu.Root>

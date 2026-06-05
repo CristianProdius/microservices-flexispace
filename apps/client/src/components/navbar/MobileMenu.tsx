@@ -7,6 +7,7 @@ import useAuthStore from "@/stores/authStore";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { isHostRole } from "@/lib/roles";
 import LanguageSwitcher from "../LanguageSwitcher";
 
 const MobileMenu = () => {
@@ -15,7 +16,7 @@ const MobileMenu = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isHost = user?.role === "HOST" || user?.role === "ADMIN";
+  const isHost = isHostRole(user?.role);
 
   const handleLogout = async () => {
     await logout();

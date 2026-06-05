@@ -57,6 +57,11 @@ export default function SpaceListBrowse({
 
   // Cache key scoped to locale + search params to prevent cross-locale contamination
   const cacheKey = STORAGE_KEY_PREFIX + locale + "_" + searchParams.toString();
+  // Tracks the cacheKey that the current `spaces` state was loaded for. Used
+  // to skip the save effect on the first render after a filter change, when
+  // `cacheKey` has already updated but `spaces` still holds the old filter's
+  // data (which would otherwise be persisted under the new key).
+  const spacesOwnerKeyRef = useRef(cacheKey);
 
   // Restore from sessionStorage on mount (back-button support)
   useEffect(() => {
@@ -74,6 +79,7 @@ export default function SpaceListBrowse({
           setPage(cachedPage);
           setTotal(cachedTotal);
           setHasMore(cachedSpaces.length < cachedTotal);
+          spacesOwnerKeyRef.current = cacheKey;
           // Restore scroll position after layout settles
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -88,22 +94,26 @@ export default function SpaceListBrowse({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally mount-only to restore cached state
   }, []);
 
-  // Save to sessionStorage when spaces change
+  // Save to sessionStorage when spaces change.
+  // Skip when the current `spaces` state was loaded for a different cacheKey —
+  // otherwise the brief window between a searchParams change updating
+  // `cacheKey` and the reset-effect refreshing `spaces` pollutes the new
+  // filter's cache with the previous filter's results.
   useEffect(() => {
-    if (spaces.length > 0) {
-      try {
-        sessionStorage.setItem(
-          cacheKey,
-          JSON.stringify({
-            spaces,
-            page,
-            total,
-            scrollY: window.scrollY,
-          })
-        );
-      } catch {
-        // Ignore storage quota errors
-      }
+    if (spaces.length === 0) return;
+    if (spacesOwnerKeyRef.current !== cacheKey) return;
+    try {
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          spaces,
+          page,
+          total,
+          scrollY: window.scrollY,
+        })
+      );
+    } catch {
+      // Ignore storage quota errors
     }
   }, [spaces, page, total, cacheKey]);
 
@@ -119,8 +129,11 @@ export default function SpaceListBrowse({
       setTotal(initialPagination.total);
       setHasMore(initialPagination.page < initialPagination.totalPages);
       setLoadError(initialError);
+      // The newly-reset `spaces` belong to the new cacheKey; mark it as the
+      // owner so subsequent save-effects persist under the right key.
+      spacesOwnerKeyRef.current = cacheKey;
     }
-  }, [searchParams, initialSpaces, initialPagination, initialApiParams, initialError]);
+  }, [searchParams, initialSpaces, initialPagination, initialApiParams, initialError, cacheKey]);
 
   // Fetch next page using resolved API params (not raw browser searchParams)
   const loadMore = useCallback(async () => {

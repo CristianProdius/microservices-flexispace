@@ -76,7 +76,19 @@ export async function logout(refreshToken: string): Promise<void> {
   });
 }
 
-export async function refreshAccessToken(refreshToken: string): Promise<string> {
+export interface RefreshResponse {
+  accessToken: string;
+  /**
+   * Optional. Auth services that rotate refresh tokens return a new value
+   * here; services that don't rotate omit it. Callers should persist whichever
+   * value the server returned and fall back to the existing token otherwise.
+   */
+  refreshToken?: string;
+}
+
+export async function refreshAccessToken(
+  refreshToken: string
+): Promise<RefreshResponse> {
   const res = await fetchAuth("/auth/refresh", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -88,7 +100,10 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
   }
 
   const data = await res.json();
-  return data.accessToken;
+  return {
+    accessToken: data.accessToken,
+    refreshToken: typeof data.refreshToken === "string" ? data.refreshToken : undefined,
+  };
 }
 
 export async function getMe(token: string): Promise<User> {

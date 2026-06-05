@@ -52,9 +52,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const refreshToken = getRefreshToken();
         if (!refreshToken) throw new Error("No refresh token");
-        const newToken = await refreshAccessToken(refreshToken);
-        saveTokens(newToken, refreshToken);
-        set({ user, token: newToken, isAuthenticated: true, isLoading: false });
+        const refreshed = await refreshAccessToken(refreshToken);
+        // Persist whichever refresh token the server returned; if the server
+        // rotated it we must use the new one or the next refresh will fail.
+        saveTokens(refreshed.accessToken, refreshed.refreshToken ?? refreshToken);
+        set({ user, token: refreshed.accessToken, isAuthenticated: true, isLoading: false });
       } catch {
         clearAuth();
         set({ user: null, token: null, isAuthenticated: false, isLoading: false });
