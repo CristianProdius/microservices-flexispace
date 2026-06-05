@@ -5,7 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import useBookingStore from "@/stores/bookingStore";
 import useAuthStore from "@/stores/authStore";
-import { fetchWithAuth } from "@/lib/apiClient";
+import { fetchWithAuth, SessionExpiredError } from "@/lib/apiClient";
 import { useTranslations } from "next-intl";
 import { Calendar, Clock, Users, AlertCircle, Check } from "lucide-react";
 import { formatPriceFull } from "@/lib/utils";
@@ -63,6 +63,9 @@ const CheckoutPage = () => {
       clearDraft();
       setSuccess(true);
     } catch (err) {
+      // Session expired: the auth store has already navigated to /login and
+      // shown a toast. Swallow so we don't flash an auth error in the UI.
+      if (err instanceof SessionExpiredError) return;
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);

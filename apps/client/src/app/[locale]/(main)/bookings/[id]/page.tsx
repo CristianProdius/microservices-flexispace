@@ -6,7 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import useAuthStore from "@/stores/authStore";
-import { fetchWithAuth } from "@/lib/apiClient";
+import { fetchWithAuth, SessionExpiredError } from "@/lib/apiClient";
 import { useTranslations } from "next-intl";
 import {
   Calendar,
@@ -144,6 +144,8 @@ const BookingDetailPage = () => {
       const data = await res.json();
       setBooking(data);
     } catch (err) {
+      // Session expired: the auth store is already navigating to /login.
+      if (err instanceof SessionExpiredError) return;
       setError(err instanceof Error ? err.message : "Failed to fetch booking");
     } finally {
       setIsLoading(false);
@@ -171,6 +173,8 @@ const BookingDetailPage = () => {
 
       fetchBooking();
     } catch (err) {
+      // Session expired: the auth store is already navigating to /login.
+      if (err instanceof SessionExpiredError) return;
       setError(err instanceof Error ? err.message : "Failed to cancel booking");
     } finally {
       setCancelling(false);
