@@ -2,15 +2,39 @@ import { prisma } from "@repo/db";
 import { Request, Response } from "express";
 import { parsePositiveInteger, parsePositiveIntegerWithDefault, parseRating } from "../lib/validation.js";
 
+const COMMENT_MAX_LENGTH = 5000;
+const HOST_RESPONSE_MAX_LENGTH = 2000;
+
 export const createReview = async (req: Request, res: Response) => {
   const id = req.params.id as string; // space ID
   const spaceId = parsePositiveInteger(id);
   if (spaceId === null) return res.status(400).json({ message: "Invalid ID" });
   const userId = req.userId!;
-  const { bookingId, rating, comment } = req.body;
+  const { bookingId, rating, comment } = req.body ?? {};
+
+  // PRODSVC-005: bookingId must be a non-empty string. Without this check,
+  // Prisma silently drops `id: undefined` from the WHERE clause and the guest
+  // ends up reviewing whichever completed booking the query returns first.
+  if (typeof bookingId !== "string" || bookingId.trim() === "") {
+    return res.status(400).json({ message: "bookingId is required" });
+  }
+  const trimmedBookingId = bookingId.trim();
 
   if (parseRating(rating) === null) {
     return res.status(400).json({ message: "Rating must be between 1 and 5" });
+  }
+
+  if (typeof comment !== "string") {
+    return res.status(400).json({ message: "comment is required" });
+  }
+  const trimmedComment = comment.trim();
+  if (trimmedComment.length === 0) {
+    return res.status(400).json({ message: "comment must not be empty" });
+  }
+  if (trimmedComment.length > COMMENT_MAX_LENGTH) {
+    return res
+      .status(400)
+      .json({ message: `comment must be at most ${COMMENT_MAX_LENGTH} characters` });
   }
 
   // Check if space exists
@@ -25,7 +49,7 @@ export const createReview = async (req: Request, res: Response) => {
   // Check if user has a completed booking for this space
   const booking = await prisma.booking.findFirst({
     where: {
-      id: bookingId,
+      id: trimmedBookingId,
       spaceId,
       guestId: userId,
       status: "COMPLETED",
@@ -40,7 +64,7 @@ export const createReview = async (req: Request, res: Response) => {
 
   // Check if user already reviewed this booking
   const existingReview = await prisma.review.findUnique({
-    where: { bookingId },
+    where: { bookingId: trimmedBookingId },
   });
 
   if (existingReview) {
@@ -53,9 +77,9 @@ export const createReview = async (req: Request, res: Response) => {
     data: {
       spaceId,
       userId,
-      bookingId,
+      bookingId: trimmedBookingId,
       rating,
-      comment,
+      comment: trimmedComment,
     },
     include: {
       user: {
@@ -211,7 +235,23 @@ export const respondToReview = async (req: Request, res: Response) => {
   const reviewIdNum = parsePositiveInteger(reviewId);
   if (reviewIdNum === null) return res.status(400).json({ message: "Invalid ID" });
   const hostId = req.userId!;
-  const { response } = req.body;
+  const { response } = req.body ?? {};
+
+  // PRODSVC-011: validate `response` before writing. Without this the host
+  // could pass undefined (silent no-op), null (wipes the response) or an
+  // arbitrarily large payload.
+  if (typeof response !== "string") {
+    return res.status(400).json({ message: "response is required" });
+  }
+  const trimmedResponse = response.trim();
+  if (trimmedResponse.length === 0) {
+    return res.status(400).json({ message: "response must not be empty" });
+  }
+  if (trimmedResponse.length > HOST_RESPONSE_MAX_LENGTH) {
+    return res
+      .status(400)
+      .json({ message: `response must be at most ${HOST_RESPONSE_MAX_LENGTH} characters` });
+  }
 
   const review = await prisma.review.findUnique({
     where: { id: reviewIdNum },
@@ -231,7 +271,7 @@ export const respondToReview = async (req: Request, res: Response) => {
   const updatedReview = await prisma.review.update({
     where: { id: reviewIdNum },
     data: {
-      hostResponse: response,
+      hostResponse: trimmedResponse,
       hostRespondedAt: new Date(),
     },
     include: {
