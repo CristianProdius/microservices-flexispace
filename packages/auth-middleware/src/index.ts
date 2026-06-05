@@ -8,11 +8,17 @@ export {
   signTokenPair,
   verifyAccessToken,
   verifyRefreshToken,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
   extractTokenFromHeader,
 } from "./jwt.js";
+export type { PasswordResetTokenPayload } from "./jwt.js";
 
 // Password utilities
 export { hashPassword, comparePassword } from "./password.js";
+
+// Email normalization (AUTHMW-003)
+export { normalizeEmail } from "./email.js";
 
 // Express middleware
 export {

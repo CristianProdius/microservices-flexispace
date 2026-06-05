@@ -7,6 +7,8 @@ export interface JwtPayload {
   hostVerified?: boolean;
   iat?: number;
   exp?: number;
+  /** JWT id — set by `jsonwebtoken` when `jwtid` is provided at sign time. */
+  jti?: string;
 }
 
 export interface AuthUser {

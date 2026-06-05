@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma, Role } from "@repo/db";
-import { hashPassword } from "@repo/auth-middleware";
+import { hashPassword, normalizeEmail } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
 
 const router: Router = Router();
@@ -121,15 +121,18 @@ router.get("/:id", async (req, res) => {
 // Create user (admin only)
 router.post("/", async (req, res) => {
   try {
-    const { email, username, password, name, role } = req.body;
+    const { email: rawEmail, username, password, name, role } = req.body;
     const parsedRole = parseOptionalRole(role);
 
-    if (!email || !username || !password) {
+    if (!rawEmail || !username || !password) {
       return res.status(400).json({ message: "Email, username, and password are required" });
     }
     if (parsedRole === null) {
       return res.status(400).json({ message: "Invalid role" });
     }
+
+    // AUTHMW-003: normalize at the entry point.
+    const email = normalizeEmail(String(rawEmail));
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -184,11 +187,13 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, username, name, role, image } = req.body;
+    const { email: rawEmail, username, name, role, image } = req.body;
     const parsedRole = parseOptionalRole(role);
     if (parsedRole === null) {
       return res.status(400).json({ message: "Invalid role" });
     }
+
+    const email = rawEmail ? normalizeEmail(String(rawEmail)) : undefined;
 
     const user = await prisma.user.update({
       where: { id },
