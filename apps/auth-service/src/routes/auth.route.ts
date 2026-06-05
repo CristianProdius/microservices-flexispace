@@ -82,13 +82,27 @@ router.post("/register", async (req, res) => {
       },
     });
 
-    // Send Kafka event for user creation
-    producer.send("user.created", {
-      value: {
-        username: user.username,
-        email: user.email,
-      },
-    });
+    // Send Kafka event for user creation.
+    // The user row is already committed; do not fail registration if the
+    // event publish fails (welcome email is best-effort, not critical to
+    // account creation).
+    // TODO(KAFKA-001 follow-up): transactional outbox so user.created is
+    // guaranteed to be published exactly once after the DB write.
+    try {
+      await producer.send("user.created", {
+        value: {
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.created event for",
+        user.id,
+        "- account created but welcome email will not fire:",
+        err instanceof Error ? err.message : err
+      );
+    }
 
     return res.status(201).json({
       user: {
@@ -339,14 +353,27 @@ router.post("/become-host", shouldBeUser, async (req, res) => {
       },
     });
 
-    // Send Kafka event
-    producer.send("user.became-host", {
-      value: {
-        userId: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    });
+    // Send Kafka event.
+    // The role transition is already persisted; do not fail the request if
+    // the event publish fails (downstream host-onboarding email/notification
+    // can be reconciled out-of-band).
+    // TODO(KAFKA-001 follow-up): transactional outbox.
+    try {
+      await producer.send("user.became-host", {
+        value: {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+        },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.became-host event for",
+        user.id,
+        "- role updated but onboarding notification will not fire:",
+        err instanceof Error ? err.message : err
+      );
+    }
 
     // Generate new tokens with updated role
     const tokens = signTokenPair({

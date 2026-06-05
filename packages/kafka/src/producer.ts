@@ -1,6 +1,36 @@
 import type { Kafka, Producer } from "kafkajs";
 import { isKafkaEnabled } from "./client";
 
+/**
+ * Thrown when the producer cannot establish its initial broker connection.
+ * Callers (typically service `index.ts` boot code) should let this propagate
+ * so the process exits non-zero and the orchestrator restarts it. Running
+ * with a "log-only" producer silently loses events (KAFKA-002).
+ */
+export class KafkaProducerConnectError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "KafkaProducerConnectError";
+  }
+}
+
+/**
+ * Thrown when a `send` fails — either because the producer was never
+ * connected or because KafkaJS surfaced an error after its internal
+ * retries were exhausted. Callers must decide explicitly whether to fail
+ * the request (critical event) or log-and-continue (best-effort event).
+ *
+ * Follow-up: a transactional outbox would make the DB write + event
+ * publish atomic; until then individual callers carry the consistency
+ * gap. Tracked separately from KAFKA-001/002.
+ */
+export class KafkaProducerSendError extends Error {
+  constructor(message: string, public readonly topic: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "KafkaProducerSendError";
+  }
+}
+
 export const createProducer = (kafka: Kafka) => {
   let producer: Producer | null = null;
   let connected = false;
@@ -17,15 +47,28 @@ export const createProducer = (kafka: Kafka) => {
       connected = true;
       console.log("[Kafka Producer] Connected");
     } catch (error) {
-      console.warn("[Kafka Producer] Failed to connect - messages will be logged only:", error instanceof Error ? error.message : error);
       connected = false;
+      producer = null;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[Kafka Producer] Failed to connect:", message);
+      throw new KafkaProducerConnectError(
+        `Kafka producer failed to connect: ${message}`,
+        error
+      );
     }
   };
 
   const send = async (topic: string, message: object) => {
-    if (!connected || !producer) {
-      console.log(`[Kafka Producer] Would send to ${topic}:`, JSON.stringify(message));
+    if (!isKafkaEnabled()) {
+      console.log(`[Kafka Producer] Disabled - would send to ${topic}:`, JSON.stringify(message));
       return;
+    }
+
+    if (!connected || !producer) {
+      throw new KafkaProducerSendError(
+        `Kafka producer is not connected; cannot send to ${topic}`,
+        topic
+      );
     }
 
     try {
@@ -34,7 +77,12 @@ export const createProducer = (kafka: Kafka) => {
         messages: [{ value: JSON.stringify(message) }],
       });
     } catch (error) {
-      console.error(`[Kafka Producer] Failed to send to ${topic}:`, error instanceof Error ? error.message : error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      throw new KafkaProducerSendError(
+        `Kafka producer failed to send to ${topic}: ${errMsg}`,
+        topic,
+        error
+      );
     }
   };
 
@@ -45,5 +93,18 @@ export const createProducer = (kafka: Kafka) => {
     }
   };
 
-  return { connect, send, disconnect };
+  /**
+   * True when the producer has an established broker connection. Intended for
+   * `/health` probes — if this returns false in production, the orchestrator
+   * should consider the pod unhealthy.
+   *
+   * Note: Returns true when Kafka is disabled via `KAFKA_ENABLED=false`, so a
+   * locally-running service without Kafka still reports healthy.
+   */
+  const isHealthy = (): boolean => {
+    if (!isKafkaEnabled()) return true;
+    return connected && producer !== null;
+  };
+
+  return { connect, send, disconnect, isHealthy };
 };

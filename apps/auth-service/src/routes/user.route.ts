@@ -165,13 +165,26 @@ router.post("/", async (req, res) => {
       },
     });
 
-    // Send Kafka event
-    producer.send("user.created", {
-      value: {
-        username: user.username,
-        email: user.email,
-      },
-    });
+    // Send Kafka event.
+    // The user row is already committed; do not fail the admin call if the
+    // event publish fails — admin tooling will see the user listed even
+    // without the welcome-email side effect.
+    // TODO(KAFKA-001 follow-up): transactional outbox.
+    try {
+      await producer.send("user.created", {
+        value: {
+          username: user.username,
+          email: user.email,
+        },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.created event (admin create) for",
+        user.id,
+        "- account created but welcome email will not fire:",
+        err instanceof Error ? err.message : err
+      );
+    }
 
     return res.status(201).json(user);
   } catch (error) {

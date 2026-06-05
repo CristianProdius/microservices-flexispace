@@ -105,7 +105,20 @@ export const createVenue = async (req: Request, res: Response) => {
       hostId,
     },
   });
-  producer.send("venue.created", { value: { id: venue.id, hostId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox so downstream search
+  // indexers are guaranteed to see the new venue. For now: log + continue —
+  // the venue row is already committed and failing the response would lead
+  // hosts to retry and create duplicates.
+  try {
+    await producer.send("venue.created", { value: { id: venue.id, hostId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish venue.created event for venue",
+      venue.id,
+      "- venue persisted but search/cache will be stale until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
   res.status(201).json(venue);
 };
 
@@ -179,7 +192,17 @@ export const updateVenue = async (req: Request, res: Response) => {
   }
 
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
-  producer.send("venue.updated", { value: { id: venueId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox.
+  try {
+    await producer.send("venue.updated", { value: { id: venueId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish venue.updated event for venue",
+      venueId,
+      "- DB updated but search/cache will be stale until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
   res.status(200).json(venue);
 };
 
@@ -202,6 +225,16 @@ export const deleteVenue = async (req: Request, res: Response) => {
     }),
     prisma.space.updateMany({ where: { venueId }, data: { isActive: false } }),
   ]);
-  producer.send("venue.deleted", { value: { id: venueId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox.
+  try {
+    await producer.send("venue.deleted", { value: { id: venueId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish venue.deleted event for venue",
+      venueId,
+      "- soft-deleted in DB but search/cache will not reflect deletion until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
   res.status(200).json({ message: "Venue deleted successfully" });
 };
