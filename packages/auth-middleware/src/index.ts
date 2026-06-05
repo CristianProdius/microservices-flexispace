@@ -13,7 +13,7 @@ export {
 export type { VerifyResult, VerifyFailureReason } from "./jwt.js";
 
 // Password utilities
-export { hashPassword, comparePassword } from "./password.js";
+export { hashPassword, comparePassword, InvalidPasswordError } from "./password.js";
 
 // Express middleware
 export {

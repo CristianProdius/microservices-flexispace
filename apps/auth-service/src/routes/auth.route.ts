@@ -6,6 +6,7 @@ import {
   signTokenPair,
   verifyRefreshToken,
   signAccessToken,
+  InvalidPasswordError,
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import { producer } from "../utils/kafka.js";
@@ -104,6 +105,9 @@ router.post("/register", async (req, res) => {
       ...tokens,
     });
   } catch (error) {
+    if (error instanceof InvalidPasswordError) {
+      return res.status(400).json({ message: error.message });
+    }
     console.error("Register error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
