@@ -45,6 +45,10 @@ fastify.register(bookingRoute);
 
 const start = async () => {
   try {
+    // KAFKA-002: producer.connect() throws on initial broker failure.
+    // We intentionally let that propagate to the catch below and exit
+    // non-zero so the orchestrator restarts the pod, instead of silently
+    // running in "log-only" mode and losing events.
     await Promise.all([producer.connect(), consumer.connect()]);
     await runKafkaSubscriptions();
     await fastify.listen({ port: PORT, host: "0.0.0.0" });

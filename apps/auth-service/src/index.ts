@@ -50,6 +50,10 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 const start = async () => {
   try {
+    // KAFKA-002: producer.connect() throws on initial broker failure.
+    // We intentionally let that propagate to the catch below and exit
+    // non-zero so the orchestrator restarts the pod, instead of silently
+    // running in "log-only" mode and losing events.
     await producer.connect();
     const server = app.listen(PORT, () => {
       console.log(`Auth service is running on ${PORT}`);

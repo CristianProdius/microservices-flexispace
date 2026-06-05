@@ -527,7 +527,20 @@ export const createSpace = async (req: Request, res: Response) => {
     });
   }
 
-  producer.send("space.created", { value: { id: space.id, hostId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox so downstream search
+  // indexers are guaranteed to see the new space. For now: log + continue —
+  // the space row is already committed and failing the response would lead
+  // hosts to retry and create duplicates.
+  try {
+    await producer.send("space.created", { value: { id: space.id, hostId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish space.created event for space",
+      space.id,
+      "- space persisted but search/cache will be stale until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   res.status(201).json(space);
 };
@@ -701,7 +714,17 @@ export const updateSpace = async (req: Request, res: Response) => {
     },
   });
 
-  producer.send("space.updated", { value: { id: spaceId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox.
+  try {
+    await producer.send("space.updated", { value: { id: spaceId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish space.updated event for space",
+      spaceId,
+      "- DB updated but search/cache will be stale until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   res.status(200).json(flattenVenue(freshSpace));
 };
@@ -735,7 +758,17 @@ export const deleteSpace = async (req: Request, res: Response) => {
     data: { isActive: false },
   });
 
-  producer.send("space.deleted", { value: { id: spaceId } });
+  // TODO(KAFKA-001 follow-up): transactional outbox.
+  try {
+    await producer.send("space.deleted", { value: { id: spaceId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish space.deleted event for space",
+      spaceId,
+      "- soft-deleted in DB but search/cache will not reflect deletion until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   res.status(200).json({ message: "Space deleted successfully" });
 };

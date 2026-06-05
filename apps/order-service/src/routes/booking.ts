@@ -395,19 +395,30 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         throw err;
       }
 
-      // Send Kafka event
-      producer.send("booking.created", {
-        value: {
-          bookingId: booking.id,
-          spaceId: booking.spaceId,
-          guestId: booking.guestId,
-          hostId: booking.hostId,
-          guestEmail: booking.guest.email,
-          hostEmail: booking.space.host.email,
-          spaceName: booking.space.name,
-          status: booking.status,
-        },
-      });
+      // Send Kafka event. The booking row is already committed; surfacing
+      // a 5xx here would mislead the user into retrying and creating a
+      // duplicate. Log loudly and continue.
+      // TODO(KAFKA-001 follow-up): replace fire-and-forget with a
+      // transactional outbox so the DB write + event publish are atomic.
+      try {
+        await producer.send("booking.created", {
+          value: {
+            bookingId: booking.id,
+            spaceId: booking.spaceId,
+            guestId: booking.guestId,
+            hostId: booking.hostId,
+            guestEmail: booking.guest.email,
+            hostEmail: booking.space.host.email,
+            spaceName: booking.space.name,
+            status: booking.status,
+          },
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: booking.id, topic: "booking.created" },
+          "Failed to publish booking.created event; booking persisted but downstream (email, notifications) will not fire until reconciled"
+        );
+      }
 
       return reply.status(201).send(booking);
     }
@@ -566,14 +577,23 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       // TYPES-004: topic renamed from `booking.approved` to `booking.confirmed`
       // to match the actual state transition (PENDING -> CONFIRMED).
-      producer.send("booking.confirmed", {
-        value: {
-          bookingId: id,
-          guestEmail: booking.guest.email,
-          guestName: booking.guest.name,
-          spaceName: booking.space.name,
-        },
-      });
+      // TODO(KAFKA-001 follow-up): transactional outbox. Booking status is
+      // already updated; do not fail the request if the event publish fails.
+      try {
+        await producer.send("booking.confirmed", {
+          value: {
+            bookingId: id,
+            guestEmail: booking.guest.email,
+            guestName: booking.guest.name,
+            spaceName: booking.space.name,
+          },
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: id, topic: "booking.confirmed" },
+          "Failed to publish booking.confirmed event; status updated but guest will not be notified"
+        );
+      }
 
       return reply.send(updatedBooking);
     }
@@ -615,14 +635,23 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         },
       });
 
-      producer.send("booking.rejected", {
-        value: {
-          bookingId: id,
-          guestEmail: booking.guest.email,
-          spaceName: booking.space.name,
-          reason,
-        },
-      });
+      // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
+      // committed; log + continue rather than misleading the host.
+      try {
+        await producer.send("booking.rejected", {
+          value: {
+            bookingId: id,
+            guestEmail: booking.guest.email,
+            spaceName: booking.space.name,
+            reason,
+          },
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: id, topic: "booking.rejected" },
+          "Failed to publish booking.rejected event; guest will not be notified"
+        );
+      }
 
       return reply.send(updatedBooking);
     }
@@ -676,18 +705,27 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         },
       });
 
-      producer.send("booking.cancelled", {
-        value: {
-          bookingId: id,
-          cancelledByRole: actor,
-          guestEmail: booking.guest.email,
-          guestName: booking.guest.name,
-          hostEmail: booking.host.email,
-          hostName: booking.host.name,
-          spaceName: booking.space.name,
-          reason,
-        },
-      });
+      // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
+      // committed; log + continue rather than reverse a successful cancel.
+      try {
+        await producer.send("booking.cancelled", {
+          value: {
+            bookingId: id,
+            cancelledByRole: actor,
+            guestEmail: booking.guest.email,
+            guestName: booking.guest.name,
+            hostEmail: booking.host.email,
+            hostName: booking.host.name,
+            spaceName: booking.space.name,
+            reason,
+          },
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: id, topic: "booking.cancelled" },
+          "Failed to publish booking.cancelled event; counterparty will not be notified"
+        );
+      }
 
       return reply.send(updatedBooking);
     }
@@ -728,15 +766,25 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         },
       });
 
-      producer.send("booking.completed", {
-        value: {
-          bookingId: id,
-          guestEmail: booking.guest.email,
-          spaceName: booking.space.name,
-          hostId: booking.hostId,
-          totalAmount: booking.totalAmount,
-        },
-      });
+      // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
+      // committed; payout reconciliation downstream consumes this event and
+      // can be replayed manually if publish fails.
+      try {
+        await producer.send("booking.completed", {
+          value: {
+            bookingId: id,
+            guestEmail: booking.guest.email,
+            spaceName: booking.space.name,
+            hostId: booking.hostId,
+            totalAmount: booking.totalAmount,
+          },
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: id, topic: "booking.completed" },
+          "Failed to publish booking.completed event; downstream payout/notification will require manual reconciliation"
+        );
+      }
 
       return reply.send(updatedBooking);
     }
