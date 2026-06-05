@@ -27,7 +27,7 @@ const PRODUCT_SERVICE_URL =
   process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL || "http://localhost:8000";
 
 const CategoriesPage = () => {
-  const { token } = useAuthStore();
+  const { getToken } = useAuthStore();
   const [groups, setGroups] = useState<NormalizedTaxonomyCategoryGroup[]>(() =>
     normalizeCategoryGroups([])
   );
@@ -55,19 +55,21 @@ const CategoriesPage = () => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
     try {
+      const resolvedToken = await getToken();
+      if (!resolvedToken) {
+        toast.error("Sign in again to delete categories");
+        return;
+      }
+
       const res = await fetch(`${PRODUCT_SERVICE_URL}/categories/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${resolvedToken}` },
       });
 
       if (res.ok) {
-        setGroups((prev) =>
-          prev.map((group) => ({
-            ...group,
-            categories: group.categories.filter((category) => category.id !== id),
-          }))
-        );
         toast.success("Category deleted");
+        // Refetch so we stay in sync with the server (handles parallel admins).
+        await fetchCategories();
       } else {
         toast.error("Failed to delete category");
       }

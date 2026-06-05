@@ -22,8 +22,8 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      router.push("/");
+      const user = await login(email, password);
+      router.replace(user.role === "ADMIN" ? "/admin" : "/host");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
