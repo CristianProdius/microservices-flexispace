@@ -1,5 +1,5 @@
 // Types
-export type { JwtPayload, AuthUser, TokenPair, Role } from "./types.js";
+export type { JwtPayload, AuthUser, TokenPair, Role, TokenUse } from "./types.js";
 
 // JWT utilities
 export {
@@ -10,6 +10,7 @@ export {
   verifyRefreshToken,
   extractTokenFromHeader,
 } from "./jwt.js";
+export type { VerifyResult, VerifyFailureReason } from "./jwt.js";
 
 // Password utilities
 export { hashPassword, comparePassword } from "./password.js";

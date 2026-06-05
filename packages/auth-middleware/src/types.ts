@@ -1,10 +1,13 @@
 export type Role = "USER" | "HOST" | "ADMIN";
 
+export type TokenUse = "access" | "refresh";
+
 export interface JwtPayload {
   userId: string;
   email: string;
   role: Role;
   hostVerified?: boolean;
+  tokenUse?: TokenUse;
   iat?: number;
   exp?: number;
 }
