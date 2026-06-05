@@ -166,6 +166,10 @@ export const getSpaces = async (req: Request, res: Response) => {
   const sortParam = req.query.sort as string | undefined;
   let resolvedSortBy = (req.query.sortBy as string) || "createdAt";
   let resolvedSortOrder = (req.query.sortOrder as string) || "desc";
+  // PRODSVC-014: track when the caller really wants rating-ordered
+  // results so we can swap to a raw SQL pre-query instead of silently
+  // falling back to createdAt.
+  let sortByRating = false;
 
   if (sortParam) {
     switch (sortParam) {
@@ -182,9 +186,10 @@ export const getSpaces = async (req: Request, res: Response) => {
         resolvedSortOrder = "desc";
         break;
       case "rating":
-        // averageRating is computed after the query, so we can't sort by it in Prisma.
-        // Falls back to newest as a reasonable approximation.
-        resolvedSortBy = "createdAt";
+        // Prisma cannot orderBy on aggregations of related rows, so we
+        // run a raw SQL GROUP BY below to get the rating-ordered id page
+        // and then re-fetch with the rich include shape.
+        sortByRating = true;
         resolvedSortOrder = "desc";
         break;
     }
@@ -220,6 +225,25 @@ export const getSpaces = async (req: Request, res: Response) => {
   const minCapacityNum = parseNumberFilter(minCapacity);
   const minPriceNum = parseNumberFilter(minPrice);
   const maxPriceNum = parseNumberFilter(maxPrice);
+
+  // PRODSVC-019: enforce non-negative + ordered price bounds before they
+  // reach Prisma so callers cannot supply absurd ranges (e.g. negative
+  // floors that match every row) to bypass intended pagination semantics.
+  if (minPriceNum !== undefined && minPriceNum < 0) {
+    return res.status(400).json({ message: "minPrice must be >= 0" });
+  }
+  if (maxPriceNum !== undefined && maxPriceNum < 0) {
+    return res.status(400).json({ message: "maxPrice must be >= 0" });
+  }
+  if (
+    minPriceNum !== undefined &&
+    maxPriceNum !== undefined &&
+    minPriceNum > maxPriceNum
+  ) {
+    return res
+      .status(400)
+      .json({ message: "minPrice must be <= maxPrice" });
+  }
   const resolvedSpaceType =
     typeof spaceType === "string" && SPACE_TYPES.has(spaceType as SpaceType)
       ? (spaceType as SpaceType)
@@ -238,6 +262,29 @@ export const getSpaces = async (req: Request, res: Response) => {
 
   const pageNum = parsePositiveInt(page, 1);
   const limitNum = Math.min(parsePositiveInt(limit, 20), 100);
+
+  // PRODSVC-016: parse the amenityIds query param (string list, single
+  // string, or repeated key) into a numeric array we can hand to Prisma.
+  // Default semantics are `some` (has any of the selected) which matches
+  // typical marketplace filtering UX where amenities are OR-ed.
+  const parseAmenityIds = (value: unknown): number[] => {
+    const raw: string[] = Array.isArray(value)
+      ? value.flatMap((v) =>
+          typeof v === "string" ? v.split(",") : [],
+        )
+      : typeof value === "string"
+        ? value.split(",")
+        : [];
+    const ids: number[] = [];
+    for (const token of raw) {
+      const trimmed = token.trim();
+      if (!trimmed) continue;
+      const parsed = Number(trimmed);
+      if (Number.isInteger(parsed) && parsed > 0) ids.push(parsed);
+    }
+    return ids;
+  };
+  const amenityIdList = parseAmenityIds(amenityIds);
 
   const hasBbox = neLat && neLng && swLat && swLng;
   const bbox = hasBbox
@@ -285,6 +332,12 @@ export const getSpaces = async (req: Request, res: Response) => {
     ...(minCapacityNum !== undefined && { capacity: { gte: minCapacityNum } }),
     ...(instantBook !== undefined && { instantBook: instantBook === "true" }),
     ...(resolvedCurrency && { currency: resolvedCurrency }),
+    // PRODSVC-016: apply the amenityIds filter. `some` semantics mean "has
+    // any of the selected amenities" — the marketplace default; switch to
+    // `every` only if product wants strict AND matching.
+    ...(amenityIdList.length > 0 && {
+      amenities: { some: { amenityId: { in: amenityIdList } } },
+    }),
     ...((minPriceNum !== undefined || maxPriceNum !== undefined) && {
       OR: [
         {
@@ -309,35 +362,84 @@ export const getSpaces = async (req: Request, res: Response) => {
 
   const skip = (pageNum - 1) * limitNum;
 
-  const [spaces, total] = await Promise.all([
-    prisma.space.findMany({
-      where,
-      orderBy,
-      skip,
-      take: limitNum,
-      include: {
-        category: true,
-        venue: venueInclude,
-        host: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        amenities: {
-          include: {
-            amenity: true,
-          },
-        },
-        pricingTiers: { orderBy: { minutes: "asc" } },
-        _count: {
-          select: { reviews: true },
-        },
+  const spaceInclude = {
+    category: true,
+    venue: venueInclude,
+    host: {
+      select: {
+        id: true,
+        name: true,
+        image: true,
       },
-    }),
-    prisma.space.count({ where }),
-  ]);
+    },
+    amenities: {
+      include: {
+        amenity: true,
+      },
+    },
+    pricingTiers: { orderBy: { minutes: "asc" as const } },
+    _count: {
+      select: { reviews: true },
+    },
+  } satisfies Prisma.SpaceInclude;
+
+  let spaces: Awaited<
+    ReturnType<typeof prisma.space.findMany<{ include: typeof spaceInclude }>>
+  >;
+  let total: number;
+
+  if (sortByRating) {
+    // PRODSVC-014: order by avg review rating. Prisma cannot orderBy on
+    // aggregations of related rows, so we run a raw SQL pre-query that
+    // resolves the ordered page of ids, then re-fetch with the full
+    // include shape so the response stays consistent with other sorts.
+    // NULLS LAST keeps unrated spaces at the bottom of a desc sort.
+    const candidateIdRows = await prisma.space.findMany({
+      where,
+      select: { id: true },
+    });
+    total = candidateIdRows.length;
+    const candidateIds = candidateIdRows.map((row) => row.id);
+
+    let orderedIds: number[] = [];
+    if (candidateIds.length > 0) {
+      const rows = await prisma.$queryRaw<
+        Array<{ id: number }>
+      >`SELECT s."id" AS id
+        FROM "Space" s
+        LEFT JOIN "Review" r ON r."spaceId" = s."id"
+        WHERE s."id" IN (${Prisma.join(candidateIds)})
+        GROUP BY s."id"
+        ORDER BY AVG(r."rating") DESC NULLS LAST, s."id" DESC
+        LIMIT ${limitNum} OFFSET ${skip}`;
+      orderedIds = rows.map((r) => r.id);
+    }
+
+    if (orderedIds.length === 0) {
+      spaces = [];
+    } else {
+      const pageRows = await prisma.space.findMany({
+        where: { id: { in: orderedIds } },
+        include: spaceInclude,
+      });
+      const orderIndex = new Map(orderedIds.map((id, idx) => [id, idx]));
+      spaces = pageRows.sort(
+        (a, b) =>
+          (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0),
+      );
+    }
+  } else {
+    [spaces, total] = await Promise.all([
+      prisma.space.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limitNum,
+        include: spaceInclude,
+      }),
+      prisma.space.count({ where }),
+    ]);
+  }
 
   const lang = req.query.lang as string | undefined;
 
@@ -861,6 +963,13 @@ export const updateAvailability = async (req: Request, res: Response) => {
     ]);
   }
 
+  // PRODSVC-013: notify downstream consumers (search reindexer, client
+  // cache invalidation) that the space has changed. Without this they
+  // serve stale availability after a host updates their schedule. Match
+  // the fire-and-forget pattern used by createSpace/updateSpace/deleteSpace
+  // in this file — kafka durability is handled inside the producer.
+  producer.send("space.updated", { value: { id: spaceId } });
+
   res.status(200).json({ message: "Availability updated" });
 };
 
@@ -883,6 +992,19 @@ export const checkAvailability = async (req: Request, res: Response) => {
     return res
       .status(400)
       .json({ message: "endDate must be on or after startDate" });
+  }
+  // PRODSVC-017: cap the range to 90 days. Without this an unauth caller
+  // can ask for a multi-year window and force a full scan of the
+  // availability/booking rows. Gateway-level rate limiting is separate.
+  const MAX_RANGE_DAYS = 90;
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const rangeDays = Math.ceil(
+    (end.getTime() - start.getTime()) / MS_PER_DAY,
+  );
+  if (rangeDays > MAX_RANGE_DAYS) {
+    return res.status(400).json({
+      message: `Date range must be ${MAX_RANGE_DAYS} days or fewer`,
+    });
   }
 
   const space = await prisma.space.findUnique({
