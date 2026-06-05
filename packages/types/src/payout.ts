@@ -6,9 +6,9 @@ export type PayoutStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 export interface Payout {
   id: string;
   hostId: string;
-  amount: number; // In dollars
-  platformFee: number;
-  netAmount: number;
+  amount: number; // In dollars (matches DB Float; long-term target: Decimal(12, 2))
+  platformFee: number; // In dollars
+  netAmount: number; // In dollars
   status: PayoutStatus;
   bookingIds: string[];
   processedAt: string | null;
