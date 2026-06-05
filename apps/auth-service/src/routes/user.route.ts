@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma, Role } from "@repo/db";
 import { hashPassword } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
+import { sendPrismaError } from "../utils/prismaErrors.js";
 
 const router: Router = Router();
 
@@ -14,6 +15,23 @@ const parseOptionalRole = (role: unknown) => {
   if (role === undefined || role === null || role === "") return undefined;
   return parseRole(role);
 };
+
+// Password policy: bcrypt truncates at 72 bytes, so 72 is a hard upper bound.
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 72;
+
+function validatePassword(pw: unknown): { ok: true; value: string } | { ok: false; message: string } {
+  if (typeof pw !== "string") {
+    return { ok: false, message: "Password must be a string" };
+  }
+  if (pw.length < PASSWORD_MIN_LENGTH) {
+    return { ok: false, message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` };
+  }
+  if (pw.length > PASSWORD_MAX_LENGTH) {
+    return { ok: false, message: `Password must be at most ${PASSWORD_MAX_LENGTH} characters` };
+  }
+  return { ok: true, value: pw };
+}
 
 // Get all users (admin only)
 router.get("/", async (req, res) => {
@@ -46,8 +64,7 @@ router.get("/", async (req, res) => {
 
     return res.status(200).json(users);
   } catch (error) {
-    console.error("Get users error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Get users error");
   }
 });
 
@@ -82,8 +99,7 @@ router.get("/hosts", async (req, res) => {
 
     return res.status(200).json(hosts);
   } catch (error) {
-    console.error("Get hosts error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Get hosts error");
   }
 });
 
@@ -113,8 +129,7 @@ router.get("/:id", async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.error("Get user error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Get user error");
   }
 });
 
@@ -131,7 +146,12 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Check if user already exists
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      return res.status(400).json({ message: pwCheck.message });
+    }
+
+    // Check if user already exists (defence-in-depth; Prisma P2002 handler also covers race)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { username }],
@@ -139,13 +159,13 @@ router.post("/", async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: "User with this email or username already exists" });
+      return res.status(409).json({ message: "User with this email or username already exists" });
     }
 
     // Hash password
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(pwCheck.value);
 
-    // Create user
+    // Create user — admin-provisioned accounts must rotate the password on first login.
     const user = await prisma.user.create({
       data: {
         email,
@@ -153,6 +173,7 @@ router.post("/", async (req, res) => {
         password: hashedPassword,
         name: name || null,
         role: parsedRole || "USER",
+        mustChangePassword: true,
       },
       select: {
         id: true,
@@ -161,6 +182,7 @@ router.post("/", async (req, res) => {
         name: true,
         role: true,
         image: true,
+        mustChangePassword: true,
         createdAt: true,
       },
     });
@@ -175,8 +197,7 @@ router.post("/", async (req, res) => {
 
     return res.status(201).json(user);
   } catch (error) {
-    console.error("Create user error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Create user error");
   }
 });
 
@@ -184,10 +205,22 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, username, name, role, image } = req.body;
+    const { email, username, name, role, image, password } = req.body;
     const parsedRole = parseOptionalRole(role);
     if (parsedRole === null) {
       return res.status(400).json({ message: "Invalid role" });
+    }
+
+    // If a password rotation is requested, validate + hash it. We also flip
+    // mustChangePassword off (the admin has just set a known value) and
+    // invalidate every existing session so other devices are forced to re-auth.
+    let hashedPassword: string | undefined;
+    if (password !== undefined && password !== null && password !== "") {
+      const pwCheck = validatePassword(password);
+      if (!pwCheck.ok) {
+        return res.status(400).json({ message: pwCheck.message });
+      }
+      hashedPassword = await hashPassword(pwCheck.value);
     }
 
     const user = await prisma.user.update({
@@ -198,6 +231,10 @@ router.put("/:id", async (req, res) => {
         ...(name !== undefined && { name }),
         ...(parsedRole && { role: parsedRole }),
         ...(image !== undefined && { image }),
+        ...(hashedPassword !== undefined && {
+          password: hashedPassword,
+          mustChangePassword: false,
+        }),
       },
       select: {
         id: true,
@@ -206,15 +243,20 @@ router.put("/:id", async (req, res) => {
         name: true,
         role: true,
         image: true,
+        mustChangePassword: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
+    // Invalidate sessions only after the user update succeeds.
+    if (hashedPassword !== undefined) {
+      await prisma.session.deleteMany({ where: { userId: id } });
+    }
+
     return res.status(200).json(user);
   } catch (error) {
-    console.error("Update user error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Update user error");
   }
 });
 
@@ -222,6 +264,30 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const callerId = req.userId;
+
+    if (callerId && callerId === id) {
+      return res.status(400).json({ message: "Cannot delete your own account via this endpoint" });
+    }
+
+    // Last-admin guard: load the target so we know whether removing them would
+    // empty out the ADMIN role.
+    const target = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true },
+    });
+    if (!target) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (target.role === "ADMIN") {
+      const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+      if (adminCount <= 1) {
+        return res
+          .status(409)
+          .json({ message: "Cannot remove the last remaining admin" });
+      }
+    }
 
     await prisma.user.delete({
       where: { id },
@@ -229,8 +295,7 @@ router.delete("/:id", async (req, res) => {
 
     return res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    console.error("Delete user error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Delete user error");
   }
 });
 
@@ -271,8 +336,7 @@ router.put("/:id/verify-host", async (req, res) => {
 
     return res.status(200).json(updatedUser);
   } catch (error) {
-    console.error("Verify host error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Verify host error");
   }
 });
 
@@ -281,10 +345,37 @@ router.put("/:id/role", async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
+    const callerId = req.userId;
 
     const parsedRole = parseRole(role);
     if (!parsedRole) {
       return res.status(400).json({ message: "Invalid role" });
+    }
+
+    if (callerId && callerId === id) {
+      return res
+        .status(400)
+        .json({ message: "Cannot change your own role via this endpoint" });
+    }
+
+    // Last-admin guard: if we're demoting the target away from ADMIN and they
+    // are currently the only admin, refuse.
+    if (parsedRole !== "ADMIN") {
+      const target = await prisma.user.findUnique({
+        where: { id },
+        select: { id: true, role: true },
+      });
+      if (!target) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (target.role === "ADMIN") {
+        const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+        if (adminCount <= 1) {
+          return res
+            .status(409)
+            .json({ message: "Cannot demote the last remaining admin" });
+        }
+      }
     }
 
     const user = await prisma.user.update({
@@ -306,8 +397,7 @@ router.put("/:id/role", async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.error("Change role error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return sendPrismaError(res, error, "Change role error");
   }
 });
 

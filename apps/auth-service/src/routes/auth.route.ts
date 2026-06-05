@@ -149,6 +149,12 @@ router.post("/login", async (req, res) => {
       },
     });
 
+    // AUTHSVC-014: admin-provisioned accounts (or any account flagged for
+    // rotation) must be redirected to the change-password flow. We still issue
+    // tokens so the client can call the existing /auth/change-password
+    // endpoint — the flag is purely advisory.
+    const requiresPasswordChange = user.mustChangePassword === true;
+
     return res.status(200).json({
       user: {
         id: user.id,
@@ -160,6 +166,7 @@ router.post("/login", async (req, res) => {
         hostVerified: user.hostVerified,
       },
       ...tokens,
+      requiresPasswordChange,
     });
   } catch (error) {
     console.error("Login error:", error);
