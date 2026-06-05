@@ -80,7 +80,7 @@ const UsersPage = () => {
       {error ? (
         <DataLoadError message={error} onRetry={fetchUsers} />
       ) : (
-        <DataTable columns={columns} data={users} />
+        <DataTable columns={columns} data={users} onUsersChanged={fetchUsers} />
       )}
     </div>
   );
