@@ -16,6 +16,16 @@ const DEFAULT_CORS_ORIGINS = [
 const configuredCorsOrigins = process.env.CORS_ORIGINS?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// BOOKSVC-015: fail closed in production. Falling back to localhost with
+// credentials:true is unsafe if env wiring fails — a compromised dev machine
+// could otherwise talk to prod with cookies via DNS rebinding or local XSS.
+if (process.env.NODE_ENV === "production" && !configuredCorsOrigins?.length) {
+  throw new Error(
+    "CORS_ORIGINS must be set in production; refusing to fall back to localhost defaults"
+  );
+}
+
 const corsOrigins = configuredCorsOrigins?.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
 
 const app = express();

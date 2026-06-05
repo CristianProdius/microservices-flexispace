@@ -41,10 +41,15 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Email, username, and password are required" });
     }
 
+    // Normalize to lowercase to avoid case-sensitive duplicates (e.g. "Alice@x" vs "alice@x").
+    // See AUTHSVC-008.
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedUsername = String(username).trim().toLowerCase();
+
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email }, { username }],
+        OR: [{ email: normalizedEmail }, { username: normalizedUsername }],
       },
     });
 
@@ -58,8 +63,8 @@ router.post("/register", async (req, res) => {
     // Create user
     const user = await prisma.user.create({
       data: {
-        email,
-        username,
+        email: normalizedEmail,
+        username: normalizedUsername,
         password: hashedPassword,
         name: name || null,
       },
@@ -116,9 +121,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
+    // Normalize to match how addresses were stored at registration (AUTHSVC-008).
+    const normalizedEmail = String(email).trim().toLowerCase();
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {

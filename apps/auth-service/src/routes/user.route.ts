@@ -131,10 +131,14 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    // Normalize to lowercase to keep email/username unique case-insensitively (AUTHSVC-008).
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedUsername = String(username).trim().toLowerCase();
+
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email }, { username }],
+        OR: [{ email: normalizedEmail }, { username: normalizedUsername }],
       },
     });
 
@@ -148,8 +152,8 @@ router.post("/", async (req, res) => {
     // Create user
     const user = await prisma.user.create({
       data: {
-        email,
-        username,
+        email: normalizedEmail,
+        username: normalizedUsername,
         password: hashedPassword,
         name: name || null,
         role: parsedRole || "USER",
@@ -190,11 +194,17 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    // Normalize email/username case to match registration-time storage (AUTHSVC-008).
+    const normalizedEmail =
+      typeof email === "string" ? email.trim().toLowerCase() : undefined;
+    const normalizedUsername =
+      typeof username === "string" ? username.trim().toLowerCase() : undefined;
+
     const user = await prisma.user.update({
       where: { id },
       data: {
-        ...(email && { email }),
-        ...(username && { username }),
+        ...(normalizedEmail && { email: normalizedEmail }),
+        ...(normalizedUsername && { username: normalizedUsername }),
         ...(name !== undefined && { name }),
         ...(parsedRole && { role: parsedRole }),
         ...(image !== undefined && { image }),

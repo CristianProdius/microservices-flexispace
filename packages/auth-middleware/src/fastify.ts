@@ -10,17 +10,31 @@ declare module "fastify" {
   }
 }
 
+// Helper: explicitly await the reply and return it so Fastify reliably
+// short-circuits the request lifecycle, regardless of framework internals.
+// (See: AUTHMW-007 — relying on `return reply.status().send()` works in
+// Fastify v5 only because send() returns the reply object; this pattern is
+// more robust and future-proof.)
+async function sendAndHalt(
+  reply: FastifyReply,
+  status: number,
+  body: Record<string, unknown>
+): Promise<FastifyReply> {
+  await reply.status(status).send(body);
+  return reply;
+}
+
 export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply) {
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
+    return sendAndHalt(reply, 401, { message: "No token provided" });
   }
 
   const payload = verifyAccessToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
+    return sendAndHalt(reply, 401, { message: "Invalid or expired token" });
   }
 
   const user: AuthUser = {
@@ -38,17 +52,17 @@ export async function shouldBeAdmin(request: FastifyRequest, reply: FastifyReply
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
+    return sendAndHalt(reply, 401, { message: "No token provided" });
   }
 
   const payload = verifyAccessToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
+    return sendAndHalt(reply, 401, { message: "Invalid or expired token" });
   }
 
   if (payload.role !== "ADMIN") {
-    return reply.status(403).send({ message: "Admin access required" });
+    return sendAndHalt(reply, 403, { message: "Admin access required" });
   }
 
   const user: AuthUser = {
@@ -66,17 +80,17 @@ export async function shouldBeHost(request: FastifyRequest, reply: FastifyReply)
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
+    return sendAndHalt(reply, 401, { message: "No token provided" });
   }
 
   const payload = verifyAccessToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
+    return sendAndHalt(reply, 401, { message: "Invalid or expired token" });
   }
 
   if (!hasVerifiedHostAccess(payload)) {
-    return reply.status(403).send({ message: "Verified host access required" });
+    return sendAndHalt(reply, 403, { message: "Verified host access required" });
   }
 
   const user: AuthUser = {
@@ -94,17 +108,17 @@ export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: Fastif
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
+    return sendAndHalt(reply, 401, { message: "No token provided" });
   }
 
   const payload = verifyAccessToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
+    return sendAndHalt(reply, 401, { message: "Invalid or expired token" });
   }
 
   if (!hasVerifiedHostAccess(payload)) {
-    return reply.status(403).send({ message: "Verified host or Admin access required" });
+    return sendAndHalt(reply, 403, { message: "Verified host or Admin access required" });
   }
 
   const user: AuthUser = {
