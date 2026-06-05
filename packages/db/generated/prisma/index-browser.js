@@ -319,6 +319,7 @@ exports.Prisma.PayoutScalarFieldEnum = {
   amount: 'amount',
   platformFee: 'platformFee',
   netAmount: 'netAmount',
+  currency: 'currency',
   status: 'status',
   bookingIds: 'bookingIds',
   processedAt: 'processedAt',
