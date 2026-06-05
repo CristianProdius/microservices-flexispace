@@ -3,6 +3,7 @@ import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
+import { isAccessTokenRevoked } from "./revocation.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -43,6 +44,12 @@ async function authenticate(
 
   if (!result.ok) {
     await reply.status(401).send({ message: messageForReason(result.reason) });
+    return null;
+  }
+
+  // AUTHSVC-007: revocation check (no-op when no checker installed).
+  if (await isAccessTokenRevoked(result.payload.jti)) {
+    await reply.status(401).send({ message: "Token revoked" });
     return null;
   }
 

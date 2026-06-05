@@ -4,6 +4,7 @@ import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
+import { isAccessTokenRevoked } from "./revocation.js";
 
 type AuthVariables = {
   user: AuthUser;
@@ -27,9 +28,10 @@ function messageForReason(reason: VerifyFailureReason): string {
  * failing that, the HttpOnly session cookie. Header wins when both are
  * present so existing API clients keep their current behaviour.
  */
-function authenticate(c: Context):
+async function authenticate(c: Context): Promise<
   | { ok: true; payload: JwtPayload }
-  | { ok: false; response: Response } {
+  | { ok: false; response: Response }
+> {
   const token = extractAccessToken(c.req.header("Authorization"), c.req.header("Cookie"));
 
   if (!token) {
@@ -43,6 +45,11 @@ function authenticate(c: Context):
       ok: false,
       response: c.json({ message: messageForReason(result.reason) }, 401),
     };
+  }
+
+  // AUTHSVC-007: revocation check (no-op when no checker installed).
+  if (await isAccessTokenRevoked(result.payload.jti)) {
+    return { ok: false, response: c.json({ message: "Token revoked" }, 401) };
   }
 
   return { ok: true, payload: result.payload };
@@ -62,7 +69,7 @@ function attachUser(c: Context<{ Variables: AuthVariables }>, payload: JwtPayloa
 
 export const shouldBeUser = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const auth = authenticate(c);
+    const auth = await authenticate(c);
     if (!auth.ok) return auth.response;
 
     attachUser(c, auth.payload);
@@ -72,7 +79,7 @@ export const shouldBeUser = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeAdmin = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const auth = authenticate(c);
+    const auth = await authenticate(c);
     if (!auth.ok) return auth.response;
 
     if (auth.payload.role !== "ADMIN") {
@@ -86,7 +93,7 @@ export const shouldBeAdmin = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeHost = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const auth = authenticate(c);
+    const auth = await authenticate(c);
     if (!auth.ok) return auth.response;
 
     if (!hasVerifiedHostAccess(auth.payload)) {
@@ -100,7 +107,7 @@ export const shouldBeHost = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeHostOrAdmin = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const auth = authenticate(c);
+    const auth = await authenticate(c);
     if (!auth.ok) return auth.response;
 
     if (!hasVerifiedHostAccess(auth.payload)) {

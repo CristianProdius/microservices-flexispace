@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "@repo/db";
 import {
@@ -10,6 +10,10 @@ import {
   signPasswordResetToken,
   verifyRefreshToken,
   verifyPasswordResetToken,
+  signEmailVerificationToken,
+  verifyEmailVerificationToken,
+  verifyAccessToken,
+  extractTokenFromHeader,
   normalizeEmail,
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
@@ -63,6 +67,47 @@ const refreshLifetimeMs = () =>
 
 const accessLifetimeMs = () =>
   parseExpiry(process.env.JWT_EXPIRES_IN || "15m");
+
+// ---------------------------------------------------------------------------
+// AUTHSVC-003: constant-time login.
+// When the user does not exist we still run bcrypt.compare against a known
+// dummy hash so the timing of a "no such user" branch matches the timing of
+// a "user exists, bad password" branch. The dummy hash is computed lazily
+// once at first use to avoid blocking module load.
+// ---------------------------------------------------------------------------
+let dummyHashPromise: Promise<string> | null = null;
+const getDummyHash = (): Promise<string> => {
+  if (!dummyHashPromise) {
+    dummyHashPromise = hashPassword("__spacefly_timing_dummy__");
+  }
+  return dummyHashPromise;
+};
+
+// ---------------------------------------------------------------------------
+// AUTHSVC-004: email verification gate.
+// Enforce by default in production; toggleable via ENFORCE_EMAIL_VERIFICATION
+// for environments where the email pipeline isn't wired up (local dev, CI).
+// ---------------------------------------------------------------------------
+const enforceEmailVerification = (): boolean => {
+  const raw = process.env.ENFORCE_EMAIL_VERIFICATION;
+  if (raw === undefined) {
+    return process.env.NODE_ENV === "production";
+  }
+  return raw === "true" || raw === "1";
+};
+
+const sendVerificationEvent = (user: { id: string; email: string; username: string; name: string | null }) => {
+  const token = signEmailVerificationToken({ userId: user.id, email: user.email });
+  producer.send("user.email-verification-requested", {
+    value: {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      name: user.name,
+      token,
+    },
+  });
+};
 
 /**
  * AUTHSVC-006: persist a refresh token's jti into the rotation chain.
@@ -205,6 +250,10 @@ router.post("/register", registerLimiter, async (req, res) => {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken, refreshLifetimeMs(), accessLifetimeMs());
 
+    // AUTHSVC-004: emit verification request so email-service can dispatch a
+    // verification link. Token is single-use (JWT, purpose=email-verification).
+    sendVerificationEvent(user);
+
     // We return tokens in the body too so existing clients that read them
     // from JSON keep working until they migrate to the cookie flow.
     return res.status(201).json({
@@ -216,6 +265,7 @@ router.post("/register", registerLimiter, async (req, res) => {
         name: user.name,
         role: user.role,
         hostVerified: user.hostVerified,
+        emailVerified: user.emailVerified,
       },
       ...tokens,
     });
@@ -245,13 +295,22 @@ router.post("/login", loginLimiter, async (req, res) => {
         ? await prisma.user.findUnique({ where: { username } })
         : null;
 
-    if (!user) {
+    // AUTHSVC-003: always run bcrypt.compare so timing does not leak whether
+    // an account exists. If the user is missing we compare against a dummy
+    // hash and ignore the result.
+    const hashToCompare = user?.password ?? (await getDummyHash());
+    const isValidPassword = await comparePassword(body.password, hashToCompare);
+
+    if (!user || !isValidPassword) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isValidPassword = await comparePassword(body.password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    // AUTHSVC-004: block unverified emails when enforcement is on.
+    if (!user.emailVerified && enforceEmailVerification()) {
+      return res.status(403).json({
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Email address has not been verified. Please check your inbox or request a new verification email.",
+      });
     }
 
     const refreshJti = uuidv4();
@@ -285,6 +344,7 @@ router.post("/login", loginLimiter, async (req, res) => {
         role: user.role,
         image: user.image,
         hostVerified: user.hostVerified,
+        emailVerified: user.emailVerified,
       },
       ...tokens,
     });
@@ -317,6 +377,27 @@ router.post("/logout", shouldBeUser, async (req, res) => {
     }
 
     clearAuthCookies(res);
+
+    // AUTHSVC-007: revoke the access token the client is logging out with.
+    const accessToken = extractTokenFromHeader(req.headers.authorization);
+    if (accessToken) {
+      const verified = verifyAccessToken(accessToken);
+      if (verified.ok && verified.payload.jti && verified.payload.exp && req.userId) {
+        const expiresAt = new Date(verified.payload.exp * 1000);
+        // Use upsert to be idempotent: a double-logout should not 500.
+        await prisma.revokedAccessToken.upsert({
+          where: { jti: verified.payload.jti },
+          update: {},
+          create: {
+            jti: verified.payload.jti,
+            userId: req.userId,
+            expiresAt,
+            reason: "logout",
+          },
+        });
+      }
+    }
+
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout error:", error);
@@ -447,6 +528,159 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// AUTHSVC-004: verify-email — marks the user's email as verified.
+// Token is a signed JWT with purpose=email-verification (24h TTL by default).
+// Accepts both JSON POST and GET-with-query so a plain link in an email works.
+// ---------------------------------------------------------------------------
+const handleVerifyEmail = async (token: string | undefined, res: Response) => {
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({ message: "Verification token is required" });
+  }
+
+  const payload = verifyEmailVerificationToken(token);
+  if (!payload) {
+    return res.status(400).json({ message: "Verification token is invalid or expired" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  if (!user || user.email !== payload.email) {
+    return res.status(400).json({ message: "Verification token is invalid or expired" });
+  }
+
+  if (!user.emailVerified) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+  }
+
+  return res.status(200).json({ message: "Email verified successfully", emailVerified: true });
+};
+
+router.get("/verify-email", async (req, res) => {
+  const token = typeof req.query.token === "string" ? req.query.token : undefined;
+  return handleVerifyEmail(token, res);
+});
+
+router.post("/verify-email", async (req, res) => {
+  const token = typeof req.body?.token === "string" ? req.body.token : undefined;
+  return handleVerifyEmail(token, res);
+});
+
+// ---------------------------------------------------------------------------
+// AUTHSVC-004: resend-verification.
+// Always returns 200 to avoid leaking which emails exist. If the address
+// matches a user that isn't yet verified, we emit a fresh verification event.
+// NOTE: a sibling branch (fix/auth-route-critical) is adding shared rate
+// limiting; this endpoint should be wrapped by that middleware at merge time.
+// ---------------------------------------------------------------------------
+router.post("/resend-verification", async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user && !user.emailVerified) {
+      sendVerificationEvent(user);
+    }
+
+    return res.status(200).json({
+      message: "If an account exists for that email and is not yet verified, a new verification message has been sent.",
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AUTHSVC-009: change password (authenticated, requires currentPassword).
+// On success we revoke the caller's current access token, delete all of the
+// user's refresh sessions, and ask the client to re-login.
+// ---------------------------------------------------------------------------
+const MIN_PASSWORD_LENGTH = 8;
+
+router.post("/change-password", shouldBeUser, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string" ||
+      !currentPassword ||
+      !newPassword
+    ) {
+      return res.status(400).json({ message: "currentPassword and newPassword are required" });
+    }
+
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      return res
+        .status(400)
+        .json({ message: `New password must be at least ${MIN_PASSWORD_LENGTH} characters long` });
+    }
+
+    if (newPassword === currentPassword) {
+      return res
+        .status(400)
+        .json({ message: "New password must be different from the current password" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // bcrypt.compare is constant-time for hashes of equal cost.
+    const ok = await comparePassword(currentPassword, user.password);
+    if (!ok) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    const newHash = await hashPassword(newPassword);
+
+    // Apply the change, nuke all refresh sessions, and revoke the current
+    // access token in a single transaction.
+    const accessToken = extractTokenFromHeader(req.headers.authorization);
+    const accessVerified = accessToken ? verifyAccessToken(accessToken) : null;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { password: newHash },
+      });
+
+      await tx.session.deleteMany({ where: { userId: user.id } });
+
+      if (
+        accessVerified?.ok &&
+        accessVerified.payload.jti &&
+        accessVerified.payload.exp
+      ) {
+        await tx.revokedAccessToken.upsert({
+          where: { jti: accessVerified.payload.jti },
+          update: {},
+          create: {
+            jti: accessVerified.payload.jti,
+            userId: user.id,
+            expiresAt: new Date(accessVerified.payload.exp * 1000),
+            reason: "password-change",
+          },
+        });
+      }
+    });
+
+    return res.status(200).json({
+      message: "Password updated. Please log in again with your new password.",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // =================== ME ====================
 router.get("/me", shouldBeUser, async (req, res) => {
   try {
@@ -466,6 +700,7 @@ router.get("/me", shouldBeUser, async (req, res) => {
         hostVerified: true,
         hostingSince: true,
         hostApplicationPending: true,
+        emailVerified: true,
         createdAt: true,
       },
     });

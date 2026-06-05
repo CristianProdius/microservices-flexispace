@@ -31,7 +31,16 @@ type EmailEventMessage = {
     reason?: string;
     cancelledByRole?: string;
     totalAmount?: number;
+    token?: string;
+    userId?: string;
+    name?: string | null;
   };
+};
+
+const verificationLinkFor = (token: string): string => {
+  const base = process.env.EMAIL_VERIFICATION_LINK_BASE || "http://localhost:3002/auth/verify-email";
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(token)}`;
 };
 
 const formatCurrency = (amountInDollars: number | undefined) =>
@@ -50,6 +59,21 @@ const subscriptions = [
           text: `Welcome ${username}. Your Spacefly.ai account has been created!`,
         });
       }
+    },
+  },
+  {
+    topicName: "user.email-verification-requested",
+    topicHandler: async (message: EmailEventMessage) => {
+      const { email, name, username, token } = message.value || {};
+      if (!email || !token) return;
+
+      const link = verificationLinkFor(token);
+      const greeting = name || username || "there";
+      await sendMail({
+        email,
+        subject: "Verify your Spacefly.ai email address",
+        text: `Hi ${greeting},\n\nPlease verify your email address by visiting the following link (valid for 24 hours):\n\n${link}\n\nIf you did not create a Spacefly.ai account you can safely ignore this message.`,
+      });
     },
   },
   {

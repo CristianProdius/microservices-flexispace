@@ -1,19 +1,21 @@
 import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
 import type { SignOptions } from "jsonwebtoken";
-import type { JwtPayload, TokenPair, TokenUse } from "./types.js";
+import type { JwtPayload, PurposeTokenPayload, TokenPair, TokenUse } from "./types.js";
 
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "15m") as SignOptions["expiresIn"];
 const JWT_REFRESH_EXPIRES_IN = (process.env.JWT_REFRESH_EXPIRES_IN || "7d") as SignOptions["expiresIn"];
 const JWT_PASSWORD_RESET_EXPIRES_IN =
   (process.env.JWT_PASSWORD_RESET_EXPIRES_IN || "30m") as SignOptions["expiresIn"];
+const EMAIL_VERIFICATION_EXPIRES_IN = (process.env.EMAIL_VERIFICATION_EXPIRES_IN ||
+  "24h") as SignOptions["expiresIn"];
 
 const JWT_ALGORITHM = "HS256" as const;
 const JWT_ISSUER = "spacefly";
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "spacefly-api";
 
 const getRequiredEnv = (
-  name: "JWT_SECRET" | "JWT_REFRESH_SECRET" | "JWT_PASSWORD_RESET_SECRET",
+  name: "JWT_SECRET" | "JWT_REFRESH_SECRET" | "JWT_PASSWORD_RESET_SECRET" | "JWT_VERIFICATION_SECRET",
 ): string => {
   const value = process.env[name];
 
@@ -160,6 +162,35 @@ export function verifyPasswordResetToken(
       getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
     ) as PasswordResetTokenPayload & { jti?: string };
     if (decoded.purpose !== "password-reset") return null;
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * AUTHSVC-004: email-verification token. The `purpose` claim is checked on
+ * verify so it cannot be substituted for an access token. Falls back to
+ * JWT_SECRET when JWT_VERIFICATION_SECRET is not set, so existing
+ * single-secret deployments keep working.
+ */
+const getVerificationSecret = (): string => {
+  return process.env.JWT_VERIFICATION_SECRET || getRequiredEnv("JWT_SECRET");
+};
+
+export function signEmailVerificationToken(
+  payload: Omit<PurposeTokenPayload, "iat" | "exp" | "purpose">,
+): string {
+  return jwt.sign({ ...payload, purpose: "email-verification" as const }, getVerificationSecret(), {
+    expiresIn: EMAIL_VERIFICATION_EXPIRES_IN,
+    jwtid: randomUUID(),
+  });
+}
+
+export function verifyEmailVerificationToken(token: string): PurposeTokenPayload | null {
+  try {
+    const decoded = jwt.verify(token, getVerificationSecret()) as PurposeTokenPayload;
+    if (decoded.purpose !== "email-verification") return null;
     return decoded;
   } catch {
     return null;

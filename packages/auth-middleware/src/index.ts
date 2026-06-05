@@ -1,5 +1,12 @@
 // Types
-export type { JwtPayload, AuthUser, TokenPair, Role, TokenUse } from "./types.js";
+export type {
+  JwtPayload,
+  AuthUser,
+  TokenPair,
+  Role,
+  TokenUse,
+  PurposeTokenPayload,
+} from "./types.js";
 
 // JWT utilities
 export {
@@ -10,6 +17,8 @@ export {
   verifyRefreshToken,
   signPasswordResetToken,
   verifyPasswordResetToken,
+  signEmailVerificationToken,
+  verifyEmailVerificationToken,
   extractTokenFromHeader,
   extractTokenFromCookieHeader,
   extractAccessToken,
@@ -23,6 +32,13 @@ export { hashPassword, comparePassword, InvalidPasswordError } from "./password.
 
 // Email normalization (AUTHMW-003)
 export { normalizeEmail } from "./email.js";
+
+// Access-token revocation hook
+export {
+  setRevocationChecker,
+  isAccessTokenRevoked,
+  type RevocationChecker,
+} from "./revocation.js";
 
 // Express middleware
 export {

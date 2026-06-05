@@ -3,13 +3,14 @@ import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
+import { isAccessTokenRevoked } from "./revocation.js";
 
 /**
  * Resolve the bearer token from the standard `Authorization` header or,
  * failing that, the HttpOnly session cookie. Header wins when both are
  * present so existing API clients keep their current behaviour.
  */
-function authenticate(req: Request, res: Response): JwtPayload | null {
+async function authenticate(req: Request, res: Response): Promise<JwtPayload | null> {
   const token = extractAccessToken(req.headers.authorization, req.headers.cookie);
 
   if (!token) {
@@ -21,6 +22,13 @@ function authenticate(req: Request, res: Response): JwtPayload | null {
 
   if (!result.ok) {
     res.status(401).json({ message: messageForReason(result.reason) });
+    return null;
+  }
+
+  // AUTHSVC-007: check whether this token's jti has been revoked
+  // (logout / password change). No-op when no checker is installed.
+  if (await isAccessTokenRevoked(result.payload.jti)) {
+    res.status(401).json({ message: "Token revoked" });
     return null;
   }
 
@@ -51,16 +59,16 @@ function attachUser(req: Request, payload: JwtPayload): void {
   req.userId = payload.userId;
 }
 
-export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
-  const payload = authenticate(req, res);
+export async function shouldBeUser(req: Request, res: Response, next: NextFunction) {
+  const payload = await authenticate(req, res);
   if (!payload) return;
 
   attachUser(req, payload);
   return next();
 }
 
-export function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
-  const payload = authenticate(req, res);
+export async function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
+  const payload = await authenticate(req, res);
   if (!payload) return;
 
   if (payload.role !== "ADMIN") {
@@ -71,8 +79,8 @@ export function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
-export function shouldBeHost(req: Request, res: Response, next: NextFunction) {
-  const payload = authenticate(req, res);
+export async function shouldBeHost(req: Request, res: Response, next: NextFunction) {
+  const payload = await authenticate(req, res);
   if (!payload) return;
 
   if (!hasVerifiedHostAccess(payload)) {
@@ -83,8 +91,8 @@ export function shouldBeHost(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
-export function shouldBeHostOrAdmin(req: Request, res: Response, next: NextFunction) {
-  const payload = authenticate(req, res);
+export async function shouldBeHostOrAdmin(req: Request, res: Response, next: NextFunction) {
+  const payload = await authenticate(req, res);
   if (!payload) return;
 
   if (!hasVerifiedHostAccess(payload)) {

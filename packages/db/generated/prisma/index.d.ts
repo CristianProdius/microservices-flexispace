@@ -24,20 +24,10 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
 /**
- * Model RefreshToken
+ * Model RevokedAccessToken
  * 
  */
-export type RefreshToken = $Result.DefaultSelection<Prisma.$RefreshTokenPayload>
-/**
- * Model HostApplication
- * 
- */
-export type HostApplication = $Result.DefaultSelection<Prisma.$HostApplicationPayload>
-/**
- * Model PasswordResetUse
- * 
- */
-export type PasswordResetUse = $Result.DefaultSelection<Prisma.$PasswordResetUsePayload>
+export type RevokedAccessToken = $Result.DefaultSelection<Prisma.$RevokedAccessTokenPayload>
 /**
  * Model Venue
  * 
@@ -140,6 +130,7 @@ export type PricingType = (typeof PricingType)[keyof typeof PricingType]
 
 export const BookingStatus: {
   PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
   CONFIRMED: 'CONFIRMED',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
@@ -170,15 +161,6 @@ export const PayoutStatus: {
 export type PayoutStatus = (typeof PayoutStatus)[keyof typeof PayoutStatus]
 
 
-export const HostApplicationStatus: {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED'
-};
-
-export type HostApplicationStatus = (typeof HostApplicationStatus)[keyof typeof HostApplicationStatus]
-
-
 export const Currency: {
   USD: 'USD',
   EUR: 'EUR',
@@ -186,15 +168,6 @@ export const Currency: {
 };
 
 export type Currency = (typeof Currency)[keyof typeof Currency]
-
-
-export const BookingActor: {
-  GUEST: 'GUEST',
-  HOST: 'HOST',
-  ADMIN: 'ADMIN'
-};
-
-export type BookingActor = (typeof BookingActor)[keyof typeof BookingActor]
 
 }
 
@@ -222,17 +195,9 @@ export type PayoutStatus = $Enums.PayoutStatus
 
 export const PayoutStatus: typeof $Enums.PayoutStatus
 
-export type HostApplicationStatus = $Enums.HostApplicationStatus
-
-export const HostApplicationStatus: typeof $Enums.HostApplicationStatus
-
 export type Currency = $Enums.Currency
 
 export const Currency: typeof $Enums.Currency
-
-export type BookingActor = $Enums.BookingActor
-
-export const BookingActor: typeof $Enums.BookingActor
 
 /**
  * ##  Prisma Client ʲˢ
@@ -373,34 +338,14 @@ export class PrismaClient<
   get session(): Prisma.SessionDelegate<ExtArgs, ClientOptions>;
 
   /**
-   * `prisma.refreshToken`: Exposes CRUD operations for the **RefreshToken** model.
+   * `prisma.revokedAccessToken`: Exposes CRUD operations for the **RevokedAccessToken** model.
     * Example usage:
     * ```ts
-    * // Fetch zero or more RefreshTokens
-    * const refreshTokens = await prisma.refreshToken.findMany()
+    * // Fetch zero or more RevokedAccessTokens
+    * const revokedAccessTokens = await prisma.revokedAccessToken.findMany()
     * ```
     */
-  get refreshToken(): Prisma.RefreshTokenDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.hostApplication`: Exposes CRUD operations for the **HostApplication** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more HostApplications
-    * const hostApplications = await prisma.hostApplication.findMany()
-    * ```
-    */
-  get hostApplication(): Prisma.HostApplicationDelegate<ExtArgs, ClientOptions>;
-
-  /**
-   * `prisma.passwordResetUse`: Exposes CRUD operations for the **PasswordResetUse** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more PasswordResetUses
-    * const passwordResetUses = await prisma.passwordResetUse.findMany()
-    * ```
-    */
-  get passwordResetUse(): Prisma.PasswordResetUseDelegate<ExtArgs, ClientOptions>;
+  get revokedAccessToken(): Prisma.RevokedAccessTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.venue`: Exposes CRUD operations for the **Venue** model.
@@ -973,9 +918,7 @@ export namespace Prisma {
   export const ModelName: {
     User: 'User',
     Session: 'Session',
-    RefreshToken: 'RefreshToken',
-    HostApplication: 'HostApplication',
-    PasswordResetUse: 'PasswordResetUse',
+    RevokedAccessToken: 'RevokedAccessToken',
     Venue: 'Venue',
     ExchangeRate: 'ExchangeRate',
     Space: 'Space',
@@ -1007,7 +950,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "session" | "refreshToken" | "hostApplication" | "passwordResetUse" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "availability" | "blockedDate" | "booking" | "review" | "payout"
+      modelProps: "user" | "session" | "revokedAccessToken" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "availability" | "blockedDate" | "booking" | "review" | "payout"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1159,225 +1102,77 @@ export namespace Prisma {
           }
         }
       }
-      RefreshToken: {
-        payload: Prisma.$RefreshTokenPayload<ExtArgs>
-        fields: Prisma.RefreshTokenFieldRefs
+      RevokedAccessToken: {
+        payload: Prisma.$RevokedAccessTokenPayload<ExtArgs>
+        fields: Prisma.RevokedAccessTokenFieldRefs
         operations: {
           findUnique: {
-            args: Prisma.RefreshTokenFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload> | null
+            args: Prisma.RevokedAccessTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload> | null
           }
           findUniqueOrThrow: {
-            args: Prisma.RefreshTokenFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           findFirst: {
-            args: Prisma.RefreshTokenFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload> | null
+            args: Prisma.RevokedAccessTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload> | null
           }
           findFirstOrThrow: {
-            args: Prisma.RefreshTokenFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           findMany: {
-            args: Prisma.RefreshTokenFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>[]
+            args: Prisma.RevokedAccessTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
           }
           create: {
-            args: Prisma.RefreshTokenCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           createMany: {
-            args: Prisma.RefreshTokenCreateManyArgs<ExtArgs>
+            args: Prisma.RevokedAccessTokenCreateManyArgs<ExtArgs>
             result: BatchPayload
           }
           createManyAndReturn: {
-            args: Prisma.RefreshTokenCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>[]
+            args: Prisma.RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
           }
           delete: {
-            args: Prisma.RefreshTokenDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           update: {
-            args: Prisma.RefreshTokenUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           deleteMany: {
-            args: Prisma.RefreshTokenDeleteManyArgs<ExtArgs>
+            args: Prisma.RevokedAccessTokenDeleteManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateMany: {
-            args: Prisma.RefreshTokenUpdateManyArgs<ExtArgs>
+            args: Prisma.RevokedAccessTokenUpdateManyArgs<ExtArgs>
             result: BatchPayload
           }
           updateManyAndReturn: {
-            args: Prisma.RefreshTokenUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>[]
+            args: Prisma.RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
           }
           upsert: {
-            args: Prisma.RefreshTokenUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$RefreshTokenPayload>
+            args: Prisma.RevokedAccessTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
           }
           aggregate: {
-            args: Prisma.RefreshTokenAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateRefreshToken>
+            args: Prisma.RevokedAccessTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRevokedAccessToken>
           }
           groupBy: {
-            args: Prisma.RefreshTokenGroupByArgs<ExtArgs>
-            result: $Utils.Optional<RefreshTokenGroupByOutputType>[]
+            args: Prisma.RevokedAccessTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RevokedAccessTokenGroupByOutputType>[]
           }
           count: {
-            args: Prisma.RefreshTokenCountArgs<ExtArgs>
-            result: $Utils.Optional<RefreshTokenCountAggregateOutputType> | number
-          }
-        }
-      }
-      HostApplication: {
-        payload: Prisma.$HostApplicationPayload<ExtArgs>
-        fields: Prisma.HostApplicationFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.HostApplicationFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.HostApplicationFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          findFirst: {
-            args: Prisma.HostApplicationFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.HostApplicationFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          findMany: {
-            args: Prisma.HostApplicationFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>[]
-          }
-          create: {
-            args: Prisma.HostApplicationCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          createMany: {
-            args: Prisma.HostApplicationCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.HostApplicationCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>[]
-          }
-          delete: {
-            args: Prisma.HostApplicationDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          update: {
-            args: Prisma.HostApplicationUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          deleteMany: {
-            args: Prisma.HostApplicationDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.HostApplicationUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.HostApplicationUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>[]
-          }
-          upsert: {
-            args: Prisma.HostApplicationUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$HostApplicationPayload>
-          }
-          aggregate: {
-            args: Prisma.HostApplicationAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateHostApplication>
-          }
-          groupBy: {
-            args: Prisma.HostApplicationGroupByArgs<ExtArgs>
-            result: $Utils.Optional<HostApplicationGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.HostApplicationCountArgs<ExtArgs>
-            result: $Utils.Optional<HostApplicationCountAggregateOutputType> | number
-          }
-        }
-      }
-      PasswordResetUse: {
-        payload: Prisma.$PasswordResetUsePayload<ExtArgs>
-        fields: Prisma.PasswordResetUseFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.PasswordResetUseFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.PasswordResetUseFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          findFirst: {
-            args: Prisma.PasswordResetUseFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.PasswordResetUseFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          findMany: {
-            args: Prisma.PasswordResetUseFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>[]
-          }
-          create: {
-            args: Prisma.PasswordResetUseCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          createMany: {
-            args: Prisma.PasswordResetUseCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.PasswordResetUseCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>[]
-          }
-          delete: {
-            args: Prisma.PasswordResetUseDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          update: {
-            args: Prisma.PasswordResetUseUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          deleteMany: {
-            args: Prisma.PasswordResetUseDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.PasswordResetUseUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateManyAndReturn: {
-            args: Prisma.PasswordResetUseUpdateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>[]
-          }
-          upsert: {
-            args: Prisma.PasswordResetUseUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$PasswordResetUsePayload>
-          }
-          aggregate: {
-            args: Prisma.PasswordResetUseAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregatePasswordResetUse>
-          }
-          groupBy: {
-            args: Prisma.PasswordResetUseGroupByArgs<ExtArgs>
-            result: $Utils.Optional<PasswordResetUseGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.PasswordResetUseCountArgs<ExtArgs>
-            result: $Utils.Optional<PasswordResetUseCountAggregateOutputType> | number
+            args: Prisma.RevokedAccessTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<RevokedAccessTokenCountAggregateOutputType> | number
           }
         }
       }
@@ -2441,9 +2236,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     user?: UserOmit
     session?: SessionOmit
-    refreshToken?: RefreshTokenOmit
-    hostApplication?: HostApplicationOmit
-    passwordResetUse?: PasswordResetUseOmit
+    revokedAccessToken?: RevokedAccessTokenOmit
     venue?: VenueOmit
     exchangeRate?: ExchangeRateOmit
     space?: SpaceOmit
@@ -2538,9 +2331,6 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     sessions: number
-    refreshTokens: number
-    hostApplications: number
-    passwordResetUses: number
     venues: number
     spaces: number
     bookingsAsGuest: number
@@ -2551,9 +2341,6 @@ export namespace Prisma {
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs
-    refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
-    hostApplications?: boolean | UserCountOutputTypeCountHostApplicationsArgs
-    passwordResetUses?: boolean | UserCountOutputTypeCountPasswordResetUsesArgs
     venues?: boolean | UserCountOutputTypeCountVenuesArgs
     spaces?: boolean | UserCountOutputTypeCountSpacesArgs
     bookingsAsGuest?: boolean | UserCountOutputTypeCountBookingsAsGuestArgs
@@ -2578,27 +2365,6 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountSessionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SessionWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountRefreshTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: RefreshTokenWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountHostApplicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: HostApplicationWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountPasswordResetUsesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: PasswordResetUseWhereInput
   }
 
   /**
@@ -2871,10 +2637,8 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    deletedAt: Date | null
     hostVerified: boolean | null
     hostingSince: Date | null
-    hostApplicationPending: boolean | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -2890,10 +2654,8 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date | null
     updatedAt: Date | null
-    deletedAt: Date | null
     hostVerified: boolean | null
     hostingSince: Date | null
-    hostApplicationPending: boolean | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -2909,10 +2671,8 @@ export namespace Prisma {
     bio: number
     createdAt: number
     updatedAt: number
-    deletedAt: number
     hostVerified: number
     hostingSince: number
-    hostApplicationPending: number
     _all: number
   }
 
@@ -2930,10 +2690,8 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
-    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
-    hostApplicationPending?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -2949,10 +2707,8 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
-    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
-    hostApplicationPending?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -2968,10 +2724,8 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
-    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
-    hostApplicationPending?: true
     _all?: true
   }
 
@@ -3060,10 +2814,8 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date
     updatedAt: Date
-    deletedAt: Date | null
     hostVerified: boolean
     hostingSince: Date | null
-    hostApplicationPending: boolean
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -3096,14 +2848,9 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
-    hostApplicationPending?: boolean
     sessions?: boolean | User$sessionsArgs<ExtArgs>
-    refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
-    hostApplications?: boolean | User$hostApplicationsArgs<ExtArgs>
-    passwordResetUses?: boolean | User$passwordResetUsesArgs<ExtArgs>
     venues?: boolean | User$venuesArgs<ExtArgs>
     spaces?: boolean | User$spacesArgs<ExtArgs>
     bookingsAsGuest?: boolean | User$bookingsAsGuestArgs<ExtArgs>
@@ -3126,10 +2873,8 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
-    hostApplicationPending?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -3145,10 +2890,8 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
-    hostApplicationPending?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -3164,18 +2907,13 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
-    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
-    hostApplicationPending?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostingSince" | "hostApplicationPending", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "createdAt" | "updatedAt" | "hostVerified" | "hostingSince", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
-    refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
-    hostApplications?: boolean | User$hostApplicationsArgs<ExtArgs>
-    passwordResetUses?: boolean | User$passwordResetUsesArgs<ExtArgs>
     venues?: boolean | User$venuesArgs<ExtArgs>
     spaces?: boolean | User$spacesArgs<ExtArgs>
     bookingsAsGuest?: boolean | User$bookingsAsGuestArgs<ExtArgs>
@@ -3191,9 +2929,6 @@ export namespace Prisma {
     name: "User"
     objects: {
       sessions: Prisma.$SessionPayload<ExtArgs>[]
-      refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
-      hostApplications: Prisma.$HostApplicationPayload<ExtArgs>[]
-      passwordResetUses: Prisma.$PasswordResetUsePayload<ExtArgs>[]
       venues: Prisma.$VenuePayload<ExtArgs>[]
       spaces: Prisma.$SpacePayload<ExtArgs>[]
       bookingsAsGuest: Prisma.$BookingPayload<ExtArgs>[]
@@ -3214,10 +2949,8 @@ export namespace Prisma {
       bio: string | null
       createdAt: Date
       updatedAt: Date
-      deletedAt: Date | null
       hostVerified: boolean
       hostingSince: Date | null
-      hostApplicationPending: boolean
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -3613,9 +3346,6 @@ export namespace Prisma {
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     sessions<T extends User$sessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    refreshTokens<T extends User$refreshTokensArgs<ExtArgs> = {}>(args?: Subset<T, User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    hostApplications<T extends User$hostApplicationsArgs<ExtArgs> = {}>(args?: Subset<T, User$hostApplicationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    passwordResetUses<T extends User$passwordResetUsesArgs<ExtArgs> = {}>(args?: Subset<T, User$passwordResetUsesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     venues<T extends User$venuesArgs<ExtArgs> = {}>(args?: Subset<T, User$venuesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VenuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     spaces<T extends User$spacesArgs<ExtArgs> = {}>(args?: Subset<T, User$spacesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpacePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     bookingsAsGuest<T extends User$bookingsAsGuestArgs<ExtArgs> = {}>(args?: Subset<T, User$bookingsAsGuestArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BookingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3663,10 +3393,8 @@ export namespace Prisma {
     readonly bio: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
-    readonly deletedAt: FieldRef<"User", 'DateTime'>
     readonly hostVerified: FieldRef<"User", 'Boolean'>
     readonly hostingSince: FieldRef<"User", 'DateTime'>
-    readonly hostApplicationPending: FieldRef<"User", 'Boolean'>
   }
     
 
@@ -4076,78 +3804,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: SessionScalarFieldEnum | SessionScalarFieldEnum[]
-  }
-
-  /**
-   * User.refreshTokens
-   */
-  export type User$refreshTokensArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    where?: RefreshTokenWhereInput
-    orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[]
-    cursor?: RefreshTokenWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: RefreshTokenScalarFieldEnum | RefreshTokenScalarFieldEnum[]
-  }
-
-  /**
-   * User.hostApplications
-   */
-  export type User$hostApplicationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    where?: HostApplicationWhereInput
-    orderBy?: HostApplicationOrderByWithRelationInput | HostApplicationOrderByWithRelationInput[]
-    cursor?: HostApplicationWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: HostApplicationScalarFieldEnum | HostApplicationScalarFieldEnum[]
-  }
-
-  /**
-   * User.passwordResetUses
-   */
-  export type User$passwordResetUsesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    where?: PasswordResetUseWhereInput
-    orderBy?: PasswordResetUseOrderByWithRelationInput | PasswordResetUseOrderByWithRelationInput[]
-    cursor?: PasswordResetUseWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: PasswordResetUseScalarFieldEnum | PasswordResetUseScalarFieldEnum[]
   }
 
   /**
@@ -5372,387 +5028,337 @@ export namespace Prisma {
 
 
   /**
-   * Model RefreshToken
+   * Model RevokedAccessToken
    */
 
-  export type AggregateRefreshToken = {
-    _count: RefreshTokenCountAggregateOutputType | null
-    _min: RefreshTokenMinAggregateOutputType | null
-    _max: RefreshTokenMaxAggregateOutputType | null
+  export type AggregateRevokedAccessToken = {
+    _count: RevokedAccessTokenCountAggregateOutputType | null
+    _min: RevokedAccessTokenMinAggregateOutputType | null
+    _max: RevokedAccessTokenMaxAggregateOutputType | null
   }
 
-  export type RefreshTokenMinAggregateOutputType = {
-    id: string | null
+  export type RevokedAccessTokenMinAggregateOutputType = {
     jti: string | null
     userId: string | null
     expiresAt: Date | null
-    createdAt: Date | null
-    usedAt: Date | null
-    replacedBy: string | null
-    revoked: boolean | null
+    revokedAt: Date | null
+    reason: string | null
   }
 
-  export type RefreshTokenMaxAggregateOutputType = {
-    id: string | null
+  export type RevokedAccessTokenMaxAggregateOutputType = {
     jti: string | null
     userId: string | null
     expiresAt: Date | null
-    createdAt: Date | null
-    usedAt: Date | null
-    replacedBy: string | null
-    revoked: boolean | null
+    revokedAt: Date | null
+    reason: string | null
   }
 
-  export type RefreshTokenCountAggregateOutputType = {
-    id: number
+  export type RevokedAccessTokenCountAggregateOutputType = {
     jti: number
     userId: number
     expiresAt: number
-    createdAt: number
-    usedAt: number
-    replacedBy: number
-    revoked: number
+    revokedAt: number
+    reason: number
     _all: number
   }
 
 
-  export type RefreshTokenMinAggregateInputType = {
-    id?: true
+  export type RevokedAccessTokenMinAggregateInputType = {
     jti?: true
     userId?: true
     expiresAt?: true
-    createdAt?: true
-    usedAt?: true
-    replacedBy?: true
-    revoked?: true
+    revokedAt?: true
+    reason?: true
   }
 
-  export type RefreshTokenMaxAggregateInputType = {
-    id?: true
+  export type RevokedAccessTokenMaxAggregateInputType = {
     jti?: true
     userId?: true
     expiresAt?: true
-    createdAt?: true
-    usedAt?: true
-    replacedBy?: true
-    revoked?: true
+    revokedAt?: true
+    reason?: true
   }
 
-  export type RefreshTokenCountAggregateInputType = {
-    id?: true
+  export type RevokedAccessTokenCountAggregateInputType = {
     jti?: true
     userId?: true
     expiresAt?: true
-    createdAt?: true
-    usedAt?: true
-    replacedBy?: true
-    revoked?: true
+    revokedAt?: true
+    reason?: true
     _all?: true
   }
 
-  export type RefreshTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Filter which RefreshToken to aggregate.
+     * Filter which RevokedAccessToken to aggregate.
      */
-    where?: RefreshTokenWhereInput
+    where?: RevokedAccessTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of RefreshTokens to fetch.
+     * Determine the order of RevokedAccessTokens to fetch.
      */
-    orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[]
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
      * Sets the start position
      */
-    cursor?: RefreshTokenWhereUniqueInput
+    cursor?: RevokedAccessTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` RefreshTokens from the position of the cursor.
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` RefreshTokens.
+     * Skip the first `n` RevokedAccessTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
-     * Count returned RefreshTokens
+     * Count returned RevokedAccessTokens
     **/
-    _count?: true | RefreshTokenCountAggregateInputType
+    _count?: true | RevokedAccessTokenCountAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the minimum value
     **/
-    _min?: RefreshTokenMinAggregateInputType
+    _min?: RevokedAccessTokenMinAggregateInputType
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
      * Select which fields to find the maximum value
     **/
-    _max?: RefreshTokenMaxAggregateInputType
+    _max?: RevokedAccessTokenMaxAggregateInputType
   }
 
-  export type GetRefreshTokenAggregateType<T extends RefreshTokenAggregateArgs> = {
-        [P in keyof T & keyof AggregateRefreshToken]: P extends '_count' | 'count'
+  export type GetRevokedAccessTokenAggregateType<T extends RevokedAccessTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregateRevokedAccessToken]: P extends '_count' | 'count'
       ? T[P] extends true
         ? number
-        : GetScalarType<T[P], AggregateRefreshToken[P]>
-      : GetScalarType<T[P], AggregateRefreshToken[P]>
+        : GetScalarType<T[P], AggregateRevokedAccessToken[P]>
+      : GetScalarType<T[P], AggregateRevokedAccessToken[P]>
   }
 
 
 
 
-  export type RefreshTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: RefreshTokenWhereInput
-    orderBy?: RefreshTokenOrderByWithAggregationInput | RefreshTokenOrderByWithAggregationInput[]
-    by: RefreshTokenScalarFieldEnum[] | RefreshTokenScalarFieldEnum
-    having?: RefreshTokenScalarWhereWithAggregatesInput
+  export type RevokedAccessTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RevokedAccessTokenWhereInput
+    orderBy?: RevokedAccessTokenOrderByWithAggregationInput | RevokedAccessTokenOrderByWithAggregationInput[]
+    by: RevokedAccessTokenScalarFieldEnum[] | RevokedAccessTokenScalarFieldEnum
+    having?: RevokedAccessTokenScalarWhereWithAggregatesInput
     take?: number
     skip?: number
-    _count?: RefreshTokenCountAggregateInputType | true
-    _min?: RefreshTokenMinAggregateInputType
-    _max?: RefreshTokenMaxAggregateInputType
+    _count?: RevokedAccessTokenCountAggregateInputType | true
+    _min?: RevokedAccessTokenMinAggregateInputType
+    _max?: RevokedAccessTokenMaxAggregateInputType
   }
 
-  export type RefreshTokenGroupByOutputType = {
-    id: string
+  export type RevokedAccessTokenGroupByOutputType = {
     jti: string
     userId: string
     expiresAt: Date
-    createdAt: Date
-    usedAt: Date | null
-    replacedBy: string | null
-    revoked: boolean
-    _count: RefreshTokenCountAggregateOutputType | null
-    _min: RefreshTokenMinAggregateOutputType | null
-    _max: RefreshTokenMaxAggregateOutputType | null
+    revokedAt: Date
+    reason: string | null
+    _count: RevokedAccessTokenCountAggregateOutputType | null
+    _min: RevokedAccessTokenMinAggregateOutputType | null
+    _max: RevokedAccessTokenMaxAggregateOutputType | null
   }
 
-  type GetRefreshTokenGroupByPayload<T extends RefreshTokenGroupByArgs> = Prisma.PrismaPromise<
+  type GetRevokedAccessTokenGroupByPayload<T extends RevokedAccessTokenGroupByArgs> = Prisma.PrismaPromise<
     Array<
-      PickEnumerable<RefreshTokenGroupByOutputType, T['by']> &
+      PickEnumerable<RevokedAccessTokenGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof RefreshTokenGroupByOutputType))]: P extends '_count'
+          [P in ((keyof T) & (keyof RevokedAccessTokenGroupByOutputType))]: P extends '_count'
             ? T[P] extends boolean
               ? number
-              : GetScalarType<T[P], RefreshTokenGroupByOutputType[P]>
-            : GetScalarType<T[P], RefreshTokenGroupByOutputType[P]>
+              : GetScalarType<T[P], RevokedAccessTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], RevokedAccessTokenGroupByOutputType[P]>
         }
       >
     >
 
 
-  export type RefreshTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
+  export type RevokedAccessTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     jti?: boolean
     userId?: boolean
     expiresAt?: boolean
-    createdAt?: boolean
-    usedAt?: boolean
-    replacedBy?: boolean
-    revoked?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["refreshToken"]>
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
 
-  export type RefreshTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
+  export type RevokedAccessTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     jti?: boolean
     userId?: boolean
     expiresAt?: boolean
-    createdAt?: boolean
-    usedAt?: boolean
-    replacedBy?: boolean
-    revoked?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["refreshToken"]>
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
 
-  export type RefreshTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
+  export type RevokedAccessTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     jti?: boolean
     userId?: boolean
     expiresAt?: boolean
-    createdAt?: boolean
-    usedAt?: boolean
-    replacedBy?: boolean
-    revoked?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["refreshToken"]>
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
 
-  export type RefreshTokenSelectScalar = {
-    id?: boolean
+  export type RevokedAccessTokenSelectScalar = {
     jti?: boolean
     userId?: boolean
     expiresAt?: boolean
-    createdAt?: boolean
-    usedAt?: boolean
-    replacedBy?: boolean
-    revoked?: boolean
+    revokedAt?: boolean
+    reason?: boolean
   }
 
-  export type RefreshTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "jti" | "userId" | "expiresAt" | "createdAt" | "usedAt" | "replacedBy" | "revoked", ExtArgs["result"]["refreshToken"]>
-  export type RefreshTokenInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type RefreshTokenIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type RefreshTokenIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
+  export type RevokedAccessTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"jti" | "userId" | "expiresAt" | "revokedAt" | "reason", ExtArgs["result"]["revokedAccessToken"]>
 
-  export type $RefreshTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "RefreshToken"
-    objects: {
-      user: Prisma.$UserPayload<ExtArgs>
-    }
+  export type $RevokedAccessTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RevokedAccessToken"
+    objects: {}
     scalars: $Extensions.GetPayloadResult<{
-      id: string
       jti: string
       userId: string
       expiresAt: Date
-      createdAt: Date
-      usedAt: Date | null
-      replacedBy: string | null
-      revoked: boolean
-    }, ExtArgs["result"]["refreshToken"]>
+      revokedAt: Date
+      reason: string | null
+    }, ExtArgs["result"]["revokedAccessToken"]>
     composites: {}
   }
 
-  type RefreshTokenGetPayload<S extends boolean | null | undefined | RefreshTokenDefaultArgs> = $Result.GetResult<Prisma.$RefreshTokenPayload, S>
+  type RevokedAccessTokenGetPayload<S extends boolean | null | undefined | RevokedAccessTokenDefaultArgs> = $Result.GetResult<Prisma.$RevokedAccessTokenPayload, S>
 
-  type RefreshTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<RefreshTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: RefreshTokenCountAggregateInputType | true
+  type RevokedAccessTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RevokedAccessTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RevokedAccessTokenCountAggregateInputType | true
     }
 
-  export interface RefreshTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RefreshToken'], meta: { name: 'RefreshToken' } }
+  export interface RevokedAccessTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RevokedAccessToken'], meta: { name: 'RevokedAccessToken' } }
     /**
-     * Find zero or one RefreshToken that matches the filter.
-     * @param {RefreshTokenFindUniqueArgs} args - Arguments to find a RefreshToken
+     * Find zero or one RevokedAccessToken that matches the filter.
+     * @param {RevokedAccessTokenFindUniqueArgs} args - Arguments to find a RevokedAccessToken
      * @example
-     * // Get one RefreshToken
-     * const refreshToken = await prisma.refreshToken.findUnique({
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findUnique({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUnique<T extends RefreshTokenFindUniqueArgs>(args: SelectSubset<T, RefreshTokenFindUniqueArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findUnique<T extends RevokedAccessTokenFindUniqueArgs>(args: SelectSubset<T, RevokedAccessTokenFindUniqueArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find one RefreshToken that matches the filter or throw an error with `error.code='P2025'`
+     * Find one RevokedAccessToken that matches the filter or throw an error with `error.code='P2025'`
      * if no matches were found.
-     * @param {RefreshTokenFindUniqueOrThrowArgs} args - Arguments to find a RefreshToken
+     * @param {RevokedAccessTokenFindUniqueOrThrowArgs} args - Arguments to find a RevokedAccessToken
      * @example
-     * // Get one RefreshToken
-     * const refreshToken = await prisma.refreshToken.findUniqueOrThrow({
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findUniqueOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findUniqueOrThrow<T extends RefreshTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, RefreshTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findUniqueOrThrow<T extends RevokedAccessTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first RefreshToken that matches the filter.
+     * Find the first RevokedAccessToken that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenFindFirstArgs} args - Arguments to find a RefreshToken
+     * @param {RevokedAccessTokenFindFirstArgs} args - Arguments to find a RevokedAccessToken
      * @example
-     * // Get one RefreshToken
-     * const refreshToken = await prisma.refreshToken.findFirst({
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findFirst({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirst<T extends RefreshTokenFindFirstArgs>(args?: SelectSubset<T, RefreshTokenFindFirstArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    findFirst<T extends RevokedAccessTokenFindFirstArgs>(args?: SelectSubset<T, RevokedAccessTokenFindFirstArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find the first RefreshToken that matches the filter or
+     * Find the first RevokedAccessToken that matches the filter or
      * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenFindFirstOrThrowArgs} args - Arguments to find a RefreshToken
+     * @param {RevokedAccessTokenFindFirstOrThrowArgs} args - Arguments to find a RevokedAccessToken
      * @example
-     * // Get one RefreshToken
-     * const refreshToken = await prisma.refreshToken.findFirstOrThrow({
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findFirstOrThrow({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      */
-    findFirstOrThrow<T extends RefreshTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, RefreshTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    findFirstOrThrow<T extends RevokedAccessTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Find zero or more RefreshTokens that matches the filter.
+     * Find zero or more RevokedAccessTokens that matches the filter.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @param {RevokedAccessTokenFindManyArgs} args - Arguments to filter and select certain fields only.
      * @example
-     * // Get all RefreshTokens
-     * const refreshTokens = await prisma.refreshToken.findMany()
+     * // Get all RevokedAccessTokens
+     * const revokedAccessTokens = await prisma.revokedAccessToken.findMany()
      * 
-     * // Get first 10 RefreshTokens
-     * const refreshTokens = await prisma.refreshToken.findMany({ take: 10 })
+     * // Get first 10 RevokedAccessTokens
+     * const revokedAccessTokens = await prisma.revokedAccessToken.findMany({ take: 10 })
      * 
-     * // Only select the `id`
-     * const refreshTokenWithIdOnly = await prisma.refreshToken.findMany({ select: { id: true } })
+     * // Only select the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.findMany({ select: { jti: true } })
      * 
      */
-    findMany<T extends RefreshTokenFindManyArgs>(args?: SelectSubset<T, RefreshTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+    findMany<T extends RevokedAccessTokenFindManyArgs>(args?: SelectSubset<T, RevokedAccessTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
 
     /**
-     * Create a RefreshToken.
-     * @param {RefreshTokenCreateArgs} args - Arguments to create a RefreshToken.
+     * Create a RevokedAccessToken.
+     * @param {RevokedAccessTokenCreateArgs} args - Arguments to create a RevokedAccessToken.
      * @example
-     * // Create one RefreshToken
-     * const RefreshToken = await prisma.refreshToken.create({
+     * // Create one RevokedAccessToken
+     * const RevokedAccessToken = await prisma.revokedAccessToken.create({
      *   data: {
-     *     // ... data to create a RefreshToken
+     *     // ... data to create a RevokedAccessToken
      *   }
      * })
      * 
      */
-    create<T extends RefreshTokenCreateArgs>(args: SelectSubset<T, RefreshTokenCreateArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    create<T extends RevokedAccessTokenCreateArgs>(args: SelectSubset<T, RevokedAccessTokenCreateArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Create many RefreshTokens.
-     * @param {RefreshTokenCreateManyArgs} args - Arguments to create many RefreshTokens.
+     * Create many RevokedAccessTokens.
+     * @param {RevokedAccessTokenCreateManyArgs} args - Arguments to create many RevokedAccessTokens.
      * @example
-     * // Create many RefreshTokens
-     * const refreshToken = await prisma.refreshToken.createMany({
+     * // Create many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.createMany({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      *     
      */
-    createMany<T extends RefreshTokenCreateManyArgs>(args?: SelectSubset<T, RefreshTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    createMany<T extends RevokedAccessTokenCreateManyArgs>(args?: SelectSubset<T, RevokedAccessTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Create many RefreshTokens and returns the data saved in the database.
-     * @param {RefreshTokenCreateManyAndReturnArgs} args - Arguments to create many RefreshTokens.
+     * Create many RevokedAccessTokens and returns the data saved in the database.
+     * @param {RevokedAccessTokenCreateManyAndReturnArgs} args - Arguments to create many RevokedAccessTokens.
      * @example
-     * // Create many RefreshTokens
-     * const refreshToken = await prisma.refreshToken.createManyAndReturn({
+     * // Create many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.createManyAndReturn({
      *   data: [
      *     // ... provide data here
      *   ]
      * })
      * 
-     * // Create many RefreshTokens and only return the `id`
-     * const refreshTokenWithIdOnly = await prisma.refreshToken.createManyAndReturn({
-     *   select: { id: true },
+     * // Create many RevokedAccessTokens and only return the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.createManyAndReturn({
+     *   select: { jti: true },
      *   data: [
      *     // ... provide data here
      *   ]
@@ -5761,28 +5367,28 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    createManyAndReturn<T extends RefreshTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, RefreshTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+    createManyAndReturn<T extends RevokedAccessTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Delete a RefreshToken.
-     * @param {RefreshTokenDeleteArgs} args - Arguments to delete one RefreshToken.
+     * Delete a RevokedAccessToken.
+     * @param {RevokedAccessTokenDeleteArgs} args - Arguments to delete one RevokedAccessToken.
      * @example
-     * // Delete one RefreshToken
-     * const RefreshToken = await prisma.refreshToken.delete({
+     * // Delete one RevokedAccessToken
+     * const RevokedAccessToken = await prisma.revokedAccessToken.delete({
      *   where: {
-     *     // ... filter to delete one RefreshToken
+     *     // ... filter to delete one RevokedAccessToken
      *   }
      * })
      * 
      */
-    delete<T extends RefreshTokenDeleteArgs>(args: SelectSubset<T, RefreshTokenDeleteArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    delete<T extends RevokedAccessTokenDeleteArgs>(args: SelectSubset<T, RevokedAccessTokenDeleteArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Update one RefreshToken.
-     * @param {RefreshTokenUpdateArgs} args - Arguments to update one RefreshToken.
+     * Update one RevokedAccessToken.
+     * @param {RevokedAccessTokenUpdateArgs} args - Arguments to update one RevokedAccessToken.
      * @example
-     * // Update one RefreshToken
-     * const refreshToken = await prisma.refreshToken.update({
+     * // Update one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.update({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5792,30 +5398,30 @@ export namespace Prisma {
      * })
      * 
      */
-    update<T extends RefreshTokenUpdateArgs>(args: SelectSubset<T, RefreshTokenUpdateArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    update<T extends RevokedAccessTokenUpdateArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
     /**
-     * Delete zero or more RefreshTokens.
-     * @param {RefreshTokenDeleteManyArgs} args - Arguments to filter RefreshTokens to delete.
+     * Delete zero or more RevokedAccessTokens.
+     * @param {RevokedAccessTokenDeleteManyArgs} args - Arguments to filter RevokedAccessTokens to delete.
      * @example
-     * // Delete a few RefreshTokens
-     * const { count } = await prisma.refreshToken.deleteMany({
+     * // Delete a few RevokedAccessTokens
+     * const { count } = await prisma.revokedAccessToken.deleteMany({
      *   where: {
      *     // ... provide filter here
      *   }
      * })
      * 
      */
-    deleteMany<T extends RefreshTokenDeleteManyArgs>(args?: SelectSubset<T, RefreshTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    deleteMany<T extends RevokedAccessTokenDeleteManyArgs>(args?: SelectSubset<T, RevokedAccessTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more RefreshTokens.
+     * Update zero or more RevokedAccessTokens.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @param {RevokedAccessTokenUpdateManyArgs} args - Arguments to update one or more rows.
      * @example
-     * // Update many RefreshTokens
-     * const refreshToken = await prisma.refreshToken.updateMany({
+     * // Update many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.updateMany({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5825,14 +5431,14 @@ export namespace Prisma {
      * })
      * 
      */
-    updateMany<T extends RefreshTokenUpdateManyArgs>(args: SelectSubset<T, RefreshTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+    updateMany<T extends RevokedAccessTokenUpdateManyArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
 
     /**
-     * Update zero or more RefreshTokens and returns the data updated in the database.
-     * @param {RefreshTokenUpdateManyAndReturnArgs} args - Arguments to update many RefreshTokens.
+     * Update zero or more RevokedAccessTokens and returns the data updated in the database.
+     * @param {RevokedAccessTokenUpdateManyAndReturnArgs} args - Arguments to update many RevokedAccessTokens.
      * @example
-     * // Update many RefreshTokens
-     * const refreshToken = await prisma.refreshToken.updateManyAndReturn({
+     * // Update many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.updateManyAndReturn({
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5841,9 +5447,9 @@ export namespace Prisma {
      *   ]
      * })
      * 
-     * // Update zero or more RefreshTokens and only return the `id`
-     * const refreshTokenWithIdOnly = await prisma.refreshToken.updateManyAndReturn({
-     *   select: { id: true },
+     * // Update zero or more RevokedAccessTokens and only return the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.updateManyAndReturn({
+     *   select: { jti: true },
      *   where: {
      *     // ... provide filter here
      *   },
@@ -5855,56 +5461,56 @@ export namespace Prisma {
      * Read more here: https://pris.ly/d/null-undefined
      * 
      */
-    updateManyAndReturn<T extends RefreshTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, RefreshTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+    updateManyAndReturn<T extends RevokedAccessTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
 
     /**
-     * Create or update one RefreshToken.
-     * @param {RefreshTokenUpsertArgs} args - Arguments to update or create a RefreshToken.
+     * Create or update one RevokedAccessToken.
+     * @param {RevokedAccessTokenUpsertArgs} args - Arguments to update or create a RevokedAccessToken.
      * @example
-     * // Update or create a RefreshToken
-     * const refreshToken = await prisma.refreshToken.upsert({
+     * // Update or create a RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.upsert({
      *   create: {
-     *     // ... data to create a RefreshToken
+     *     // ... data to create a RevokedAccessToken
      *   },
      *   update: {
      *     // ... in case it already exists, update
      *   },
      *   where: {
-     *     // ... the filter for the RefreshToken we want to update
+     *     // ... the filter for the RevokedAccessToken we want to update
      *   }
      * })
      */
-    upsert<T extends RefreshTokenUpsertArgs>(args: SelectSubset<T, RefreshTokenUpsertArgs<ExtArgs>>): Prisma__RefreshTokenClient<$Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+    upsert<T extends RevokedAccessTokenUpsertArgs>(args: SelectSubset<T, RevokedAccessTokenUpsertArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
 
     /**
-     * Count the number of RefreshTokens.
+     * Count the number of RevokedAccessTokens.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenCountArgs} args - Arguments to filter RefreshTokens to count.
+     * @param {RevokedAccessTokenCountArgs} args - Arguments to filter RevokedAccessTokens to count.
      * @example
-     * // Count the number of RefreshTokens
-     * const count = await prisma.refreshToken.count({
+     * // Count the number of RevokedAccessTokens
+     * const count = await prisma.revokedAccessToken.count({
      *   where: {
-     *     // ... the filter for the RefreshTokens we want to count
+     *     // ... the filter for the RevokedAccessTokens we want to count
      *   }
      * })
     **/
-    count<T extends RefreshTokenCountArgs>(
-      args?: Subset<T, RefreshTokenCountArgs>,
+    count<T extends RevokedAccessTokenCountArgs>(
+      args?: Subset<T, RevokedAccessTokenCountArgs>,
     ): Prisma.PrismaPromise<
       T extends $Utils.Record<'select', any>
         ? T['select'] extends true
           ? number
-          : GetScalarType<T['select'], RefreshTokenCountAggregateOutputType>
+          : GetScalarType<T['select'], RevokedAccessTokenCountAggregateOutputType>
         : number
     >
 
     /**
-     * Allows you to perform aggregations operations on a RefreshToken.
+     * Allows you to perform aggregations operations on a RevokedAccessToken.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @param {RevokedAccessTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
      * @example
      * // Ordered by age ascending
      * // Where email contains prisma.io
@@ -5924,13 +5530,13 @@ export namespace Prisma {
      *   take: 10,
      * })
     **/
-    aggregate<T extends RefreshTokenAggregateArgs>(args: Subset<T, RefreshTokenAggregateArgs>): Prisma.PrismaPromise<GetRefreshTokenAggregateType<T>>
+    aggregate<T extends RevokedAccessTokenAggregateArgs>(args: Subset<T, RevokedAccessTokenAggregateArgs>): Prisma.PrismaPromise<GetRevokedAccessTokenAggregateType<T>>
 
     /**
-     * Group by RefreshToken.
+     * Group by RevokedAccessToken.
      * Note, that providing `undefined` is treated as the value not being there.
      * Read more here: https://pris.ly/d/null-undefined
-     * @param {RefreshTokenGroupByArgs} args - Group by arguments.
+     * @param {RevokedAccessTokenGroupByArgs} args - Group by arguments.
      * @example
      * // Group by city, order by createdAt, get count
      * const result = await prisma.user.groupBy({
@@ -5945,14 +5551,14 @@ export namespace Prisma {
      * 
     **/
     groupBy<
-      T extends RefreshTokenGroupByArgs,
+      T extends RevokedAccessTokenGroupByArgs,
       HasSelectOrTake extends Or<
         Extends<'skip', Keys<T>>,
         Extends<'take', Keys<T>>
       >,
       OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: RefreshTokenGroupByArgs['orderBy'] }
-        : { orderBy?: RefreshTokenGroupByArgs['orderBy'] },
+        ? { orderBy: RevokedAccessTokenGroupByArgs['orderBy'] }
+        : { orderBy?: RevokedAccessTokenGroupByArgs['orderBy'] },
       OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
       ByFields extends MaybeTupleToUnion<T['by']>,
       ByValid extends Has<ByFields, OrderFields>,
@@ -6001,22 +5607,21 @@ export namespace Prisma {
             ? never
             : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
         }[OrderFields]
-    >(args: SubsetIntersection<T, RefreshTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRefreshTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+    >(args: SubsetIntersection<T, RevokedAccessTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRevokedAccessTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
   /**
-   * Fields of the RefreshToken model
+   * Fields of the RevokedAccessToken model
    */
-  readonly fields: RefreshTokenFieldRefs;
+  readonly fields: RevokedAccessTokenFieldRefs;
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for RefreshToken.
+   * The delegate class that acts as a "Promise-like" for RevokedAccessToken.
    * Why is this prefixed with `Prisma__`?
    * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
-  export interface Prisma__RefreshTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+  export interface Prisma__RevokedAccessTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6043,2579 +5648,377 @@ export namespace Prisma {
 
 
   /**
-   * Fields of the RefreshToken model
+   * Fields of the RevokedAccessToken model
    */
-  interface RefreshTokenFieldRefs {
-    readonly id: FieldRef<"RefreshToken", 'String'>
-    readonly jti: FieldRef<"RefreshToken", 'String'>
-    readonly userId: FieldRef<"RefreshToken", 'String'>
-    readonly expiresAt: FieldRef<"RefreshToken", 'DateTime'>
-    readonly createdAt: FieldRef<"RefreshToken", 'DateTime'>
-    readonly usedAt: FieldRef<"RefreshToken", 'DateTime'>
-    readonly replacedBy: FieldRef<"RefreshToken", 'String'>
-    readonly revoked: FieldRef<"RefreshToken", 'Boolean'>
+  interface RevokedAccessTokenFieldRefs {
+    readonly jti: FieldRef<"RevokedAccessToken", 'String'>
+    readonly userId: FieldRef<"RevokedAccessToken", 'String'>
+    readonly expiresAt: FieldRef<"RevokedAccessToken", 'DateTime'>
+    readonly revokedAt: FieldRef<"RevokedAccessToken", 'DateTime'>
+    readonly reason: FieldRef<"RevokedAccessToken", 'String'>
   }
     
 
   // Custom InputTypes
   /**
-   * RefreshToken findUnique
+   * RevokedAccessToken findUnique
    */
-  export type RefreshTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * Filter, which RevokedAccessToken to fetch.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter, which RefreshToken to fetch.
-     */
-    where: RefreshTokenWhereUniqueInput
+    where: RevokedAccessTokenWhereUniqueInput
   }
 
   /**
-   * RefreshToken findUniqueOrThrow
+   * RevokedAccessToken findUniqueOrThrow
    */
-  export type RefreshTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * Filter, which RevokedAccessToken to fetch.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter, which RefreshToken to fetch.
-     */
-    where: RefreshTokenWhereUniqueInput
+    where: RevokedAccessTokenWhereUniqueInput
   }
 
   /**
-   * RefreshToken findFirst
+   * RevokedAccessToken findFirst
    */
-  export type RefreshTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * Filter, which RevokedAccessToken to fetch.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter, which RefreshToken to fetch.
-     */
-    where?: RefreshTokenWhereInput
+    where?: RevokedAccessTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of RefreshTokens to fetch.
+     * Determine the order of RevokedAccessTokens to fetch.
      */
-    orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[]
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for RefreshTokens.
+     * Sets the position for searching for RevokedAccessTokens.
      */
-    cursor?: RefreshTokenWhereUniqueInput
+    cursor?: RevokedAccessTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` RefreshTokens from the position of the cursor.
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` RefreshTokens.
+     * Skip the first `n` RevokedAccessTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of RefreshTokens.
+     * Filter by unique combinations of RevokedAccessTokens.
      */
-    distinct?: RefreshTokenScalarFieldEnum | RefreshTokenScalarFieldEnum[]
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
   }
 
   /**
-   * RefreshToken findFirstOrThrow
+   * RevokedAccessToken findFirstOrThrow
    */
-  export type RefreshTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * Filter, which RevokedAccessToken to fetch.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter, which RefreshToken to fetch.
-     */
-    where?: RefreshTokenWhereInput
+    where?: RevokedAccessTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of RefreshTokens to fetch.
+     * Determine the order of RevokedAccessTokens to fetch.
      */
-    orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[]
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for searching for RefreshTokens.
+     * Sets the position for searching for RevokedAccessTokens.
      */
-    cursor?: RefreshTokenWhereUniqueInput
+    cursor?: RevokedAccessTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` RefreshTokens from the position of the cursor.
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` RefreshTokens.
+     * Skip the first `n` RevokedAccessTokens.
      */
     skip?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
      * 
-     * Filter by unique combinations of RefreshTokens.
+     * Filter by unique combinations of RevokedAccessTokens.
      */
-    distinct?: RefreshTokenScalarFieldEnum | RefreshTokenScalarFieldEnum[]
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
   }
 
   /**
-   * RefreshToken findMany
+   * RevokedAccessToken findMany
    */
-  export type RefreshTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * Filter, which RevokedAccessTokens to fetch.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter, which RefreshTokens to fetch.
-     */
-    where?: RefreshTokenWhereInput
+    where?: RevokedAccessTokenWhereInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
      * 
-     * Determine the order of RefreshTokens to fetch.
+     * Determine the order of RevokedAccessTokens to fetch.
      */
-    orderBy?: RefreshTokenOrderByWithRelationInput | RefreshTokenOrderByWithRelationInput[]
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
      * 
-     * Sets the position for listing RefreshTokens.
+     * Sets the position for listing RevokedAccessTokens.
      */
-    cursor?: RefreshTokenWhereUniqueInput
+    cursor?: RevokedAccessTokenWhereUniqueInput
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Take `±n` RefreshTokens from the position of the cursor.
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
      */
     take?: number
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
      * 
-     * Skip the first `n` RefreshTokens.
+     * Skip the first `n` RevokedAccessTokens.
      */
     skip?: number
-    distinct?: RefreshTokenScalarFieldEnum | RefreshTokenScalarFieldEnum[]
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
   }
 
   /**
-   * RefreshToken create
+   * RevokedAccessToken create
    */
-  export type RefreshTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * The data needed to create a RevokedAccessToken.
      */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * The data needed to create a RefreshToken.
-     */
-    data: XOR<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput>
+    data: XOR<RevokedAccessTokenCreateInput, RevokedAccessTokenUncheckedCreateInput>
   }
 
   /**
-   * RefreshToken createMany
+   * RevokedAccessToken createMany
    */
-  export type RefreshTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * The data used to create many RefreshTokens.
+     * The data used to create many RevokedAccessTokens.
      */
-    data: RefreshTokenCreateManyInput | RefreshTokenCreateManyInput[]
+    data: RevokedAccessTokenCreateManyInput | RevokedAccessTokenCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * RefreshToken createManyAndReturn
+   * RevokedAccessToken createManyAndReturn
    */
-  export type RefreshTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the RefreshToken
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: RefreshTokenSelectCreateManyAndReturn<ExtArgs> | null
+    select?: RevokedAccessTokenSelectCreateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the RefreshToken
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: RefreshTokenOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * The data used to create many RefreshTokens.
+     * The data used to create many RevokedAccessTokens.
      */
-    data: RefreshTokenCreateManyInput | RefreshTokenCreateManyInput[]
-    skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenIncludeCreateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * RefreshToken update
-   */
-  export type RefreshTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * The data needed to update a RefreshToken.
-     */
-    data: XOR<RefreshTokenUpdateInput, RefreshTokenUncheckedUpdateInput>
-    /**
-     * Choose, which RefreshToken to update.
-     */
-    where: RefreshTokenWhereUniqueInput
-  }
-
-  /**
-   * RefreshToken updateMany
-   */
-  export type RefreshTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update RefreshTokens.
-     */
-    data: XOR<RefreshTokenUpdateManyMutationInput, RefreshTokenUncheckedUpdateManyInput>
-    /**
-     * Filter which RefreshTokens to update
-     */
-    where?: RefreshTokenWhereInput
-    /**
-     * Limit how many RefreshTokens to update.
-     */
-    limit?: number
-  }
-
-  /**
-   * RefreshToken updateManyAndReturn
-   */
-  export type RefreshTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelectUpdateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * The data used to update RefreshTokens.
-     */
-    data: XOR<RefreshTokenUpdateManyMutationInput, RefreshTokenUncheckedUpdateManyInput>
-    /**
-     * Filter which RefreshTokens to update
-     */
-    where?: RefreshTokenWhereInput
-    /**
-     * Limit how many RefreshTokens to update.
-     */
-    limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenIncludeUpdateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * RefreshToken upsert
-   */
-  export type RefreshTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * The filter to search for the RefreshToken to update in case it exists.
-     */
-    where: RefreshTokenWhereUniqueInput
-    /**
-     * In case the RefreshToken found by the `where` argument doesn't exist, create a new RefreshToken with this data.
-     */
-    create: XOR<RefreshTokenCreateInput, RefreshTokenUncheckedCreateInput>
-    /**
-     * In case the RefreshToken was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<RefreshTokenUpdateInput, RefreshTokenUncheckedUpdateInput>
-  }
-
-  /**
-   * RefreshToken delete
-   */
-  export type RefreshTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenInclude<ExtArgs> | null
-    /**
-     * Filter which RefreshToken to delete.
-     */
-    where: RefreshTokenWhereUniqueInput
-  }
-
-  /**
-   * RefreshToken deleteMany
-   */
-  export type RefreshTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which RefreshTokens to delete
-     */
-    where?: RefreshTokenWhereInput
-    /**
-     * Limit how many RefreshTokens to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * RefreshToken without action
-   */
-  export type RefreshTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the RefreshToken
-     */
-    select?: RefreshTokenSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the RefreshToken
-     */
-    omit?: RefreshTokenOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RefreshTokenInclude<ExtArgs> | null
-  }
-
-
-  /**
-   * Model HostApplication
-   */
-
-  export type AggregateHostApplication = {
-    _count: HostApplicationCountAggregateOutputType | null
-    _min: HostApplicationMinAggregateOutputType | null
-    _max: HostApplicationMaxAggregateOutputType | null
-  }
-
-  export type HostApplicationMinAggregateOutputType = {
-    id: string | null
-    userId: string | null
-    status: $Enums.HostApplicationStatus | null
-    decisionBy: string | null
-    decisionAt: Date | null
-    decisionNotes: string | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type HostApplicationMaxAggregateOutputType = {
-    id: string | null
-    userId: string | null
-    status: $Enums.HostApplicationStatus | null
-    decisionBy: string | null
-    decisionAt: Date | null
-    decisionNotes: string | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type HostApplicationCountAggregateOutputType = {
-    id: number
-    userId: number
-    status: number
-    applicationData: number
-    decisionBy: number
-    decisionAt: number
-    decisionNotes: number
-    createdAt: number
-    updatedAt: number
-    _all: number
-  }
-
-
-  export type HostApplicationMinAggregateInputType = {
-    id?: true
-    userId?: true
-    status?: true
-    decisionBy?: true
-    decisionAt?: true
-    decisionNotes?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type HostApplicationMaxAggregateInputType = {
-    id?: true
-    userId?: true
-    status?: true
-    decisionBy?: true
-    decisionAt?: true
-    decisionNotes?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type HostApplicationCountAggregateInputType = {
-    id?: true
-    userId?: true
-    status?: true
-    applicationData?: true
-    decisionBy?: true
-    decisionAt?: true
-    decisionNotes?: true
-    createdAt?: true
-    updatedAt?: true
-    _all?: true
-  }
-
-  export type HostApplicationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which HostApplication to aggregate.
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of HostApplications to fetch.
-     */
-    orderBy?: HostApplicationOrderByWithRelationInput | HostApplicationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: HostApplicationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` HostApplications from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` HostApplications.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned HostApplications
-    **/
-    _count?: true | HostApplicationCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: HostApplicationMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: HostApplicationMaxAggregateInputType
-  }
-
-  export type GetHostApplicationAggregateType<T extends HostApplicationAggregateArgs> = {
-        [P in keyof T & keyof AggregateHostApplication]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateHostApplication[P]>
-      : GetScalarType<T[P], AggregateHostApplication[P]>
-  }
-
-
-
-
-  export type HostApplicationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: HostApplicationWhereInput
-    orderBy?: HostApplicationOrderByWithAggregationInput | HostApplicationOrderByWithAggregationInput[]
-    by: HostApplicationScalarFieldEnum[] | HostApplicationScalarFieldEnum
-    having?: HostApplicationScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: HostApplicationCountAggregateInputType | true
-    _min?: HostApplicationMinAggregateInputType
-    _max?: HostApplicationMaxAggregateInputType
-  }
-
-  export type HostApplicationGroupByOutputType = {
-    id: string
-    userId: string
-    status: $Enums.HostApplicationStatus
-    applicationData: JsonValue | null
-    decisionBy: string | null
-    decisionAt: Date | null
-    decisionNotes: string | null
-    createdAt: Date
-    updatedAt: Date
-    _count: HostApplicationCountAggregateOutputType | null
-    _min: HostApplicationMinAggregateOutputType | null
-    _max: HostApplicationMaxAggregateOutputType | null
-  }
-
-  type GetHostApplicationGroupByPayload<T extends HostApplicationGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<HostApplicationGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof HostApplicationGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], HostApplicationGroupByOutputType[P]>
-            : GetScalarType<T[P], HostApplicationGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type HostApplicationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    userId?: boolean
-    status?: boolean
-    applicationData?: boolean
-    decisionBy?: boolean
-    decisionAt?: boolean
-    decisionNotes?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["hostApplication"]>
-
-  export type HostApplicationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    userId?: boolean
-    status?: boolean
-    applicationData?: boolean
-    decisionBy?: boolean
-    decisionAt?: boolean
-    decisionNotes?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["hostApplication"]>
-
-  export type HostApplicationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    userId?: boolean
-    status?: boolean
-    applicationData?: boolean
-    decisionBy?: boolean
-    decisionAt?: boolean
-    decisionNotes?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["hostApplication"]>
-
-  export type HostApplicationSelectScalar = {
-    id?: boolean
-    userId?: boolean
-    status?: boolean
-    applicationData?: boolean
-    decisionBy?: boolean
-    decisionAt?: boolean
-    decisionNotes?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }
-
-  export type HostApplicationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "status" | "applicationData" | "decisionBy" | "decisionAt" | "decisionNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["hostApplication"]>
-  export type HostApplicationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type HostApplicationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type HostApplicationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-
-  export type $HostApplicationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "HostApplication"
-    objects: {
-      user: Prisma.$UserPayload<ExtArgs>
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      userId: string
-      status: $Enums.HostApplicationStatus
-      applicationData: Prisma.JsonValue | null
-      decisionBy: string | null
-      decisionAt: Date | null
-      decisionNotes: string | null
-      createdAt: Date
-      updatedAt: Date
-    }, ExtArgs["result"]["hostApplication"]>
-    composites: {}
-  }
-
-  type HostApplicationGetPayload<S extends boolean | null | undefined | HostApplicationDefaultArgs> = $Result.GetResult<Prisma.$HostApplicationPayload, S>
-
-  type HostApplicationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<HostApplicationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: HostApplicationCountAggregateInputType | true
-    }
-
-  export interface HostApplicationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['HostApplication'], meta: { name: 'HostApplication' } }
-    /**
-     * Find zero or one HostApplication that matches the filter.
-     * @param {HostApplicationFindUniqueArgs} args - Arguments to find a HostApplication
-     * @example
-     * // Get one HostApplication
-     * const hostApplication = await prisma.hostApplication.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends HostApplicationFindUniqueArgs>(args: SelectSubset<T, HostApplicationFindUniqueArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one HostApplication that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {HostApplicationFindUniqueOrThrowArgs} args - Arguments to find a HostApplication
-     * @example
-     * // Get one HostApplication
-     * const hostApplication = await prisma.hostApplication.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends HostApplicationFindUniqueOrThrowArgs>(args: SelectSubset<T, HostApplicationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first HostApplication that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationFindFirstArgs} args - Arguments to find a HostApplication
-     * @example
-     * // Get one HostApplication
-     * const hostApplication = await prisma.hostApplication.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends HostApplicationFindFirstArgs>(args?: SelectSubset<T, HostApplicationFindFirstArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first HostApplication that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationFindFirstOrThrowArgs} args - Arguments to find a HostApplication
-     * @example
-     * // Get one HostApplication
-     * const hostApplication = await prisma.hostApplication.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends HostApplicationFindFirstOrThrowArgs>(args?: SelectSubset<T, HostApplicationFindFirstOrThrowArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more HostApplications that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all HostApplications
-     * const hostApplications = await prisma.hostApplication.findMany()
-     * 
-     * // Get first 10 HostApplications
-     * const hostApplications = await prisma.hostApplication.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const hostApplicationWithIdOnly = await prisma.hostApplication.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends HostApplicationFindManyArgs>(args?: SelectSubset<T, HostApplicationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a HostApplication.
-     * @param {HostApplicationCreateArgs} args - Arguments to create a HostApplication.
-     * @example
-     * // Create one HostApplication
-     * const HostApplication = await prisma.hostApplication.create({
-     *   data: {
-     *     // ... data to create a HostApplication
-     *   }
-     * })
-     * 
-     */
-    create<T extends HostApplicationCreateArgs>(args: SelectSubset<T, HostApplicationCreateArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many HostApplications.
-     * @param {HostApplicationCreateManyArgs} args - Arguments to create many HostApplications.
-     * @example
-     * // Create many HostApplications
-     * const hostApplication = await prisma.hostApplication.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends HostApplicationCreateManyArgs>(args?: SelectSubset<T, HostApplicationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many HostApplications and returns the data saved in the database.
-     * @param {HostApplicationCreateManyAndReturnArgs} args - Arguments to create many HostApplications.
-     * @example
-     * // Create many HostApplications
-     * const hostApplication = await prisma.hostApplication.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many HostApplications and only return the `id`
-     * const hostApplicationWithIdOnly = await prisma.hostApplication.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends HostApplicationCreateManyAndReturnArgs>(args?: SelectSubset<T, HostApplicationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a HostApplication.
-     * @param {HostApplicationDeleteArgs} args - Arguments to delete one HostApplication.
-     * @example
-     * // Delete one HostApplication
-     * const HostApplication = await prisma.hostApplication.delete({
-     *   where: {
-     *     // ... filter to delete one HostApplication
-     *   }
-     * })
-     * 
-     */
-    delete<T extends HostApplicationDeleteArgs>(args: SelectSubset<T, HostApplicationDeleteArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one HostApplication.
-     * @param {HostApplicationUpdateArgs} args - Arguments to update one HostApplication.
-     * @example
-     * // Update one HostApplication
-     * const hostApplication = await prisma.hostApplication.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends HostApplicationUpdateArgs>(args: SelectSubset<T, HostApplicationUpdateArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more HostApplications.
-     * @param {HostApplicationDeleteManyArgs} args - Arguments to filter HostApplications to delete.
-     * @example
-     * // Delete a few HostApplications
-     * const { count } = await prisma.hostApplication.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends HostApplicationDeleteManyArgs>(args?: SelectSubset<T, HostApplicationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more HostApplications.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many HostApplications
-     * const hostApplication = await prisma.hostApplication.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends HostApplicationUpdateManyArgs>(args: SelectSubset<T, HostApplicationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more HostApplications and returns the data updated in the database.
-     * @param {HostApplicationUpdateManyAndReturnArgs} args - Arguments to update many HostApplications.
-     * @example
-     * // Update many HostApplications
-     * const hostApplication = await prisma.hostApplication.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more HostApplications and only return the `id`
-     * const hostApplicationWithIdOnly = await prisma.hostApplication.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends HostApplicationUpdateManyAndReturnArgs>(args: SelectSubset<T, HostApplicationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one HostApplication.
-     * @param {HostApplicationUpsertArgs} args - Arguments to update or create a HostApplication.
-     * @example
-     * // Update or create a HostApplication
-     * const hostApplication = await prisma.hostApplication.upsert({
-     *   create: {
-     *     // ... data to create a HostApplication
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the HostApplication we want to update
-     *   }
-     * })
-     */
-    upsert<T extends HostApplicationUpsertArgs>(args: SelectSubset<T, HostApplicationUpsertArgs<ExtArgs>>): Prisma__HostApplicationClient<$Result.GetResult<Prisma.$HostApplicationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of HostApplications.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationCountArgs} args - Arguments to filter HostApplications to count.
-     * @example
-     * // Count the number of HostApplications
-     * const count = await prisma.hostApplication.count({
-     *   where: {
-     *     // ... the filter for the HostApplications we want to count
-     *   }
-     * })
-    **/
-    count<T extends HostApplicationCountArgs>(
-      args?: Subset<T, HostApplicationCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], HostApplicationCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a HostApplication.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends HostApplicationAggregateArgs>(args: Subset<T, HostApplicationAggregateArgs>): Prisma.PrismaPromise<GetHostApplicationAggregateType<T>>
-
-    /**
-     * Group by HostApplication.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {HostApplicationGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends HostApplicationGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: HostApplicationGroupByArgs['orderBy'] }
-        : { orderBy?: HostApplicationGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, HostApplicationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetHostApplicationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the HostApplication model
-   */
-  readonly fields: HostApplicationFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for HostApplication.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__HostApplicationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the HostApplication model
-   */
-  interface HostApplicationFieldRefs {
-    readonly id: FieldRef<"HostApplication", 'String'>
-    readonly userId: FieldRef<"HostApplication", 'String'>
-    readonly status: FieldRef<"HostApplication", 'HostApplicationStatus'>
-    readonly applicationData: FieldRef<"HostApplication", 'Json'>
-    readonly decisionBy: FieldRef<"HostApplication", 'String'>
-    readonly decisionAt: FieldRef<"HostApplication", 'DateTime'>
-    readonly decisionNotes: FieldRef<"HostApplication", 'String'>
-    readonly createdAt: FieldRef<"HostApplication", 'DateTime'>
-    readonly updatedAt: FieldRef<"HostApplication", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * HostApplication findUnique
-   */
-  export type HostApplicationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter, which HostApplication to fetch.
-     */
-    where: HostApplicationWhereUniqueInput
-  }
-
-  /**
-   * HostApplication findUniqueOrThrow
-   */
-  export type HostApplicationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter, which HostApplication to fetch.
-     */
-    where: HostApplicationWhereUniqueInput
-  }
-
-  /**
-   * HostApplication findFirst
-   */
-  export type HostApplicationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter, which HostApplication to fetch.
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of HostApplications to fetch.
-     */
-    orderBy?: HostApplicationOrderByWithRelationInput | HostApplicationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for HostApplications.
-     */
-    cursor?: HostApplicationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` HostApplications from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` HostApplications.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of HostApplications.
-     */
-    distinct?: HostApplicationScalarFieldEnum | HostApplicationScalarFieldEnum[]
-  }
-
-  /**
-   * HostApplication findFirstOrThrow
-   */
-  export type HostApplicationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter, which HostApplication to fetch.
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of HostApplications to fetch.
-     */
-    orderBy?: HostApplicationOrderByWithRelationInput | HostApplicationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for HostApplications.
-     */
-    cursor?: HostApplicationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` HostApplications from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` HostApplications.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of HostApplications.
-     */
-    distinct?: HostApplicationScalarFieldEnum | HostApplicationScalarFieldEnum[]
-  }
-
-  /**
-   * HostApplication findMany
-   */
-  export type HostApplicationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter, which HostApplications to fetch.
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of HostApplications to fetch.
-     */
-    orderBy?: HostApplicationOrderByWithRelationInput | HostApplicationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing HostApplications.
-     */
-    cursor?: HostApplicationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` HostApplications from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` HostApplications.
-     */
-    skip?: number
-    distinct?: HostApplicationScalarFieldEnum | HostApplicationScalarFieldEnum[]
-  }
-
-  /**
-   * HostApplication create
-   */
-  export type HostApplicationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * The data needed to create a HostApplication.
-     */
-    data: XOR<HostApplicationCreateInput, HostApplicationUncheckedCreateInput>
-  }
-
-  /**
-   * HostApplication createMany
-   */
-  export type HostApplicationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many HostApplications.
-     */
-    data: HostApplicationCreateManyInput | HostApplicationCreateManyInput[]
+    data: RevokedAccessTokenCreateManyInput | RevokedAccessTokenCreateManyInput[]
     skipDuplicates?: boolean
   }
 
   /**
-   * HostApplication createManyAndReturn
+   * RevokedAccessToken update
    */
-  export type HostApplicationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the HostApplication
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: HostApplicationSelectCreateManyAndReturn<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the HostApplication
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: HostApplicationOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * The data used to create many HostApplications.
+     * The data needed to update a RevokedAccessToken.
      */
-    data: HostApplicationCreateManyInput | HostApplicationCreateManyInput[]
-    skipDuplicates?: boolean
+    data: XOR<RevokedAccessTokenUpdateInput, RevokedAccessTokenUncheckedUpdateInput>
     /**
-     * Choose, which related nodes to fetch as well
+     * Choose, which RevokedAccessToken to update.
      */
-    include?: HostApplicationIncludeCreateManyAndReturn<ExtArgs> | null
+    where: RevokedAccessTokenWhereUniqueInput
   }
 
   /**
-   * HostApplication update
+   * RevokedAccessToken updateMany
    */
-  export type HostApplicationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the HostApplication
+     * The data used to update RevokedAccessTokens.
      */
-    select?: HostApplicationSelect<ExtArgs> | null
+    data: XOR<RevokedAccessTokenUpdateManyMutationInput, RevokedAccessTokenUncheckedUpdateManyInput>
     /**
-     * Omit specific fields from the HostApplication
+     * Filter which RevokedAccessTokens to update
      */
-    omit?: HostApplicationOmit<ExtArgs> | null
+    where?: RevokedAccessTokenWhereInput
     /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * The data needed to update a HostApplication.
-     */
-    data: XOR<HostApplicationUpdateInput, HostApplicationUncheckedUpdateInput>
-    /**
-     * Choose, which HostApplication to update.
-     */
-    where: HostApplicationWhereUniqueInput
-  }
-
-  /**
-   * HostApplication updateMany
-   */
-  export type HostApplicationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update HostApplications.
-     */
-    data: XOR<HostApplicationUpdateManyMutationInput, HostApplicationUncheckedUpdateManyInput>
-    /**
-     * Filter which HostApplications to update
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * Limit how many HostApplications to update.
+     * Limit how many RevokedAccessTokens to update.
      */
     limit?: number
   }
 
   /**
-   * HostApplication updateManyAndReturn
+   * RevokedAccessToken updateManyAndReturn
    */
-  export type HostApplicationUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the HostApplication
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: HostApplicationSelectUpdateManyAndReturn<ExtArgs> | null
+    select?: RevokedAccessTokenSelectUpdateManyAndReturn<ExtArgs> | null
     /**
-     * Omit specific fields from the HostApplication
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: HostApplicationOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * The data used to update HostApplications.
+     * The data used to update RevokedAccessTokens.
      */
-    data: XOR<HostApplicationUpdateManyMutationInput, HostApplicationUncheckedUpdateManyInput>
+    data: XOR<RevokedAccessTokenUpdateManyMutationInput, RevokedAccessTokenUncheckedUpdateManyInput>
     /**
-     * Filter which HostApplications to update
+     * Filter which RevokedAccessTokens to update
      */
-    where?: HostApplicationWhereInput
+    where?: RevokedAccessTokenWhereInput
     /**
-     * Limit how many HostApplications to update.
-     */
-    limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationIncludeUpdateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * HostApplication upsert
-   */
-  export type HostApplicationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * The filter to search for the HostApplication to update in case it exists.
-     */
-    where: HostApplicationWhereUniqueInput
-    /**
-     * In case the HostApplication found by the `where` argument doesn't exist, create a new HostApplication with this data.
-     */
-    create: XOR<HostApplicationCreateInput, HostApplicationUncheckedCreateInput>
-    /**
-     * In case the HostApplication was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<HostApplicationUpdateInput, HostApplicationUncheckedUpdateInput>
-  }
-
-  /**
-   * HostApplication delete
-   */
-  export type HostApplicationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the HostApplication
-     */
-    select?: HostApplicationSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the HostApplication
-     */
-    omit?: HostApplicationOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: HostApplicationInclude<ExtArgs> | null
-    /**
-     * Filter which HostApplication to delete.
-     */
-    where: HostApplicationWhereUniqueInput
-  }
-
-  /**
-   * HostApplication deleteMany
-   */
-  export type HostApplicationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which HostApplications to delete
-     */
-    where?: HostApplicationWhereInput
-    /**
-     * Limit how many HostApplications to delete.
+     * Limit how many RevokedAccessTokens to update.
      */
     limit?: number
   }
 
   /**
-   * HostApplication without action
+   * RevokedAccessToken upsert
    */
-  export type HostApplicationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the HostApplication
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: HostApplicationSelect<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the HostApplication
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: HostApplicationOmit<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Choose, which related nodes to fetch as well
+     * The filter to search for the RevokedAccessToken to update in case it exists.
      */
-    include?: HostApplicationInclude<ExtArgs> | null
-  }
-
-
-  /**
-   * Model PasswordResetUse
-   */
-
-  export type AggregatePasswordResetUse = {
-    _count: PasswordResetUseCountAggregateOutputType | null
-    _min: PasswordResetUseMinAggregateOutputType | null
-    _max: PasswordResetUseMaxAggregateOutputType | null
-  }
-
-  export type PasswordResetUseMinAggregateOutputType = {
-    id: string | null
-    jti: string | null
-    userId: string | null
-    usedAt: Date | null
-  }
-
-  export type PasswordResetUseMaxAggregateOutputType = {
-    id: string | null
-    jti: string | null
-    userId: string | null
-    usedAt: Date | null
-  }
-
-  export type PasswordResetUseCountAggregateOutputType = {
-    id: number
-    jti: number
-    userId: number
-    usedAt: number
-    _all: number
-  }
-
-
-  export type PasswordResetUseMinAggregateInputType = {
-    id?: true
-    jti?: true
-    userId?: true
-    usedAt?: true
-  }
-
-  export type PasswordResetUseMaxAggregateInputType = {
-    id?: true
-    jti?: true
-    userId?: true
-    usedAt?: true
-  }
-
-  export type PasswordResetUseCountAggregateInputType = {
-    id?: true
-    jti?: true
-    userId?: true
-    usedAt?: true
-    _all?: true
-  }
-
-  export type PasswordResetUseAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where: RevokedAccessTokenWhereUniqueInput
     /**
-     * Filter which PasswordResetUse to aggregate.
+     * In case the RevokedAccessToken found by the `where` argument doesn't exist, create a new RevokedAccessToken with this data.
      */
-    where?: PasswordResetUseWhereInput
+    create: XOR<RevokedAccessTokenCreateInput, RevokedAccessTokenUncheckedCreateInput>
     /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetUses to fetch.
+     * In case the RevokedAccessToken was found with the provided `where` argument, update it with this data.
      */
-    orderBy?: PasswordResetUseOrderByWithRelationInput | PasswordResetUseOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: PasswordResetUseWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetUses from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetUses.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned PasswordResetUses
-    **/
-    _count?: true | PasswordResetUseCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: PasswordResetUseMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: PasswordResetUseMaxAggregateInputType
-  }
-
-  export type GetPasswordResetUseAggregateType<T extends PasswordResetUseAggregateArgs> = {
-        [P in keyof T & keyof AggregatePasswordResetUse]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregatePasswordResetUse[P]>
-      : GetScalarType<T[P], AggregatePasswordResetUse[P]>
-  }
-
-
-
-
-  export type PasswordResetUseGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: PasswordResetUseWhereInput
-    orderBy?: PasswordResetUseOrderByWithAggregationInput | PasswordResetUseOrderByWithAggregationInput[]
-    by: PasswordResetUseScalarFieldEnum[] | PasswordResetUseScalarFieldEnum
-    having?: PasswordResetUseScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: PasswordResetUseCountAggregateInputType | true
-    _min?: PasswordResetUseMinAggregateInputType
-    _max?: PasswordResetUseMaxAggregateInputType
-  }
-
-  export type PasswordResetUseGroupByOutputType = {
-    id: string
-    jti: string
-    userId: string
-    usedAt: Date
-    _count: PasswordResetUseCountAggregateOutputType | null
-    _min: PasswordResetUseMinAggregateOutputType | null
-    _max: PasswordResetUseMaxAggregateOutputType | null
-  }
-
-  type GetPasswordResetUseGroupByPayload<T extends PasswordResetUseGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<PasswordResetUseGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof PasswordResetUseGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], PasswordResetUseGroupByOutputType[P]>
-            : GetScalarType<T[P], PasswordResetUseGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type PasswordResetUseSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    jti?: boolean
-    userId?: boolean
-    usedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["passwordResetUse"]>
-
-  export type PasswordResetUseSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    jti?: boolean
-    userId?: boolean
-    usedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["passwordResetUse"]>
-
-  export type PasswordResetUseSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    jti?: boolean
-    userId?: boolean
-    usedAt?: boolean
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["passwordResetUse"]>
-
-  export type PasswordResetUseSelectScalar = {
-    id?: boolean
-    jti?: boolean
-    userId?: boolean
-    usedAt?: boolean
-  }
-
-  export type PasswordResetUseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "jti" | "userId" | "usedAt", ExtArgs["result"]["passwordResetUse"]>
-  export type PasswordResetUseInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type PasswordResetUseIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-  export type PasswordResetUseIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | UserDefaultArgs<ExtArgs>
-  }
-
-  export type $PasswordResetUsePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "PasswordResetUse"
-    objects: {
-      user: Prisma.$UserPayload<ExtArgs>
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      jti: string
-      userId: string
-      usedAt: Date
-    }, ExtArgs["result"]["passwordResetUse"]>
-    composites: {}
-  }
-
-  type PasswordResetUseGetPayload<S extends boolean | null | undefined | PasswordResetUseDefaultArgs> = $Result.GetResult<Prisma.$PasswordResetUsePayload, S>
-
-  type PasswordResetUseCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
-    Omit<PasswordResetUseFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
-      select?: PasswordResetUseCountAggregateInputType | true
-    }
-
-  export interface PasswordResetUseDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PasswordResetUse'], meta: { name: 'PasswordResetUse' } }
-    /**
-     * Find zero or one PasswordResetUse that matches the filter.
-     * @param {PasswordResetUseFindUniqueArgs} args - Arguments to find a PasswordResetUse
-     * @example
-     * // Get one PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends PasswordResetUseFindUniqueArgs>(args: SelectSubset<T, PasswordResetUseFindUniqueArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find one PasswordResetUse that matches the filter or throw an error with `error.code='P2025'`
-     * if no matches were found.
-     * @param {PasswordResetUseFindUniqueOrThrowArgs} args - Arguments to find a PasswordResetUse
-     * @example
-     * // Get one PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends PasswordResetUseFindUniqueOrThrowArgs>(args: SelectSubset<T, PasswordResetUseFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first PasswordResetUse that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseFindFirstArgs} args - Arguments to find a PasswordResetUse
-     * @example
-     * // Get one PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends PasswordResetUseFindFirstArgs>(args?: SelectSubset<T, PasswordResetUseFindFirstArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find the first PasswordResetUse that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseFindFirstOrThrowArgs} args - Arguments to find a PasswordResetUse
-     * @example
-     * // Get one PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends PasswordResetUseFindFirstOrThrowArgs>(args?: SelectSubset<T, PasswordResetUseFindFirstOrThrowArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Find zero or more PasswordResetUses that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all PasswordResetUses
-     * const passwordResetUses = await prisma.passwordResetUse.findMany()
-     * 
-     * // Get first 10 PasswordResetUses
-     * const passwordResetUses = await prisma.passwordResetUse.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const passwordResetUseWithIdOnly = await prisma.passwordResetUse.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends PasswordResetUseFindManyArgs>(args?: SelectSubset<T, PasswordResetUseFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
-
-    /**
-     * Create a PasswordResetUse.
-     * @param {PasswordResetUseCreateArgs} args - Arguments to create a PasswordResetUse.
-     * @example
-     * // Create one PasswordResetUse
-     * const PasswordResetUse = await prisma.passwordResetUse.create({
-     *   data: {
-     *     // ... data to create a PasswordResetUse
-     *   }
-     * })
-     * 
-     */
-    create<T extends PasswordResetUseCreateArgs>(args: SelectSubset<T, PasswordResetUseCreateArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Create many PasswordResetUses.
-     * @param {PasswordResetUseCreateManyArgs} args - Arguments to create many PasswordResetUses.
-     * @example
-     * // Create many PasswordResetUses
-     * const passwordResetUse = await prisma.passwordResetUse.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends PasswordResetUseCreateManyArgs>(args?: SelectSubset<T, PasswordResetUseCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many PasswordResetUses and returns the data saved in the database.
-     * @param {PasswordResetUseCreateManyAndReturnArgs} args - Arguments to create many PasswordResetUses.
-     * @example
-     * // Create many PasswordResetUses
-     * const passwordResetUse = await prisma.passwordResetUse.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many PasswordResetUses and only return the `id`
-     * const passwordResetUseWithIdOnly = await prisma.passwordResetUse.createManyAndReturn({
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends PasswordResetUseCreateManyAndReturnArgs>(args?: SelectSubset<T, PasswordResetUseCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Delete a PasswordResetUse.
-     * @param {PasswordResetUseDeleteArgs} args - Arguments to delete one PasswordResetUse.
-     * @example
-     * // Delete one PasswordResetUse
-     * const PasswordResetUse = await prisma.passwordResetUse.delete({
-     *   where: {
-     *     // ... filter to delete one PasswordResetUse
-     *   }
-     * })
-     * 
-     */
-    delete<T extends PasswordResetUseDeleteArgs>(args: SelectSubset<T, PasswordResetUseDeleteArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Update one PasswordResetUse.
-     * @param {PasswordResetUseUpdateArgs} args - Arguments to update one PasswordResetUse.
-     * @example
-     * // Update one PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends PasswordResetUseUpdateArgs>(args: SelectSubset<T, PasswordResetUseUpdateArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-    /**
-     * Delete zero or more PasswordResetUses.
-     * @param {PasswordResetUseDeleteManyArgs} args - Arguments to filter PasswordResetUses to delete.
-     * @example
-     * // Delete a few PasswordResetUses
-     * const { count } = await prisma.passwordResetUse.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends PasswordResetUseDeleteManyArgs>(args?: SelectSubset<T, PasswordResetUseDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more PasswordResetUses.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many PasswordResetUses
-     * const passwordResetUse = await prisma.passwordResetUse.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends PasswordResetUseUpdateManyArgs>(args: SelectSubset<T, PasswordResetUseUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more PasswordResetUses and returns the data updated in the database.
-     * @param {PasswordResetUseUpdateManyAndReturnArgs} args - Arguments to update many PasswordResetUses.
-     * @example
-     * // Update many PasswordResetUses
-     * const passwordResetUse = await prisma.passwordResetUse.updateManyAndReturn({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Update zero or more PasswordResetUses and only return the `id`
-     * const passwordResetUseWithIdOnly = await prisma.passwordResetUse.updateManyAndReturn({
-     *   select: { id: true },
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    updateManyAndReturn<T extends PasswordResetUseUpdateManyAndReturnArgs>(args: SelectSubset<T, PasswordResetUseUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
-
-    /**
-     * Create or update one PasswordResetUse.
-     * @param {PasswordResetUseUpsertArgs} args - Arguments to update or create a PasswordResetUse.
-     * @example
-     * // Update or create a PasswordResetUse
-     * const passwordResetUse = await prisma.passwordResetUse.upsert({
-     *   create: {
-     *     // ... data to create a PasswordResetUse
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the PasswordResetUse we want to update
-     *   }
-     * })
-     */
-    upsert<T extends PasswordResetUseUpsertArgs>(args: SelectSubset<T, PasswordResetUseUpsertArgs<ExtArgs>>): Prisma__PasswordResetUseClient<$Result.GetResult<Prisma.$PasswordResetUsePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
-
-
-    /**
-     * Count the number of PasswordResetUses.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseCountArgs} args - Arguments to filter PasswordResetUses to count.
-     * @example
-     * // Count the number of PasswordResetUses
-     * const count = await prisma.passwordResetUse.count({
-     *   where: {
-     *     // ... the filter for the PasswordResetUses we want to count
-     *   }
-     * })
-    **/
-    count<T extends PasswordResetUseCountArgs>(
-      args?: Subset<T, PasswordResetUseCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], PasswordResetUseCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a PasswordResetUse.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends PasswordResetUseAggregateArgs>(args: Subset<T, PasswordResetUseAggregateArgs>): Prisma.PrismaPromise<GetPasswordResetUseAggregateType<T>>
-
-    /**
-     * Group by PasswordResetUse.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {PasswordResetUseGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends PasswordResetUseGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: PasswordResetUseGroupByArgs['orderBy'] }
-        : { orderBy?: PasswordResetUseGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, PasswordResetUseGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPasswordResetUseGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the PasswordResetUse model
-   */
-  readonly fields: PasswordResetUseFieldRefs;
+    update: XOR<RevokedAccessTokenUpdateInput, RevokedAccessTokenUncheckedUpdateInput>
   }
 
   /**
-   * The delegate class that acts as a "Promise-like" for PasswordResetUse.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
+   * RevokedAccessToken delete
    */
-  export interface Prisma__PasswordResetUseClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  export type RevokedAccessTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
+     * Omit specific fields from the RevokedAccessToken
      */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
     /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
+     * Filter which RevokedAccessToken to delete.
      */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the PasswordResetUse model
-   */
-  interface PasswordResetUseFieldRefs {
-    readonly id: FieldRef<"PasswordResetUse", 'String'>
-    readonly jti: FieldRef<"PasswordResetUse", 'String'>
-    readonly userId: FieldRef<"PasswordResetUse", 'String'>
-    readonly usedAt: FieldRef<"PasswordResetUse", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * PasswordResetUse findUnique
-   */
-  export type PasswordResetUseFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetUse to fetch.
-     */
-    where: PasswordResetUseWhereUniqueInput
+    where: RevokedAccessTokenWhereUniqueInput
   }
 
   /**
-   * PasswordResetUse findUniqueOrThrow
+   * RevokedAccessToken deleteMany
    */
-  export type PasswordResetUseFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the PasswordResetUse
+     * Filter which RevokedAccessTokens to delete
      */
-    select?: PasswordResetUseSelect<ExtArgs> | null
+    where?: RevokedAccessTokenWhereInput
     /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetUse to fetch.
-     */
-    where: PasswordResetUseWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetUse findFirst
-   */
-  export type PasswordResetUseFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetUse to fetch.
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetUses to fetch.
-     */
-    orderBy?: PasswordResetUseOrderByWithRelationInput | PasswordResetUseOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for PasswordResetUses.
-     */
-    cursor?: PasswordResetUseWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetUses from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetUses.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of PasswordResetUses.
-     */
-    distinct?: PasswordResetUseScalarFieldEnum | PasswordResetUseScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetUse findFirstOrThrow
-   */
-  export type PasswordResetUseFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetUse to fetch.
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetUses to fetch.
-     */
-    orderBy?: PasswordResetUseOrderByWithRelationInput | PasswordResetUseOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for PasswordResetUses.
-     */
-    cursor?: PasswordResetUseWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetUses from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetUses.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of PasswordResetUses.
-     */
-    distinct?: PasswordResetUseScalarFieldEnum | PasswordResetUseScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetUse findMany
-   */
-  export type PasswordResetUseFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter, which PasswordResetUses to fetch.
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of PasswordResetUses to fetch.
-     */
-    orderBy?: PasswordResetUseOrderByWithRelationInput | PasswordResetUseOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing PasswordResetUses.
-     */
-    cursor?: PasswordResetUseWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` PasswordResetUses from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` PasswordResetUses.
-     */
-    skip?: number
-    distinct?: PasswordResetUseScalarFieldEnum | PasswordResetUseScalarFieldEnum[]
-  }
-
-  /**
-   * PasswordResetUse create
-   */
-  export type PasswordResetUseCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * The data needed to create a PasswordResetUse.
-     */
-    data: XOR<PasswordResetUseCreateInput, PasswordResetUseUncheckedCreateInput>
-  }
-
-  /**
-   * PasswordResetUse createMany
-   */
-  export type PasswordResetUseCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many PasswordResetUses.
-     */
-    data: PasswordResetUseCreateManyInput | PasswordResetUseCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * PasswordResetUse createManyAndReturn
-   */
-  export type PasswordResetUseCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * The data used to create many PasswordResetUses.
-     */
-    data: PasswordResetUseCreateManyInput | PasswordResetUseCreateManyInput[]
-    skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseIncludeCreateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * PasswordResetUse update
-   */
-  export type PasswordResetUseUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * The data needed to update a PasswordResetUse.
-     */
-    data: XOR<PasswordResetUseUpdateInput, PasswordResetUseUncheckedUpdateInput>
-    /**
-     * Choose, which PasswordResetUse to update.
-     */
-    where: PasswordResetUseWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetUse updateMany
-   */
-  export type PasswordResetUseUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update PasswordResetUses.
-     */
-    data: XOR<PasswordResetUseUpdateManyMutationInput, PasswordResetUseUncheckedUpdateManyInput>
-    /**
-     * Filter which PasswordResetUses to update
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * Limit how many PasswordResetUses to update.
+     * Limit how many RevokedAccessTokens to delete.
      */
     limit?: number
   }
 
   /**
-   * PasswordResetUse updateManyAndReturn
+   * RevokedAccessToken without action
    */
-  export type PasswordResetUseUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type RevokedAccessTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the PasswordResetUse
+     * Select specific fields to fetch from the RevokedAccessToken
      */
-    select?: PasswordResetUseSelectUpdateManyAndReturn<ExtArgs> | null
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the PasswordResetUse
+     * Omit specific fields from the RevokedAccessToken
      */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * The data used to update PasswordResetUses.
-     */
-    data: XOR<PasswordResetUseUpdateManyMutationInput, PasswordResetUseUncheckedUpdateManyInput>
-    /**
-     * Filter which PasswordResetUses to update
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * Limit how many PasswordResetUses to update.
-     */
-    limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseIncludeUpdateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * PasswordResetUse upsert
-   */
-  export type PasswordResetUseUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * The filter to search for the PasswordResetUse to update in case it exists.
-     */
-    where: PasswordResetUseWhereUniqueInput
-    /**
-     * In case the PasswordResetUse found by the `where` argument doesn't exist, create a new PasswordResetUse with this data.
-     */
-    create: XOR<PasswordResetUseCreateInput, PasswordResetUseUncheckedCreateInput>
-    /**
-     * In case the PasswordResetUse was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<PasswordResetUseUpdateInput, PasswordResetUseUncheckedUpdateInput>
-  }
-
-  /**
-   * PasswordResetUse delete
-   */
-  export type PasswordResetUseDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
-    /**
-     * Filter which PasswordResetUse to delete.
-     */
-    where: PasswordResetUseWhereUniqueInput
-  }
-
-  /**
-   * PasswordResetUse deleteMany
-   */
-  export type PasswordResetUseDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which PasswordResetUses to delete
-     */
-    where?: PasswordResetUseWhereInput
-    /**
-     * Limit how many PasswordResetUses to delete.
-     */
-    limit?: number
-  }
-
-  /**
-   * PasswordResetUse without action
-   */
-  export type PasswordResetUseDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the PasswordResetUse
-     */
-    select?: PasswordResetUseSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the PasswordResetUse
-     */
-    omit?: PasswordResetUseOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: PasswordResetUseInclude<ExtArgs> | null
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
   }
 
 
@@ -9964,19 +7367,19 @@ export namespace Prisma {
 
   export type ExchangeRateAvgAggregateOutputType = {
     id: number | null
-    rate: Decimal | null
+    rate: number | null
   }
 
   export type ExchangeRateSumAggregateOutputType = {
     id: number | null
-    rate: Decimal | null
+    rate: number | null
   }
 
   export type ExchangeRateMinAggregateOutputType = {
     id: number | null
     fromCurrency: $Enums.Currency | null
     toCurrency: $Enums.Currency | null
-    rate: Decimal | null
+    rate: number | null
     updatedAt: Date | null
     updatedBy: string | null
   }
@@ -9985,7 +7388,7 @@ export namespace Prisma {
     id: number | null
     fromCurrency: $Enums.Currency | null
     toCurrency: $Enums.Currency | null
-    rate: Decimal | null
+    rate: number | null
     updatedAt: Date | null
     updatedBy: string | null
   }
@@ -10129,7 +7532,7 @@ export namespace Prisma {
     id: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: Decimal
+    rate: number
     updatedAt: Date
     updatedBy: string | null
     _count: ExchangeRateCountAggregateOutputType | null
@@ -10198,7 +7601,7 @@ export namespace Prisma {
       id: number
       fromCurrency: $Enums.Currency
       toCurrency: $Enums.Currency
-      rate: Prisma.Decimal
+      rate: number
       updatedAt: Date
       updatedBy: string | null
     }, ExtArgs["result"]["exchangeRate"]>
@@ -10627,7 +8030,7 @@ export namespace Prisma {
     readonly id: FieldRef<"ExchangeRate", 'Int'>
     readonly fromCurrency: FieldRef<"ExchangeRate", 'Currency'>
     readonly toCurrency: FieldRef<"ExchangeRate", 'Currency'>
-    readonly rate: FieldRef<"ExchangeRate", 'Decimal'>
+    readonly rate: FieldRef<"ExchangeRate", 'Float'>
     readonly updatedAt: FieldRef<"ExchangeRate", 'DateTime'>
     readonly updatedBy: FieldRef<"ExchangeRate", 'String'>
   }
@@ -11016,6 +8419,8 @@ export namespace Prisma {
     capacity: number | null
     minBookingHours: number | null
     maxBookingHours: number | null
+    latitude: number | null
+    longitude: number | null
     venueId: number | null
   }
 
@@ -11027,6 +8432,8 @@ export namespace Prisma {
     capacity: number | null
     minBookingHours: number | null
     maxBookingHours: number | null
+    latitude: number | null
+    longitude: number | null
     venueId: number | null
   }
 
@@ -11045,6 +8452,13 @@ export namespace Prisma {
     minBookingHours: number | null
     maxBookingHours: number | null
     videoUrl: string | null
+    address: string | null
+    city: string | null
+    state: string | null
+    country: string | null
+    postalCode: string | null
+    latitude: number | null
+    longitude: number | null
     isActive: boolean | null
     instantBook: boolean | null
     cancellationPolicy: $Enums.CancellationPolicy | null
@@ -11071,6 +8485,13 @@ export namespace Prisma {
     minBookingHours: number | null
     maxBookingHours: number | null
     videoUrl: string | null
+    address: string | null
+    city: string | null
+    state: string | null
+    country: string | null
+    postalCode: string | null
+    latitude: number | null
+    longitude: number | null
     isActive: boolean | null
     instantBook: boolean | null
     cancellationPolicy: $Enums.CancellationPolicy | null
@@ -11101,6 +8522,13 @@ export namespace Prisma {
     maxBookingHours: number
     images: number
     videoUrl: number
+    address: number
+    city: number
+    state: number
+    country: number
+    postalCode: number
+    latitude: number
+    longitude: number
     isActive: number
     instantBook: number
     cancellationPolicy: number
@@ -11122,6 +8550,8 @@ export namespace Prisma {
     capacity?: true
     minBookingHours?: true
     maxBookingHours?: true
+    latitude?: true
+    longitude?: true
     venueId?: true
   }
 
@@ -11133,6 +8563,8 @@ export namespace Prisma {
     capacity?: true
     minBookingHours?: true
     maxBookingHours?: true
+    latitude?: true
+    longitude?: true
     venueId?: true
   }
 
@@ -11151,6 +8583,13 @@ export namespace Prisma {
     minBookingHours?: true
     maxBookingHours?: true
     videoUrl?: true
+    address?: true
+    city?: true
+    state?: true
+    country?: true
+    postalCode?: true
+    latitude?: true
+    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -11177,6 +8616,13 @@ export namespace Prisma {
     minBookingHours?: true
     maxBookingHours?: true
     videoUrl?: true
+    address?: true
+    city?: true
+    state?: true
+    country?: true
+    postalCode?: true
+    latitude?: true
+    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -11207,6 +8653,13 @@ export namespace Prisma {
     maxBookingHours?: true
     images?: true
     videoUrl?: true
+    address?: true
+    city?: true
+    state?: true
+    country?: true
+    postalCode?: true
+    latitude?: true
+    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -11324,6 +8777,13 @@ export namespace Prisma {
     maxBookingHours: number | null
     images: JsonValue
     videoUrl: string | null
+    address: string
+    city: string
+    state: string | null
+    country: string
+    postalCode: string | null
+    latitude: number | null
+    longitude: number | null
     isActive: boolean
     instantBook: boolean
     cancellationPolicy: $Enums.CancellationPolicy
@@ -11373,6 +8833,13 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
+    address?: boolean
+    city?: boolean
+    state?: boolean
+    country?: boolean
+    postalCode?: boolean
+    latitude?: boolean
+    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -11413,6 +8880,13 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
+    address?: boolean
+    city?: boolean
+    state?: boolean
+    country?: boolean
+    postalCode?: boolean
+    latitude?: boolean
+    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -11446,6 +8920,13 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
+    address?: boolean
+    city?: boolean
+    state?: boolean
+    country?: boolean
+    postalCode?: boolean
+    latitude?: boolean
+    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -11479,6 +8960,13 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
+    address?: boolean
+    city?: boolean
+    state?: boolean
+    country?: boolean
+    postalCode?: boolean
+    latitude?: boolean
+    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -11490,7 +8978,7 @@ export namespace Prisma {
     categorySlug?: boolean
   }
 
-  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
+  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
   export type SpaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     venue?: boolean | VenueDefaultArgs<ExtArgs>
@@ -11546,6 +9034,13 @@ export namespace Prisma {
       maxBookingHours: number | null
       images: Prisma.JsonValue
       videoUrl: string | null
+      address: string
+      city: string
+      state: string | null
+      country: string
+      postalCode: string | null
+      latitude: number | null
+      longitude: number | null
       isActive: boolean
       instantBook: boolean
       cancellationPolicy: $Enums.CancellationPolicy
@@ -12005,6 +9500,13 @@ export namespace Prisma {
     readonly maxBookingHours: FieldRef<"Space", 'Int'>
     readonly images: FieldRef<"Space", 'Json'>
     readonly videoUrl: FieldRef<"Space", 'String'>
+    readonly address: FieldRef<"Space", 'String'>
+    readonly city: FieldRef<"Space", 'String'>
+    readonly state: FieldRef<"Space", 'String'>
+    readonly country: FieldRef<"Space", 'String'>
+    readonly postalCode: FieldRef<"Space", 'String'>
+    readonly latitude: FieldRef<"Space", 'Float'>
+    readonly longitude: FieldRef<"Space", 'Float'>
     readonly isActive: FieldRef<"Space", 'Boolean'>
     readonly instantBook: FieldRef<"Space", 'Boolean'>
     readonly cancellationPolicy: FieldRef<"Space", 'CancellationPolicy'>
@@ -20320,7 +17822,7 @@ export namespace Prisma {
     cleaningFee: number | null
     serviceFee: number | null
     totalAmount: number | null
-    exchangeRate: Decimal | null
+    exchangeRate: number | null
   }
 
   export type BookingSumAggregateOutputType = {
@@ -20330,7 +17832,7 @@ export namespace Prisma {
     cleaningFee: number | null
     serviceFee: number | null
     totalAmount: number | null
-    exchangeRate: Decimal | null
+    exchangeRate: number | null
   }
 
   export type BookingMinAggregateOutputType = {
@@ -20349,11 +17851,11 @@ export namespace Prisma {
     serviceFee: number | null
     totalAmount: number | null
     currency: $Enums.Currency | null
-    exchangeRate: Decimal | null
+    exchangeRate: number | null
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
-    cancelledByRole: $Enums.BookingActor | null
+    cancelledBy: string | null
     cancellationReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -20378,11 +17880,11 @@ export namespace Prisma {
     serviceFee: number | null
     totalAmount: number | null
     currency: $Enums.Currency | null
-    exchangeRate: Decimal | null
+    exchangeRate: number | null
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
-    cancelledByRole: $Enums.BookingActor | null
+    cancelledBy: string | null
     cancellationReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -20411,7 +17913,7 @@ export namespace Prisma {
     status: number
     guestMessage: number
     hostMessage: number
-    cancelledByRole: number
+    cancelledBy: number
     cancellationReason: number
     createdAt: number
     updatedAt: number
@@ -20462,7 +17964,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledByRole?: true
+    cancelledBy?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -20491,7 +17993,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledByRole?: true
+    cancelledBy?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -20520,7 +18022,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledByRole?: true
+    cancelledBy?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -20632,11 +18134,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency: $Enums.Currency
-    exchangeRate: Decimal
+    exchangeRate: number
     status: $Enums.BookingStatus
     guestMessage: string | null
     hostMessage: string | null
-    cancelledByRole: $Enums.BookingActor | null
+    cancelledBy: string | null
     cancellationReason: string | null
     createdAt: Date
     updatedAt: Date
@@ -20684,7 +18186,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledByRole?: boolean
+    cancelledBy?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -20717,7 +18219,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledByRole?: boolean
+    cancelledBy?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -20749,7 +18251,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledByRole?: boolean
+    cancelledBy?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -20781,7 +18283,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledByRole?: boolean
+    cancelledBy?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -20790,7 +18292,7 @@ export namespace Prisma {
     completedAt?: boolean
   }
 
-  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
+  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "cancelledBy" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
   export type BookingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
@@ -20832,11 +18334,11 @@ export namespace Prisma {
       serviceFee: number
       totalAmount: number
       currency: $Enums.Currency
-      exchangeRate: Prisma.Decimal
+      exchangeRate: number
       status: $Enums.BookingStatus
       guestMessage: string | null
       hostMessage: string | null
-      cancelledByRole: $Enums.BookingActor | null
+      cancelledBy: string | null
       cancellationReason: string | null
       createdAt: Date
       updatedAt: Date
@@ -21285,11 +18787,11 @@ export namespace Prisma {
     readonly serviceFee: FieldRef<"Booking", 'Float'>
     readonly totalAmount: FieldRef<"Booking", 'Float'>
     readonly currency: FieldRef<"Booking", 'Currency'>
-    readonly exchangeRate: FieldRef<"Booking", 'Decimal'>
+    readonly exchangeRate: FieldRef<"Booking", 'Float'>
     readonly status: FieldRef<"Booking", 'BookingStatus'>
     readonly guestMessage: FieldRef<"Booking", 'String'>
     readonly hostMessage: FieldRef<"Booking", 'String'>
-    readonly cancelledByRole: FieldRef<"Booking", 'BookingActor'>
+    readonly cancelledBy: FieldRef<"Booking", 'String'>
     readonly cancellationReason: FieldRef<"Booking", 'String'>
     readonly createdAt: FieldRef<"Booking", 'DateTime'>
     readonly updatedAt: FieldRef<"Booking", 'DateTime'>
@@ -22940,7 +20442,6 @@ export namespace Prisma {
     amount: number | null
     platformFee: number | null
     netAmount: number | null
-    currency: $Enums.Currency | null
     status: $Enums.PayoutStatus | null
     processedAt: Date | null
     createdAt: Date | null
@@ -22953,7 +20454,6 @@ export namespace Prisma {
     amount: number | null
     platformFee: number | null
     netAmount: number | null
-    currency: $Enums.Currency | null
     status: $Enums.PayoutStatus | null
     processedAt: Date | null
     createdAt: Date | null
@@ -22966,7 +20466,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency: number
     status: number
     bookingIds: number
     processedAt: number
@@ -22994,7 +20493,6 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
-    currency?: true
     status?: true
     processedAt?: true
     createdAt?: true
@@ -23007,7 +20505,6 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
-    currency?: true
     status?: true
     processedAt?: true
     createdAt?: true
@@ -23020,7 +20517,6 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
-    currency?: true
     status?: true
     bookingIds?: true
     processedAt?: true
@@ -23121,7 +20617,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency: $Enums.Currency
     status: $Enums.PayoutStatus
     bookingIds: string[]
     processedAt: Date | null
@@ -23154,7 +20649,6 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
-    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -23169,7 +20663,6 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
-    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -23184,7 +20677,6 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
-    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -23199,7 +20691,6 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
-    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -23207,7 +20698,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "hostId" | "amount" | "platformFee" | "netAmount" | "currency" | "status" | "bookingIds" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["payout"]>
+  export type PayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "hostId" | "amount" | "platformFee" | "netAmount" | "status" | "bookingIds" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["payout"]>
   export type PayoutInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -23229,7 +20720,6 @@ export namespace Prisma {
       amount: number
       platformFee: number
       netAmount: number
-      currency: $Enums.Currency
       status: $Enums.PayoutStatus
       bookingIds: string[]
       processedAt: Date | null
@@ -23661,10 +21151,9 @@ export namespace Prisma {
   interface PayoutFieldRefs {
     readonly id: FieldRef<"Payout", 'String'>
     readonly hostId: FieldRef<"Payout", 'String'>
-    readonly amount: FieldRef<"Payout", 'Float'>
-    readonly platformFee: FieldRef<"Payout", 'Float'>
-    readonly netAmount: FieldRef<"Payout", 'Float'>
-    readonly currency: FieldRef<"Payout", 'Currency'>
+    readonly amount: FieldRef<"Payout", 'Int'>
+    readonly platformFee: FieldRef<"Payout", 'Int'>
+    readonly netAmount: FieldRef<"Payout", 'Int'>
     readonly status: FieldRef<"Payout", 'PayoutStatus'>
     readonly bookingIds: FieldRef<"Payout", 'String[]'>
     readonly processedAt: FieldRef<"Payout", 'DateTime'>
@@ -24111,10 +21600,8 @@ export namespace Prisma {
     bio: 'bio',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
-    deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
-    hostingSince: 'hostingSince',
-    hostApplicationPending: 'hostApplicationPending'
+    hostingSince: 'hostingSince'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -24131,43 +21618,15 @@ export namespace Prisma {
   export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
-  export const RefreshTokenScalarFieldEnum: {
-    id: 'id',
+  export const RevokedAccessTokenScalarFieldEnum: {
     jti: 'jti',
     userId: 'userId',
     expiresAt: 'expiresAt',
-    createdAt: 'createdAt',
-    usedAt: 'usedAt',
-    replacedBy: 'replacedBy',
-    revoked: 'revoked'
+    revokedAt: 'revokedAt',
+    reason: 'reason'
   };
 
-  export type RefreshTokenScalarFieldEnum = (typeof RefreshTokenScalarFieldEnum)[keyof typeof RefreshTokenScalarFieldEnum]
-
-
-  export const HostApplicationScalarFieldEnum: {
-    id: 'id',
-    userId: 'userId',
-    status: 'status',
-    applicationData: 'applicationData',
-    decisionBy: 'decisionBy',
-    decisionAt: 'decisionAt',
-    decisionNotes: 'decisionNotes',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
-  };
-
-  export type HostApplicationScalarFieldEnum = (typeof HostApplicationScalarFieldEnum)[keyof typeof HostApplicationScalarFieldEnum]
-
-
-  export const PasswordResetUseScalarFieldEnum: {
-    id: 'id',
-    jti: 'jti',
-    userId: 'userId',
-    usedAt: 'usedAt'
-  };
-
-  export type PasswordResetUseScalarFieldEnum = (typeof PasswordResetUseScalarFieldEnum)[keyof typeof PasswordResetUseScalarFieldEnum]
+  export type RevokedAccessTokenScalarFieldEnum = (typeof RevokedAccessTokenScalarFieldEnum)[keyof typeof RevokedAccessTokenScalarFieldEnum]
 
 
   export const VenueScalarFieldEnum: {
@@ -24229,6 +21688,13 @@ export namespace Prisma {
     maxBookingHours: 'maxBookingHours',
     images: 'images',
     videoUrl: 'videoUrl',
+    address: 'address',
+    city: 'city',
+    state: 'state',
+    country: 'country',
+    postalCode: 'postalCode',
+    latitude: 'latitude',
+    longitude: 'longitude',
     isActive: 'isActive',
     instantBook: 'instantBook',
     cancellationPolicy: 'cancellationPolicy',
@@ -24339,7 +21805,7 @@ export namespace Prisma {
     status: 'status',
     guestMessage: 'guestMessage',
     hostMessage: 'hostMessage',
-    cancelledByRole: 'cancelledByRole',
+    cancelledBy: 'cancelledBy',
     cancellationReason: 'cancellationReason',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -24373,7 +21839,6 @@ export namespace Prisma {
     amount: 'amount',
     platformFee: 'platformFee',
     netAmount: 'netAmount',
-    currency: 'currency',
     status: 'status',
     bookingIds: 'bookingIds',
     processedAt: 'processedAt',
@@ -24487,16 +21952,16 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'HostApplicationStatus'
+   * Reference to a field of type 'Int'
    */
-  export type EnumHostApplicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'HostApplicationStatus'>
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
 
 
   /**
-   * Reference to a field of type 'HostApplicationStatus[]'
+   * Reference to a field of type 'Int[]'
    */
-  export type ListEnumHostApplicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'HostApplicationStatus[]'>
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -24511,20 +21976,6 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int[]'
-   */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -24553,20 +22004,6 @@ export namespace Prisma {
    * Reference to a field of type 'Currency[]'
    */
   export type ListEnumCurrencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Currency[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal'
-   */
-  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal[]'
-   */
-  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -24627,20 +22064,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'BookingActor'
-   */
-  export type EnumBookingActorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingActor'>
-    
-
-
-  /**
-   * Reference to a field of type 'BookingActor[]'
-   */
-  export type ListEnumBookingActorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingActor[]'>
-    
-
-
-  /**
    * Reference to a field of type 'PayoutStatus'
    */
   export type EnumPayoutStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PayoutStatus'>
@@ -24673,14 +22096,9 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
-    deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
-    hostApplicationPending?: BoolFilter<"User"> | boolean
     sessions?: SessionListRelationFilter
-    refreshTokens?: RefreshTokenListRelationFilter
-    hostApplications?: HostApplicationListRelationFilter
-    passwordResetUses?: PasswordResetUseListRelationFilter
     venues?: VenueListRelationFilter
     spaces?: SpaceListRelationFilter
     bookingsAsGuest?: BookingListRelationFilter
@@ -24702,14 +22120,9 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
-    hostApplicationPending?: SortOrder
     sessions?: SessionOrderByRelationAggregateInput
-    refreshTokens?: RefreshTokenOrderByRelationAggregateInput
-    hostApplications?: HostApplicationOrderByRelationAggregateInput
-    passwordResetUses?: PasswordResetUseOrderByRelationAggregateInput
     venues?: VenueOrderByRelationAggregateInput
     spaces?: SpaceOrderByRelationAggregateInput
     bookingsAsGuest?: BookingOrderByRelationAggregateInput
@@ -24734,14 +22147,9 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
-    deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
-    hostApplicationPending?: BoolFilter<"User"> | boolean
     sessions?: SessionListRelationFilter
-    refreshTokens?: RefreshTokenListRelationFilter
-    hostApplications?: HostApplicationListRelationFilter
-    passwordResetUses?: PasswordResetUseListRelationFilter
     venues?: VenueListRelationFilter
     spaces?: SpaceListRelationFilter
     bookingsAsGuest?: BookingListRelationFilter
@@ -24763,10 +22171,8 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
-    hostApplicationPending?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -24788,10 +22194,8 @@ export namespace Prisma {
     bio?: StringNullableWithAggregatesFilter<"User"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
-    deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
     hostingSince?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
-    hostApplicationPending?: BoolWithAggregatesFilter<"User"> | boolean
   }
 
   export type SessionWhereInput = {
@@ -24849,199 +22253,56 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Session"> | Date | string
   }
 
-  export type RefreshTokenWhereInput = {
-    AND?: RefreshTokenWhereInput | RefreshTokenWhereInput[]
-    OR?: RefreshTokenWhereInput[]
-    NOT?: RefreshTokenWhereInput | RefreshTokenWhereInput[]
-    id?: StringFilter<"RefreshToken"> | string
-    jti?: StringFilter<"RefreshToken"> | string
-    userId?: StringFilter<"RefreshToken"> | string
-    expiresAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    createdAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    usedAt?: DateTimeNullableFilter<"RefreshToken"> | Date | string | null
-    replacedBy?: StringNullableFilter<"RefreshToken"> | string | null
-    revoked?: BoolFilter<"RefreshToken"> | boolean
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  export type RevokedAccessTokenWhereInput = {
+    AND?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    OR?: RevokedAccessTokenWhereInput[]
+    NOT?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    jti?: StringFilter<"RevokedAccessToken"> | string
+    userId?: StringFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableFilter<"RevokedAccessToken"> | string | null
   }
 
-  export type RefreshTokenOrderByWithRelationInput = {
-    id?: SortOrder
+  export type RevokedAccessTokenOrderByWithRelationInput = {
     jti?: SortOrder
     userId?: SortOrder
     expiresAt?: SortOrder
-    createdAt?: SortOrder
-    usedAt?: SortOrderInput | SortOrder
-    replacedBy?: SortOrderInput | SortOrder
-    revoked?: SortOrder
-    user?: UserOrderByWithRelationInput
+    revokedAt?: SortOrder
+    reason?: SortOrderInput | SortOrder
   }
 
-  export type RefreshTokenWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
+  export type RevokedAccessTokenWhereUniqueInput = Prisma.AtLeast<{
     jti?: string
-    AND?: RefreshTokenWhereInput | RefreshTokenWhereInput[]
-    OR?: RefreshTokenWhereInput[]
-    NOT?: RefreshTokenWhereInput | RefreshTokenWhereInput[]
-    userId?: StringFilter<"RefreshToken"> | string
-    expiresAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    createdAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    usedAt?: DateTimeNullableFilter<"RefreshToken"> | Date | string | null
-    replacedBy?: StringNullableFilter<"RefreshToken"> | string | null
-    revoked?: BoolFilter<"RefreshToken"> | boolean
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id" | "jti">
+    AND?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    OR?: RevokedAccessTokenWhereInput[]
+    NOT?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    userId?: StringFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableFilter<"RevokedAccessToken"> | string | null
+  }, "jti">
 
-  export type RefreshTokenOrderByWithAggregationInput = {
-    id?: SortOrder
+  export type RevokedAccessTokenOrderByWithAggregationInput = {
     jti?: SortOrder
     userId?: SortOrder
     expiresAt?: SortOrder
-    createdAt?: SortOrder
-    usedAt?: SortOrderInput | SortOrder
-    replacedBy?: SortOrderInput | SortOrder
-    revoked?: SortOrder
-    _count?: RefreshTokenCountOrderByAggregateInput
-    _max?: RefreshTokenMaxOrderByAggregateInput
-    _min?: RefreshTokenMinOrderByAggregateInput
+    revokedAt?: SortOrder
+    reason?: SortOrderInput | SortOrder
+    _count?: RevokedAccessTokenCountOrderByAggregateInput
+    _max?: RevokedAccessTokenMaxOrderByAggregateInput
+    _min?: RevokedAccessTokenMinOrderByAggregateInput
   }
 
-  export type RefreshTokenScalarWhereWithAggregatesInput = {
-    AND?: RefreshTokenScalarWhereWithAggregatesInput | RefreshTokenScalarWhereWithAggregatesInput[]
-    OR?: RefreshTokenScalarWhereWithAggregatesInput[]
-    NOT?: RefreshTokenScalarWhereWithAggregatesInput | RefreshTokenScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"RefreshToken"> | string
-    jti?: StringWithAggregatesFilter<"RefreshToken"> | string
-    userId?: StringWithAggregatesFilter<"RefreshToken"> | string
-    expiresAt?: DateTimeWithAggregatesFilter<"RefreshToken"> | Date | string
-    createdAt?: DateTimeWithAggregatesFilter<"RefreshToken"> | Date | string
-    usedAt?: DateTimeNullableWithAggregatesFilter<"RefreshToken"> | Date | string | null
-    replacedBy?: StringNullableWithAggregatesFilter<"RefreshToken"> | string | null
-    revoked?: BoolWithAggregatesFilter<"RefreshToken"> | boolean
-  }
-
-  export type HostApplicationWhereInput = {
-    AND?: HostApplicationWhereInput | HostApplicationWhereInput[]
-    OR?: HostApplicationWhereInput[]
-    NOT?: HostApplicationWhereInput | HostApplicationWhereInput[]
-    id?: StringFilter<"HostApplication"> | string
-    userId?: StringFilter<"HostApplication"> | string
-    status?: EnumHostApplicationStatusFilter<"HostApplication"> | $Enums.HostApplicationStatus
-    applicationData?: JsonNullableFilter<"HostApplication">
-    decisionBy?: StringNullableFilter<"HostApplication"> | string | null
-    decisionAt?: DateTimeNullableFilter<"HostApplication"> | Date | string | null
-    decisionNotes?: StringNullableFilter<"HostApplication"> | string | null
-    createdAt?: DateTimeFilter<"HostApplication"> | Date | string
-    updatedAt?: DateTimeFilter<"HostApplication"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }
-
-  export type HostApplicationOrderByWithRelationInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    status?: SortOrder
-    applicationData?: SortOrderInput | SortOrder
-    decisionBy?: SortOrderInput | SortOrder
-    decisionAt?: SortOrderInput | SortOrder
-    decisionNotes?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    user?: UserOrderByWithRelationInput
-  }
-
-  export type HostApplicationWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: HostApplicationWhereInput | HostApplicationWhereInput[]
-    OR?: HostApplicationWhereInput[]
-    NOT?: HostApplicationWhereInput | HostApplicationWhereInput[]
-    userId?: StringFilter<"HostApplication"> | string
-    status?: EnumHostApplicationStatusFilter<"HostApplication"> | $Enums.HostApplicationStatus
-    applicationData?: JsonNullableFilter<"HostApplication">
-    decisionBy?: StringNullableFilter<"HostApplication"> | string | null
-    decisionAt?: DateTimeNullableFilter<"HostApplication"> | Date | string | null
-    decisionNotes?: StringNullableFilter<"HostApplication"> | string | null
-    createdAt?: DateTimeFilter<"HostApplication"> | Date | string
-    updatedAt?: DateTimeFilter<"HostApplication"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id">
-
-  export type HostApplicationOrderByWithAggregationInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    status?: SortOrder
-    applicationData?: SortOrderInput | SortOrder
-    decisionBy?: SortOrderInput | SortOrder
-    decisionAt?: SortOrderInput | SortOrder
-    decisionNotes?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: HostApplicationCountOrderByAggregateInput
-    _max?: HostApplicationMaxOrderByAggregateInput
-    _min?: HostApplicationMinOrderByAggregateInput
-  }
-
-  export type HostApplicationScalarWhereWithAggregatesInput = {
-    AND?: HostApplicationScalarWhereWithAggregatesInput | HostApplicationScalarWhereWithAggregatesInput[]
-    OR?: HostApplicationScalarWhereWithAggregatesInput[]
-    NOT?: HostApplicationScalarWhereWithAggregatesInput | HostApplicationScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"HostApplication"> | string
-    userId?: StringWithAggregatesFilter<"HostApplication"> | string
-    status?: EnumHostApplicationStatusWithAggregatesFilter<"HostApplication"> | $Enums.HostApplicationStatus
-    applicationData?: JsonNullableWithAggregatesFilter<"HostApplication">
-    decisionBy?: StringNullableWithAggregatesFilter<"HostApplication"> | string | null
-    decisionAt?: DateTimeNullableWithAggregatesFilter<"HostApplication"> | Date | string | null
-    decisionNotes?: StringNullableWithAggregatesFilter<"HostApplication"> | string | null
-    createdAt?: DateTimeWithAggregatesFilter<"HostApplication"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"HostApplication"> | Date | string
-  }
-
-  export type PasswordResetUseWhereInput = {
-    AND?: PasswordResetUseWhereInput | PasswordResetUseWhereInput[]
-    OR?: PasswordResetUseWhereInput[]
-    NOT?: PasswordResetUseWhereInput | PasswordResetUseWhereInput[]
-    id?: StringFilter<"PasswordResetUse"> | string
-    jti?: StringFilter<"PasswordResetUse"> | string
-    userId?: StringFilter<"PasswordResetUse"> | string
-    usedAt?: DateTimeFilter<"PasswordResetUse"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }
-
-  export type PasswordResetUseOrderByWithRelationInput = {
-    id?: SortOrder
-    jti?: SortOrder
-    userId?: SortOrder
-    usedAt?: SortOrder
-    user?: UserOrderByWithRelationInput
-  }
-
-  export type PasswordResetUseWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    jti?: string
-    AND?: PasswordResetUseWhereInput | PasswordResetUseWhereInput[]
-    OR?: PasswordResetUseWhereInput[]
-    NOT?: PasswordResetUseWhereInput | PasswordResetUseWhereInput[]
-    userId?: StringFilter<"PasswordResetUse"> | string
-    usedAt?: DateTimeFilter<"PasswordResetUse"> | Date | string
-    user?: XOR<UserScalarRelationFilter, UserWhereInput>
-  }, "id" | "jti">
-
-  export type PasswordResetUseOrderByWithAggregationInput = {
-    id?: SortOrder
-    jti?: SortOrder
-    userId?: SortOrder
-    usedAt?: SortOrder
-    _count?: PasswordResetUseCountOrderByAggregateInput
-    _max?: PasswordResetUseMaxOrderByAggregateInput
-    _min?: PasswordResetUseMinOrderByAggregateInput
-  }
-
-  export type PasswordResetUseScalarWhereWithAggregatesInput = {
-    AND?: PasswordResetUseScalarWhereWithAggregatesInput | PasswordResetUseScalarWhereWithAggregatesInput[]
-    OR?: PasswordResetUseScalarWhereWithAggregatesInput[]
-    NOT?: PasswordResetUseScalarWhereWithAggregatesInput | PasswordResetUseScalarWhereWithAggregatesInput[]
-    id?: StringWithAggregatesFilter<"PasswordResetUse"> | string
-    jti?: StringWithAggregatesFilter<"PasswordResetUse"> | string
-    userId?: StringWithAggregatesFilter<"PasswordResetUse"> | string
-    usedAt?: DateTimeWithAggregatesFilter<"PasswordResetUse"> | Date | string
+  export type RevokedAccessTokenScalarWhereWithAggregatesInput = {
+    AND?: RevokedAccessTokenScalarWhereWithAggregatesInput | RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    OR?: RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    NOT?: RevokedAccessTokenScalarWhereWithAggregatesInput | RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    jti?: StringWithAggregatesFilter<"RevokedAccessToken"> | string
+    userId?: StringWithAggregatesFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeWithAggregatesFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableWithAggregatesFilter<"RevokedAccessToken"> | string | null
   }
 
   export type VenueWhereInput = {
@@ -25196,7 +22457,7 @@ export namespace Prisma {
     id?: IntFilter<"ExchangeRate"> | number
     fromCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: DecimalFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
+    rate?: FloatFilter<"ExchangeRate"> | number
     updatedAt?: DateTimeFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableFilter<"ExchangeRate"> | string | null
   }
@@ -25218,7 +22479,7 @@ export namespace Prisma {
     NOT?: ExchangeRateWhereInput | ExchangeRateWhereInput[]
     fromCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: DecimalFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
+    rate?: FloatFilter<"ExchangeRate"> | number
     updatedAt?: DateTimeFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableFilter<"ExchangeRate"> | string | null
   }, "id" | "fromCurrency_toCurrency">
@@ -25244,7 +22505,7 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"ExchangeRate"> | number
     fromCurrency?: EnumCurrencyWithAggregatesFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyWithAggregatesFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: DecimalWithAggregatesFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
+    rate?: FloatWithAggregatesFilter<"ExchangeRate"> | number
     updatedAt?: DateTimeWithAggregatesFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableWithAggregatesFilter<"ExchangeRate"> | string | null
   }
@@ -25271,6 +22532,13 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
+    address?: StringFilter<"Space"> | string
+    city?: StringFilter<"Space"> | string
+    state?: StringNullableFilter<"Space"> | string | null
+    country?: StringFilter<"Space"> | string
+    postalCode?: StringNullableFilter<"Space"> | string | null
+    latitude?: FloatNullableFilter<"Space"> | number | null
+    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -25310,6 +22578,13 @@ export namespace Prisma {
     maxBookingHours?: SortOrderInput | SortOrder
     images?: SortOrder
     videoUrl?: SortOrderInput | SortOrder
+    address?: SortOrder
+    city?: SortOrder
+    state?: SortOrderInput | SortOrder
+    country?: SortOrder
+    postalCode?: SortOrderInput | SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -25352,6 +22627,13 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
+    address?: StringFilter<"Space"> | string
+    city?: StringFilter<"Space"> | string
+    state?: StringNullableFilter<"Space"> | string | null
+    country?: StringFilter<"Space"> | string
+    postalCode?: StringNullableFilter<"Space"> | string | null
+    latitude?: FloatNullableFilter<"Space"> | number | null
+    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -25391,6 +22673,13 @@ export namespace Prisma {
     maxBookingHours?: SortOrderInput | SortOrder
     images?: SortOrder
     videoUrl?: SortOrderInput | SortOrder
+    address?: SortOrder
+    city?: SortOrder
+    state?: SortOrderInput | SortOrder
+    country?: SortOrder
+    postalCode?: SortOrderInput | SortOrder
+    latitude?: SortOrderInput | SortOrder
+    longitude?: SortOrderInput | SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -25429,6 +22718,13 @@ export namespace Prisma {
     maxBookingHours?: IntNullableWithAggregatesFilter<"Space"> | number | null
     images?: JsonWithAggregatesFilter<"Space">
     videoUrl?: StringNullableWithAggregatesFilter<"Space"> | string | null
+    address?: StringWithAggregatesFilter<"Space"> | string
+    city?: StringWithAggregatesFilter<"Space"> | string
+    state?: StringNullableWithAggregatesFilter<"Space"> | string | null
+    country?: StringWithAggregatesFilter<"Space"> | string
+    postalCode?: StringNullableWithAggregatesFilter<"Space"> | string | null
+    latitude?: FloatNullableWithAggregatesFilter<"Space"> | number | null
+    longitude?: FloatNullableWithAggregatesFilter<"Space"> | number | null
     isActive?: BoolWithAggregatesFilter<"Space"> | boolean
     instantBook?: BoolWithAggregatesFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyWithAggregatesFilter<"Space"> | $Enums.CancellationPolicy
@@ -25862,11 +23158,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFilter<"Booking"> | number
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
+    cancelledBy?: StringNullableFilter<"Booking"> | string | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -25899,7 +23195,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
-    cancelledByRole?: SortOrderInput | SortOrder
+    cancelledBy?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -25931,11 +23227,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFilter<"Booking"> | number
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
+    cancelledBy?: StringNullableFilter<"Booking"> | string | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -25968,7 +23264,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
-    cancelledByRole?: SortOrderInput | SortOrder
+    cancelledBy?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -26001,11 +23297,11 @@ export namespace Prisma {
     serviceFee?: FloatWithAggregatesFilter<"Booking"> | number
     totalAmount?: FloatWithAggregatesFilter<"Booking"> | number
     currency?: EnumCurrencyWithAggregatesFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: DecimalWithAggregatesFilter<"Booking"> | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatWithAggregatesFilter<"Booking"> | number
     status?: EnumBookingStatusWithAggregatesFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     hostMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
-    cancelledByRole?: EnumBookingActorNullableWithAggregatesFilter<"Booking"> | $Enums.BookingActor | null
+    cancelledBy?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     cancellationReason?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
@@ -26108,10 +23404,9 @@ export namespace Prisma {
     NOT?: PayoutWhereInput | PayoutWhereInput[]
     id?: StringFilter<"Payout"> | string
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
-    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -26126,7 +23421,6 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
-    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrderInput | SortOrder
@@ -26141,10 +23435,9 @@ export namespace Prisma {
     OR?: PayoutWhereInput[]
     NOT?: PayoutWhereInput | PayoutWhereInput[]
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
-    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -26159,7 +23452,6 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
-    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrderInput | SortOrder
@@ -26178,10 +23470,9 @@ export namespace Prisma {
     NOT?: PayoutScalarWhereWithAggregatesInput | PayoutScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Payout"> | string
     hostId?: StringWithAggregatesFilter<"Payout"> | string
-    amount?: FloatWithAggregatesFilter<"Payout"> | number
-    platformFee?: FloatWithAggregatesFilter<"Payout"> | number
-    netAmount?: FloatWithAggregatesFilter<"Payout"> | number
-    currency?: EnumCurrencyWithAggregatesFilter<"Payout"> | $Enums.Currency
+    amount?: IntWithAggregatesFilter<"Payout"> | number
+    platformFee?: IntWithAggregatesFilter<"Payout"> | number
+    netAmount?: IntWithAggregatesFilter<"Payout"> | number
     status?: EnumPayoutStatusWithAggregatesFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableWithAggregatesFilter<"Payout"> | Date | string | null
@@ -26202,14 +23493,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
@@ -26231,14 +23517,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
@@ -26260,14 +23541,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
@@ -26289,14 +23565,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
@@ -26318,10 +23589,8 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
   }
 
   export type UserUpdateManyMutationInput = {
@@ -26337,10 +23606,8 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -26356,10 +23623,8 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type SessionCreateInput = {
@@ -26417,211 +23682,60 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type RefreshTokenCreateInput = {
-    id?: string
-    jti: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
-    user: UserCreateNestedOneWithoutRefreshTokensInput
-  }
-
-  export type RefreshTokenUncheckedCreateInput = {
-    id?: string
+  export type RevokedAccessTokenCreateInput = {
     jti: string
     userId: string
     expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
+    revokedAt?: Date | string
+    reason?: string | null
   }
 
-  export type RefreshTokenUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-    user?: UserUpdateOneRequiredWithoutRefreshTokensNestedInput
-  }
-
-  export type RefreshTokenUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type RefreshTokenCreateManyInput = {
-    id?: string
+  export type RevokedAccessTokenUncheckedCreateInput = {
     jti: string
     userId: string
     expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
+    revokedAt?: Date | string
+    reason?: string | null
   }
 
-  export type RefreshTokenUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type RefreshTokenUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
+  export type RevokedAccessTokenUpdateInput = {
     jti?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type HostApplicationCreateInput = {
-    id?: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    user: UserCreateNestedOneWithoutHostApplicationsInput
-  }
-
-  export type HostApplicationUncheckedCreateInput = {
-    id?: string
-    userId: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type HostApplicationUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutHostApplicationsNestedInput
-  }
-
-  export type HostApplicationUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
+  export type RevokedAccessTokenUncheckedUpdateInput = {
+    jti?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type HostApplicationCreateManyInput = {
-    id?: string
-    userId: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type HostApplicationUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type HostApplicationUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetUseCreateInput = {
-    id?: string
-    jti: string
-    usedAt?: Date | string
-    user: UserCreateNestedOneWithoutPasswordResetUsesInput
-  }
-
-  export type PasswordResetUseUncheckedCreateInput = {
-    id?: string
+  export type RevokedAccessTokenCreateManyInput = {
     jti: string
     userId: string
-    usedAt?: Date | string
+    expiresAt: Date | string
+    revokedAt?: Date | string
+    reason?: string | null
   }
 
-  export type PasswordResetUseUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneRequiredWithoutPasswordResetUsesNestedInput
-  }
-
-  export type PasswordResetUseUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
+  export type RevokedAccessTokenUpdateManyMutationInput = {
     jti?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type PasswordResetUseCreateManyInput = {
-    id?: string
-    jti: string
-    userId: string
-    usedAt?: Date | string
-  }
-
-  export type PasswordResetUseUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetUseUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
+  export type RevokedAccessTokenUncheckedUpdateManyInput = {
     jti?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VenueCreateInput = {
@@ -26802,7 +23916,7 @@ export namespace Prisma {
   export type ExchangeRateCreateInput = {
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: Decimal | DecimalJsLike | number | string
+    rate: number
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -26811,7 +23925,7 @@ export namespace Prisma {
     id?: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: Decimal | DecimalJsLike | number | string
+    rate: number
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -26819,7 +23933,7 @@ export namespace Prisma {
   export type ExchangeRateUpdateInput = {
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rate?: FloatFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -26828,7 +23942,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rate?: FloatFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -26837,7 +23951,7 @@ export namespace Prisma {
     id?: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: Decimal | DecimalJsLike | number | string
+    rate: number
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -26845,7 +23959,7 @@ export namespace Prisma {
   export type ExchangeRateUpdateManyMutationInput = {
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rate?: FloatFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -26854,7 +23968,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    rate?: FloatFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -26877,6 +23991,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -26913,6 +24034,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -26948,6 +24076,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -26984,6 +24119,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -27020,6 +24162,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -27049,6 +24198,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -27076,6 +24232,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -27471,11 +24634,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27504,11 +24667,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27531,11 +24694,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27564,11 +24727,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27594,11 +24757,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27620,11 +24783,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27649,11 +24812,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -27752,7 +24915,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -27767,7 +24929,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -27777,10 +24938,9 @@ export namespace Prisma {
 
   export type PayoutUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27792,10 +24952,9 @@ export namespace Prisma {
   export type PayoutUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27809,7 +24968,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -27819,10 +24977,9 @@ export namespace Prisma {
 
   export type PayoutUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27833,10 +24990,9 @@ export namespace Prisma {
   export type PayoutUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -27914,24 +25070,6 @@ export namespace Prisma {
     none?: SessionWhereInput
   }
 
-  export type RefreshTokenListRelationFilter = {
-    every?: RefreshTokenWhereInput
-    some?: RefreshTokenWhereInput
-    none?: RefreshTokenWhereInput
-  }
-
-  export type HostApplicationListRelationFilter = {
-    every?: HostApplicationWhereInput
-    some?: HostApplicationWhereInput
-    none?: HostApplicationWhereInput
-  }
-
-  export type PasswordResetUseListRelationFilter = {
-    every?: PasswordResetUseWhereInput
-    some?: PasswordResetUseWhereInput
-    none?: PasswordResetUseWhereInput
-  }
-
   export type VenueListRelationFilter = {
     every?: VenueWhereInput
     some?: VenueWhereInput
@@ -27971,18 +25109,6 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
-  export type RefreshTokenOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type HostApplicationOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type PasswordResetUseOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
   export type VenueOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -28016,10 +25142,8 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
-    hostApplicationPending?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -28035,10 +25159,8 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
-    hostApplicationPending?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -28054,10 +25176,8 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
-    hostApplicationPending?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -28171,44 +25291,39 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
-  export type RefreshTokenCountOrderByAggregateInput = {
-    id?: SortOrder
+  export type RevokedAccessTokenCountOrderByAggregateInput = {
     jti?: SortOrder
     userId?: SortOrder
     expiresAt?: SortOrder
-    createdAt?: SortOrder
-    usedAt?: SortOrder
-    replacedBy?: SortOrder
-    revoked?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
   }
 
-  export type RefreshTokenMaxOrderByAggregateInput = {
-    id?: SortOrder
+  export type RevokedAccessTokenMaxOrderByAggregateInput = {
     jti?: SortOrder
     userId?: SortOrder
     expiresAt?: SortOrder
-    createdAt?: SortOrder
-    usedAt?: SortOrder
-    replacedBy?: SortOrder
-    revoked?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
   }
 
-  export type RefreshTokenMinOrderByAggregateInput = {
-    id?: SortOrder
+  export type RevokedAccessTokenMinOrderByAggregateInput = {
     jti?: SortOrder
     userId?: SortOrder
     expiresAt?: SortOrder
-    createdAt?: SortOrder
-    usedAt?: SortOrder
-    replacedBy?: SortOrder
-    revoked?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
   }
 
-  export type EnumHostApplicationStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.HostApplicationStatus | EnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumHostApplicationStatusFilter<$PrismaModel> | $Enums.HostApplicationStatus
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
   }
   export type JsonNullableFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -28232,108 +25347,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type HostApplicationCountOrderByAggregateInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    status?: SortOrder
-    applicationData?: SortOrder
-    decisionBy?: SortOrder
-    decisionAt?: SortOrder
-    decisionNotes?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type HostApplicationMaxOrderByAggregateInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    status?: SortOrder
-    decisionBy?: SortOrder
-    decisionAt?: SortOrder
-    decisionNotes?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type HostApplicationMinOrderByAggregateInput = {
-    id?: SortOrder
-    userId?: SortOrder
-    status?: SortOrder
-    decisionBy?: SortOrder
-    decisionAt?: SortOrder
-    decisionNotes?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type EnumHostApplicationStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.HostApplicationStatus | EnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumHostApplicationStatusWithAggregatesFilter<$PrismaModel> | $Enums.HostApplicationStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumHostApplicationStatusFilter<$PrismaModel>
-    _max?: NestedEnumHostApplicationStatusFilter<$PrismaModel>
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
-  }
-
-  export type PasswordResetUseCountOrderByAggregateInput = {
-    id?: SortOrder
-    jti?: SortOrder
-    userId?: SortOrder
-    usedAt?: SortOrder
-  }
-
-  export type PasswordResetUseMaxOrderByAggregateInput = {
-    id?: SortOrder
-    jti?: SortOrder
-    userId?: SortOrder
-    usedAt?: SortOrder
-  }
-
-  export type PasswordResetUseMinOrderByAggregateInput = {
-    id?: SortOrder
-    jti?: SortOrder
-    userId?: SortOrder
-    usedAt?: SortOrder
-  }
-
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
   }
   export type JsonFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -28469,6 +25482,32 @@ export namespace Prisma {
     _min?: NestedIntFilter<$PrismaModel>
     _max?: NestedIntFilter<$PrismaModel>
   }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
   export type JsonWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
@@ -28522,15 +25561,15 @@ export namespace Prisma {
     _max?: NestedEnumCurrencyFilter<$PrismaModel>
   }
 
-  export type DecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
   export type ExchangeRateFromCurrencyToCurrencyCompoundUniqueInput = {
@@ -28575,20 +25614,20 @@ export namespace Prisma {
     rate?: SortOrder
   }
 
-  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
     _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type EnumSpaceTypeFilter<$PrismaModel = never> = {
@@ -28603,17 +25642,6 @@ export namespace Prisma {
     in?: $Enums.PricingType[] | ListEnumPricingTypeFieldRefInput<$PrismaModel>
     notIn?: $Enums.PricingType[] | ListEnumPricingTypeFieldRefInput<$PrismaModel>
     not?: NestedEnumPricingTypeFilter<$PrismaModel> | $Enums.PricingType
-  }
-
-  export type FloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
   export type IntNullableFilter<$PrismaModel = never> = {
@@ -28703,6 +25731,13 @@ export namespace Prisma {
     maxBookingHours?: SortOrder
     images?: SortOrder
     videoUrl?: SortOrder
+    address?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    country?: SortOrder
+    postalCode?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -28722,6 +25757,8 @@ export namespace Prisma {
     capacity?: SortOrder
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
     venueId?: SortOrder
   }
 
@@ -28740,6 +25777,13 @@ export namespace Prisma {
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
     videoUrl?: SortOrder
+    address?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    country?: SortOrder
+    postalCode?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -28766,6 +25810,13 @@ export namespace Prisma {
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
     videoUrl?: SortOrder
+    address?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    country?: SortOrder
+    postalCode?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -28785,6 +25836,8 @@ export namespace Prisma {
     capacity?: SortOrder
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
+    latitude?: SortOrder
+    longitude?: SortOrder
     venueId?: SortOrder
   }
 
@@ -28806,22 +25859,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPricingTypeFilter<$PrismaModel>
     _max?: NestedEnumPricingTypeFilter<$PrismaModel>
-  }
-
-  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -29144,13 +26181,6 @@ export namespace Prisma {
     not?: NestedEnumBookingStatusFilter<$PrismaModel> | $Enums.BookingStatus
   }
 
-  export type EnumBookingActorNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
-    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumBookingActorNullableFilter<$PrismaModel> | $Enums.BookingActor | null
-  }
-
   export type ReviewNullableScalarRelationFilter = {
     is?: ReviewWhereInput | null
     isNot?: ReviewWhereInput | null
@@ -29176,7 +26206,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledByRole?: SortOrder
+    cancelledBy?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29215,7 +26245,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledByRole?: SortOrder
+    cancelledBy?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29244,7 +26274,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledByRole?: SortOrder
+    cancelledBy?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29271,16 +26301,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumBookingStatusFilter<$PrismaModel>
     _max?: NestedEnumBookingStatusFilter<$PrismaModel>
-  }
-
-  export type EnumBookingActorNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
-    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel> | $Enums.BookingActor | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedEnumBookingActorNullableFilter<$PrismaModel>
-    _max?: NestedEnumBookingActorNullableFilter<$PrismaModel>
   }
 
   export type BookingScalarRelationFilter = {
@@ -29360,7 +26380,6 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
-    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrder
@@ -29380,7 +26399,6 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
-    currency?: SortOrder
     status?: SortOrder
     processedAt?: SortOrder
     createdAt?: SortOrder
@@ -29393,7 +26411,6 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
-    currency?: SortOrder
     status?: SortOrder
     processedAt?: SortOrder
     createdAt?: SortOrder
@@ -29421,27 +26438,6 @@ export namespace Prisma {
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
     createMany?: SessionCreateManyUserInputEnvelope
     connect?: SessionWhereUniqueInput | SessionWhereUniqueInput[]
-  }
-
-  export type RefreshTokenCreateNestedManyWithoutUserInput = {
-    create?: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput> | RefreshTokenCreateWithoutUserInput[] | RefreshTokenUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: RefreshTokenCreateOrConnectWithoutUserInput | RefreshTokenCreateOrConnectWithoutUserInput[]
-    createMany?: RefreshTokenCreateManyUserInputEnvelope
-    connect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-  }
-
-  export type HostApplicationCreateNestedManyWithoutUserInput = {
-    create?: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput> | HostApplicationCreateWithoutUserInput[] | HostApplicationUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: HostApplicationCreateOrConnectWithoutUserInput | HostApplicationCreateOrConnectWithoutUserInput[]
-    createMany?: HostApplicationCreateManyUserInputEnvelope
-    connect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-  }
-
-  export type PasswordResetUseCreateNestedManyWithoutUserInput = {
-    create?: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput> | PasswordResetUseCreateWithoutUserInput[] | PasswordResetUseUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: PasswordResetUseCreateOrConnectWithoutUserInput | PasswordResetUseCreateOrConnectWithoutUserInput[]
-    createMany?: PasswordResetUseCreateManyUserInputEnvelope
-    connect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
   }
 
   export type VenueCreateNestedManyWithoutHostInput = {
@@ -29491,27 +26487,6 @@ export namespace Prisma {
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
     createMany?: SessionCreateManyUserInputEnvelope
     connect?: SessionWhereUniqueInput | SessionWhereUniqueInput[]
-  }
-
-  export type RefreshTokenUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput> | RefreshTokenCreateWithoutUserInput[] | RefreshTokenUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: RefreshTokenCreateOrConnectWithoutUserInput | RefreshTokenCreateOrConnectWithoutUserInput[]
-    createMany?: RefreshTokenCreateManyUserInputEnvelope
-    connect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-  }
-
-  export type HostApplicationUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput> | HostApplicationCreateWithoutUserInput[] | HostApplicationUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: HostApplicationCreateOrConnectWithoutUserInput | HostApplicationCreateOrConnectWithoutUserInput[]
-    createMany?: HostApplicationCreateManyUserInputEnvelope
-    connect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-  }
-
-  export type PasswordResetUseUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput> | PasswordResetUseCreateWithoutUserInput[] | PasswordResetUseUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: PasswordResetUseCreateOrConnectWithoutUserInput | PasswordResetUseCreateOrConnectWithoutUserInput[]
-    createMany?: PasswordResetUseCreateManyUserInputEnvelope
-    connect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
   }
 
   export type VenueUncheckedCreateNestedManyWithoutHostInput = {
@@ -29592,48 +26567,6 @@ export namespace Prisma {
     update?: SessionUpdateWithWhereUniqueWithoutUserInput | SessionUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: SessionUpdateManyWithWhereWithoutUserInput | SessionUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
-  }
-
-  export type RefreshTokenUpdateManyWithoutUserNestedInput = {
-    create?: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput> | RefreshTokenCreateWithoutUserInput[] | RefreshTokenUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: RefreshTokenCreateOrConnectWithoutUserInput | RefreshTokenCreateOrConnectWithoutUserInput[]
-    upsert?: RefreshTokenUpsertWithWhereUniqueWithoutUserInput | RefreshTokenUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: RefreshTokenCreateManyUserInputEnvelope
-    set?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    disconnect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    delete?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    connect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    update?: RefreshTokenUpdateWithWhereUniqueWithoutUserInput | RefreshTokenUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: RefreshTokenUpdateManyWithWhereWithoutUserInput | RefreshTokenUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: RefreshTokenScalarWhereInput | RefreshTokenScalarWhereInput[]
-  }
-
-  export type HostApplicationUpdateManyWithoutUserNestedInput = {
-    create?: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput> | HostApplicationCreateWithoutUserInput[] | HostApplicationUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: HostApplicationCreateOrConnectWithoutUserInput | HostApplicationCreateOrConnectWithoutUserInput[]
-    upsert?: HostApplicationUpsertWithWhereUniqueWithoutUserInput | HostApplicationUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: HostApplicationCreateManyUserInputEnvelope
-    set?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    disconnect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    delete?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    connect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    update?: HostApplicationUpdateWithWhereUniqueWithoutUserInput | HostApplicationUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: HostApplicationUpdateManyWithWhereWithoutUserInput | HostApplicationUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: HostApplicationScalarWhereInput | HostApplicationScalarWhereInput[]
-  }
-
-  export type PasswordResetUseUpdateManyWithoutUserNestedInput = {
-    create?: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput> | PasswordResetUseCreateWithoutUserInput[] | PasswordResetUseUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: PasswordResetUseCreateOrConnectWithoutUserInput | PasswordResetUseCreateOrConnectWithoutUserInput[]
-    upsert?: PasswordResetUseUpsertWithWhereUniqueWithoutUserInput | PasswordResetUseUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: PasswordResetUseCreateManyUserInputEnvelope
-    set?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    disconnect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    delete?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    connect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    update?: PasswordResetUseUpdateWithWhereUniqueWithoutUserInput | PasswordResetUseUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: PasswordResetUseUpdateManyWithWhereWithoutUserInput | PasswordResetUseUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: PasswordResetUseScalarWhereInput | PasswordResetUseScalarWhereInput[]
   }
 
   export type VenueUpdateManyWithoutHostNestedInput = {
@@ -29734,48 +26667,6 @@ export namespace Prisma {
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
   }
 
-  export type RefreshTokenUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput> | RefreshTokenCreateWithoutUserInput[] | RefreshTokenUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: RefreshTokenCreateOrConnectWithoutUserInput | RefreshTokenCreateOrConnectWithoutUserInput[]
-    upsert?: RefreshTokenUpsertWithWhereUniqueWithoutUserInput | RefreshTokenUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: RefreshTokenCreateManyUserInputEnvelope
-    set?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    disconnect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    delete?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    connect?: RefreshTokenWhereUniqueInput | RefreshTokenWhereUniqueInput[]
-    update?: RefreshTokenUpdateWithWhereUniqueWithoutUserInput | RefreshTokenUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: RefreshTokenUpdateManyWithWhereWithoutUserInput | RefreshTokenUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: RefreshTokenScalarWhereInput | RefreshTokenScalarWhereInput[]
-  }
-
-  export type HostApplicationUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput> | HostApplicationCreateWithoutUserInput[] | HostApplicationUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: HostApplicationCreateOrConnectWithoutUserInput | HostApplicationCreateOrConnectWithoutUserInput[]
-    upsert?: HostApplicationUpsertWithWhereUniqueWithoutUserInput | HostApplicationUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: HostApplicationCreateManyUserInputEnvelope
-    set?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    disconnect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    delete?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    connect?: HostApplicationWhereUniqueInput | HostApplicationWhereUniqueInput[]
-    update?: HostApplicationUpdateWithWhereUniqueWithoutUserInput | HostApplicationUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: HostApplicationUpdateManyWithWhereWithoutUserInput | HostApplicationUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: HostApplicationScalarWhereInput | HostApplicationScalarWhereInput[]
-  }
-
-  export type PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput> | PasswordResetUseCreateWithoutUserInput[] | PasswordResetUseUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: PasswordResetUseCreateOrConnectWithoutUserInput | PasswordResetUseCreateOrConnectWithoutUserInput[]
-    upsert?: PasswordResetUseUpsertWithWhereUniqueWithoutUserInput | PasswordResetUseUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: PasswordResetUseCreateManyUserInputEnvelope
-    set?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    disconnect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    delete?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    connect?: PasswordResetUseWhereUniqueInput | PasswordResetUseWhereUniqueInput[]
-    update?: PasswordResetUseUpdateWithWhereUniqueWithoutUserInput | PasswordResetUseUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: PasswordResetUseUpdateManyWithWhereWithoutUserInput | PasswordResetUseUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: PasswordResetUseScalarWhereInput | PasswordResetUseScalarWhereInput[]
-  }
-
   export type VenueUncheckedUpdateManyWithoutHostNestedInput = {
     create?: XOR<VenueCreateWithoutHostInput, VenueUncheckedCreateWithoutHostInput> | VenueCreateWithoutHostInput[] | VenueUncheckedCreateWithoutHostInput[]
     connectOrCreate?: VenueCreateOrConnectWithoutHostInput | VenueCreateOrConnectWithoutHostInput[]
@@ -29874,52 +26765,6 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSessionsInput, UserUpdateWithoutSessionsInput>, UserUncheckedUpdateWithoutSessionsInput>
   }
 
-  export type UserCreateNestedOneWithoutRefreshTokensInput = {
-    create?: XOR<UserCreateWithoutRefreshTokensInput, UserUncheckedCreateWithoutRefreshTokensInput>
-    connectOrCreate?: UserCreateOrConnectWithoutRefreshTokensInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type UserUpdateOneRequiredWithoutRefreshTokensNestedInput = {
-    create?: XOR<UserCreateWithoutRefreshTokensInput, UserUncheckedCreateWithoutRefreshTokensInput>
-    connectOrCreate?: UserCreateOrConnectWithoutRefreshTokensInput
-    upsert?: UserUpsertWithoutRefreshTokensInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutRefreshTokensInput, UserUpdateWithoutRefreshTokensInput>, UserUncheckedUpdateWithoutRefreshTokensInput>
-  }
-
-  export type UserCreateNestedOneWithoutHostApplicationsInput = {
-    create?: XOR<UserCreateWithoutHostApplicationsInput, UserUncheckedCreateWithoutHostApplicationsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutHostApplicationsInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type EnumHostApplicationStatusFieldUpdateOperationsInput = {
-    set?: $Enums.HostApplicationStatus
-  }
-
-  export type UserUpdateOneRequiredWithoutHostApplicationsNestedInput = {
-    create?: XOR<UserCreateWithoutHostApplicationsInput, UserUncheckedCreateWithoutHostApplicationsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutHostApplicationsInput
-    upsert?: UserUpsertWithoutHostApplicationsInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutHostApplicationsInput, UserUpdateWithoutHostApplicationsInput>, UserUncheckedUpdateWithoutHostApplicationsInput>
-  }
-
-  export type UserCreateNestedOneWithoutPasswordResetUsesInput = {
-    create?: XOR<UserCreateWithoutPasswordResetUsesInput, UserUncheckedCreateWithoutPasswordResetUsesInput>
-    connectOrCreate?: UserCreateOrConnectWithoutPasswordResetUsesInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type UserUpdateOneRequiredWithoutPasswordResetUsesNestedInput = {
-    create?: XOR<UserCreateWithoutPasswordResetUsesInput, UserUncheckedCreateWithoutPasswordResetUsesInput>
-    connectOrCreate?: UserCreateOrConnectWithoutPasswordResetUsesInput
-    upsert?: UserUpsertWithoutPasswordResetUsesInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPasswordResetUsesInput, UserUpdateWithoutPasswordResetUsesInput>, UserUncheckedUpdateWithoutPasswordResetUsesInput>
-  }
-
   export type UserCreateNestedOneWithoutVenuesInput = {
     create?: XOR<UserCreateWithoutVenuesInput, UserUncheckedCreateWithoutVenuesInput>
     connectOrCreate?: UserCreateOrConnectWithoutVenuesInput
@@ -29996,12 +26841,12 @@ export namespace Prisma {
     deleteMany?: SpaceScalarWhereInput | SpaceScalarWhereInput[]
   }
 
-  export type DecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
+  export type FloatFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type UserCreateNestedOneWithoutSpacesInput = {
@@ -30112,14 +26957,6 @@ export namespace Prisma {
 
   export type EnumPricingTypeFieldUpdateOperationsInput = {
     set?: $Enums.PricingType
-  }
-
-  export type FloatFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type NullableIntFieldUpdateOperationsInput = {
@@ -30579,10 +27416,6 @@ export namespace Prisma {
     set?: $Enums.BookingStatus
   }
 
-  export type NullableEnumBookingActorFieldUpdateOperationsInput = {
-    set?: $Enums.BookingActor | null
-  }
-
   export type UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput = {
     create?: XOR<UserCreateWithoutBookingsAsGuestInput, UserUncheckedCreateWithoutBookingsAsGuestInput>
     connectOrCreate?: UserCreateOrConnectWithoutBookingsAsGuestInput
@@ -30860,46 +27693,6 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
-  export type NestedEnumHostApplicationStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.HostApplicationStatus | EnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumHostApplicationStatusFilter<$PrismaModel> | $Enums.HostApplicationStatus
-  }
-
-  export type NestedEnumHostApplicationStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.HostApplicationStatus | EnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    notIn?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
-    not?: NestedEnumHostApplicationStatusWithAggregatesFilter<$PrismaModel> | $Enums.HostApplicationStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumHostApplicationStatusFilter<$PrismaModel>
-    _max?: NestedEnumHostApplicationStatusFilter<$PrismaModel>
-  }
-  export type NestedJsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
   export type NestedFloatNullableFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel> | null
     in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
@@ -30943,6 +27736,29 @@ export namespace Prisma {
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatFilter<$PrismaModel> | number
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
   export type NestedJsonFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -30994,31 +27810,20 @@ export namespace Prisma {
     _max?: NestedEnumCurrencyFilter<$PrismaModel>
   }
 
-  export type NestedDecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
-  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
     _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type NestedEnumSpaceTypeFilter<$PrismaModel = never> = {
@@ -31062,22 +27867,6 @@ export namespace Prisma {
     _max?: NestedEnumPricingTypeFilter<$PrismaModel>
   }
 
-  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
-  }
-
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
     in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
@@ -31111,13 +27900,6 @@ export namespace Prisma {
     not?: NestedEnumBookingStatusFilter<$PrismaModel> | $Enums.BookingStatus
   }
 
-  export type NestedEnumBookingActorNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
-    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumBookingActorNullableFilter<$PrismaModel> | $Enums.BookingActor | null
-  }
-
   export type NestedEnumBookingStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.BookingStatus | EnumBookingStatusFieldRefInput<$PrismaModel>
     in?: $Enums.BookingStatus[] | ListEnumBookingStatusFieldRefInput<$PrismaModel>
@@ -31126,16 +27908,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumBookingStatusFilter<$PrismaModel>
     _max?: NestedEnumBookingStatusFilter<$PrismaModel>
-  }
-
-  export type NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
-    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel> | $Enums.BookingActor | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedEnumBookingActorNullableFilter<$PrismaModel>
-    _max?: NestedEnumBookingActorNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumPayoutStatusFilter<$PrismaModel = never> = {
@@ -31176,90 +27948,6 @@ export namespace Prisma {
 
   export type SessionCreateManyUserInputEnvelope = {
     data: SessionCreateManyUserInput | SessionCreateManyUserInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type RefreshTokenCreateWithoutUserInput = {
-    id?: string
-    jti: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
-  }
-
-  export type RefreshTokenUncheckedCreateWithoutUserInput = {
-    id?: string
-    jti: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
-  }
-
-  export type RefreshTokenCreateOrConnectWithoutUserInput = {
-    where: RefreshTokenWhereUniqueInput
-    create: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput>
-  }
-
-  export type RefreshTokenCreateManyUserInputEnvelope = {
-    data: RefreshTokenCreateManyUserInput | RefreshTokenCreateManyUserInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type HostApplicationCreateWithoutUserInput = {
-    id?: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type HostApplicationUncheckedCreateWithoutUserInput = {
-    id?: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type HostApplicationCreateOrConnectWithoutUserInput = {
-    where: HostApplicationWhereUniqueInput
-    create: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput>
-  }
-
-  export type HostApplicationCreateManyUserInputEnvelope = {
-    data: HostApplicationCreateManyUserInput | HostApplicationCreateManyUserInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type PasswordResetUseCreateWithoutUserInput = {
-    id?: string
-    jti: string
-    usedAt?: Date | string
-  }
-
-  export type PasswordResetUseUncheckedCreateWithoutUserInput = {
-    id?: string
-    jti: string
-    usedAt?: Date | string
-  }
-
-  export type PasswordResetUseCreateOrConnectWithoutUserInput = {
-    where: PasswordResetUseWhereUniqueInput
-    create: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput>
-  }
-
-  export type PasswordResetUseCreateManyUserInputEnvelope = {
-    data: PasswordResetUseCreateManyUserInput | PasswordResetUseCreateManyUserInput[]
     skipDuplicates?: boolean
   }
 
@@ -31340,6 +28028,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -31375,6 +28070,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -31414,11 +28116,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31445,11 +28147,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31482,11 +28184,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31513,11 +28215,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31575,7 +28277,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -31588,7 +28289,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -31631,93 +28331,6 @@ export namespace Prisma {
     token?: StringFilter<"Session"> | string
     expiresAt?: DateTimeFilter<"Session"> | Date | string
     createdAt?: DateTimeFilter<"Session"> | Date | string
-  }
-
-  export type RefreshTokenUpsertWithWhereUniqueWithoutUserInput = {
-    where: RefreshTokenWhereUniqueInput
-    update: XOR<RefreshTokenUpdateWithoutUserInput, RefreshTokenUncheckedUpdateWithoutUserInput>
-    create: XOR<RefreshTokenCreateWithoutUserInput, RefreshTokenUncheckedCreateWithoutUserInput>
-  }
-
-  export type RefreshTokenUpdateWithWhereUniqueWithoutUserInput = {
-    where: RefreshTokenWhereUniqueInput
-    data: XOR<RefreshTokenUpdateWithoutUserInput, RefreshTokenUncheckedUpdateWithoutUserInput>
-  }
-
-  export type RefreshTokenUpdateManyWithWhereWithoutUserInput = {
-    where: RefreshTokenScalarWhereInput
-    data: XOR<RefreshTokenUpdateManyMutationInput, RefreshTokenUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type RefreshTokenScalarWhereInput = {
-    AND?: RefreshTokenScalarWhereInput | RefreshTokenScalarWhereInput[]
-    OR?: RefreshTokenScalarWhereInput[]
-    NOT?: RefreshTokenScalarWhereInput | RefreshTokenScalarWhereInput[]
-    id?: StringFilter<"RefreshToken"> | string
-    jti?: StringFilter<"RefreshToken"> | string
-    userId?: StringFilter<"RefreshToken"> | string
-    expiresAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    createdAt?: DateTimeFilter<"RefreshToken"> | Date | string
-    usedAt?: DateTimeNullableFilter<"RefreshToken"> | Date | string | null
-    replacedBy?: StringNullableFilter<"RefreshToken"> | string | null
-    revoked?: BoolFilter<"RefreshToken"> | boolean
-  }
-
-  export type HostApplicationUpsertWithWhereUniqueWithoutUserInput = {
-    where: HostApplicationWhereUniqueInput
-    update: XOR<HostApplicationUpdateWithoutUserInput, HostApplicationUncheckedUpdateWithoutUserInput>
-    create: XOR<HostApplicationCreateWithoutUserInput, HostApplicationUncheckedCreateWithoutUserInput>
-  }
-
-  export type HostApplicationUpdateWithWhereUniqueWithoutUserInput = {
-    where: HostApplicationWhereUniqueInput
-    data: XOR<HostApplicationUpdateWithoutUserInput, HostApplicationUncheckedUpdateWithoutUserInput>
-  }
-
-  export type HostApplicationUpdateManyWithWhereWithoutUserInput = {
-    where: HostApplicationScalarWhereInput
-    data: XOR<HostApplicationUpdateManyMutationInput, HostApplicationUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type HostApplicationScalarWhereInput = {
-    AND?: HostApplicationScalarWhereInput | HostApplicationScalarWhereInput[]
-    OR?: HostApplicationScalarWhereInput[]
-    NOT?: HostApplicationScalarWhereInput | HostApplicationScalarWhereInput[]
-    id?: StringFilter<"HostApplication"> | string
-    userId?: StringFilter<"HostApplication"> | string
-    status?: EnumHostApplicationStatusFilter<"HostApplication"> | $Enums.HostApplicationStatus
-    applicationData?: JsonNullableFilter<"HostApplication">
-    decisionBy?: StringNullableFilter<"HostApplication"> | string | null
-    decisionAt?: DateTimeNullableFilter<"HostApplication"> | Date | string | null
-    decisionNotes?: StringNullableFilter<"HostApplication"> | string | null
-    createdAt?: DateTimeFilter<"HostApplication"> | Date | string
-    updatedAt?: DateTimeFilter<"HostApplication"> | Date | string
-  }
-
-  export type PasswordResetUseUpsertWithWhereUniqueWithoutUserInput = {
-    where: PasswordResetUseWhereUniqueInput
-    update: XOR<PasswordResetUseUpdateWithoutUserInput, PasswordResetUseUncheckedUpdateWithoutUserInput>
-    create: XOR<PasswordResetUseCreateWithoutUserInput, PasswordResetUseUncheckedCreateWithoutUserInput>
-  }
-
-  export type PasswordResetUseUpdateWithWhereUniqueWithoutUserInput = {
-    where: PasswordResetUseWhereUniqueInput
-    data: XOR<PasswordResetUseUpdateWithoutUserInput, PasswordResetUseUncheckedUpdateWithoutUserInput>
-  }
-
-  export type PasswordResetUseUpdateManyWithWhereWithoutUserInput = {
-    where: PasswordResetUseScalarWhereInput
-    data: XOR<PasswordResetUseUpdateManyMutationInput, PasswordResetUseUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type PasswordResetUseScalarWhereInput = {
-    AND?: PasswordResetUseScalarWhereInput | PasswordResetUseScalarWhereInput[]
-    OR?: PasswordResetUseScalarWhereInput[]
-    NOT?: PasswordResetUseScalarWhereInput | PasswordResetUseScalarWhereInput[]
-    id?: StringFilter<"PasswordResetUse"> | string
-    jti?: StringFilter<"PasswordResetUse"> | string
-    userId?: StringFilter<"PasswordResetUse"> | string
-    usedAt?: DateTimeFilter<"PasswordResetUse"> | Date | string
   }
 
   export type VenueUpsertWithWhereUniqueWithoutHostInput = {
@@ -31802,6 +28415,13 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
+    address?: StringFilter<"Space"> | string
+    city?: StringFilter<"Space"> | string
+    state?: StringNullableFilter<"Space"> | string | null
+    country?: StringFilter<"Space"> | string
+    postalCode?: StringNullableFilter<"Space"> | string | null
+    latitude?: FloatNullableFilter<"Space"> | number | null
+    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -31848,11 +28468,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFilter<"Booking"> | number
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
+    cancelledBy?: StringNullableFilter<"Booking"> | string | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -31931,10 +28551,9 @@ export namespace Prisma {
     NOT?: PayoutScalarWhereInput | PayoutScalarWhereInput[]
     id?: StringFilter<"Payout"> | string
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
-    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -31955,13 +28574,8 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
@@ -31983,13 +28597,8 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
@@ -32027,13 +28636,8 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
@@ -32055,397 +28659,8 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
-    venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUncheckedUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserCreateWithoutRefreshTokensInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
-    venues?: VenueCreateNestedManyWithoutHostInput
-    spaces?: SpaceCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
-    reviews?: ReviewCreateNestedManyWithoutUserInput
-    payouts?: PayoutCreateNestedManyWithoutHostInput
-  }
-
-  export type UserUncheckedCreateWithoutRefreshTokensInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
-    venues?: VenueUncheckedCreateNestedManyWithoutHostInput
-    spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
-    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
-    payouts?: PayoutUncheckedCreateNestedManyWithoutHostInput
-  }
-
-  export type UserCreateOrConnectWithoutRefreshTokensInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutRefreshTokensInput, UserUncheckedCreateWithoutRefreshTokensInput>
-  }
-
-  export type UserUpsertWithoutRefreshTokensInput = {
-    update: XOR<UserUpdateWithoutRefreshTokensInput, UserUncheckedUpdateWithoutRefreshTokensInput>
-    create: XOR<UserCreateWithoutRefreshTokensInput, UserUncheckedCreateWithoutRefreshTokensInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutRefreshTokensInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutRefreshTokensInput, UserUncheckedUpdateWithoutRefreshTokensInput>
-  }
-
-  export type UserUpdateWithoutRefreshTokensInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
-    venues?: VenueUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutRefreshTokensInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
-    venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUncheckedUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserCreateWithoutHostApplicationsInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
-    venues?: VenueCreateNestedManyWithoutHostInput
-    spaces?: SpaceCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
-    reviews?: ReviewCreateNestedManyWithoutUserInput
-    payouts?: PayoutCreateNestedManyWithoutHostInput
-  }
-
-  export type UserUncheckedCreateWithoutHostApplicationsInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
-    venues?: VenueUncheckedCreateNestedManyWithoutHostInput
-    spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
-    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
-    payouts?: PayoutUncheckedCreateNestedManyWithoutHostInput
-  }
-
-  export type UserCreateOrConnectWithoutHostApplicationsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutHostApplicationsInput, UserUncheckedCreateWithoutHostApplicationsInput>
-  }
-
-  export type UserUpsertWithoutHostApplicationsInput = {
-    update: XOR<UserUpdateWithoutHostApplicationsInput, UserUncheckedUpdateWithoutHostApplicationsInput>
-    create: XOR<UserCreateWithoutHostApplicationsInput, UserUncheckedCreateWithoutHostApplicationsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutHostApplicationsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutHostApplicationsInput, UserUncheckedUpdateWithoutHostApplicationsInput>
-  }
-
-  export type UserUpdateWithoutHostApplicationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
-    venues?: VenueUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutHostApplicationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
-    venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUncheckedUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUncheckedUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserCreateWithoutPasswordResetUsesInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    venues?: VenueCreateNestedManyWithoutHostInput
-    spaces?: SpaceCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
-    reviews?: ReviewCreateNestedManyWithoutUserInput
-    payouts?: PayoutCreateNestedManyWithoutHostInput
-  }
-
-  export type UserUncheckedCreateWithoutPasswordResetUsesInput = {
-    id?: string
-    email: string
-    username: string
-    name?: string | null
-    password: string
-    role?: $Enums.Role
-    emailVerified?: boolean
-    image?: string | null
-    phone?: string | null
-    bio?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    deletedAt?: Date | string | null
-    hostVerified?: boolean
-    hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
-    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    venues?: VenueUncheckedCreateNestedManyWithoutHostInput
-    spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
-    bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
-    bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
-    reviews?: ReviewUncheckedCreateNestedManyWithoutUserInput
-    payouts?: PayoutUncheckedCreateNestedManyWithoutHostInput
-  }
-
-  export type UserCreateOrConnectWithoutPasswordResetUsesInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutPasswordResetUsesInput, UserUncheckedCreateWithoutPasswordResetUsesInput>
-  }
-
-  export type UserUpsertWithoutPasswordResetUsesInput = {
-    update: XOR<UserUpdateWithoutPasswordResetUsesInput, UserUncheckedUpdateWithoutPasswordResetUsesInput>
-    create: XOR<UserCreateWithoutPasswordResetUsesInput, UserUncheckedCreateWithoutPasswordResetUsesInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutPasswordResetUsesInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutPasswordResetUsesInput, UserUncheckedUpdateWithoutPasswordResetUsesInput>
-  }
-
-  export type UserUpdateWithoutPasswordResetUsesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    venues?: VenueUpdateManyWithoutHostNestedInput
-    spaces?: SpaceUpdateManyWithoutHostNestedInput
-    bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
-    bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
-    reviews?: ReviewUpdateManyWithoutUserNestedInput
-    payouts?: PayoutUpdateManyWithoutHostNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutPasswordResetUsesInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    username?: StringFieldUpdateOperationsInput | string
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    password?: StringFieldUpdateOperationsInput | string
-    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
-    emailVerified?: BoolFieldUpdateOperationsInput | boolean
-    image?: NullableStringFieldUpdateOperationsInput | string | null
-    phone?: NullableStringFieldUpdateOperationsInput | string | null
-    bio?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostVerified?: BoolFieldUpdateOperationsInput | boolean
-    hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
-    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
@@ -32467,14 +28682,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
     bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
@@ -32495,14 +28705,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
     bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
@@ -32533,6 +28738,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -32568,6 +28780,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -32618,14 +28837,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
     bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
@@ -32646,14 +28860,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
     bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
@@ -32690,14 +28899,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
     bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
@@ -32718,14 +28922,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
     bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
@@ -32917,11 +29116,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -32948,11 +29147,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -33029,14 +29228,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
     bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
@@ -33057,14 +29251,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
     bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
@@ -33336,6 +29525,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33371,6 +29567,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33548,6 +29751,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33583,6 +29793,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33653,6 +29870,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -33688,6 +29912,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -33748,6 +29979,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33783,6 +30021,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33833,6 +30078,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -33868,6 +30120,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -33902,6 +30161,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33937,6 +30203,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -33987,6 +30260,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34022,6 +30302,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34056,6 +30343,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34091,6 +30385,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34141,6 +30442,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34176,6 +30484,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34205,14 +30520,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsHost?: BookingCreateNestedManyWithoutHostInput
@@ -34233,14 +30543,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsHost?: BookingUncheckedCreateNestedManyWithoutHostInput
@@ -34266,14 +30571,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
@@ -34294,14 +30594,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
@@ -34332,6 +30627,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34367,6 +30669,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34440,14 +30749,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsHost?: BookingUpdateManyWithoutHostNestedInput
@@ -34468,14 +30772,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsHost?: BookingUncheckedUpdateManyWithoutHostNestedInput
@@ -34507,14 +30806,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
@@ -34535,14 +30829,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
@@ -34579,6 +30868,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34614,6 +30910,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34677,14 +30980,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
@@ -34705,14 +31003,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
@@ -34743,6 +31036,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34778,6 +31078,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -34812,11 +31119,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34844,11 +31151,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34886,14 +31193,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
@@ -34914,14 +31216,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
@@ -34958,6 +31255,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -34993,6 +31297,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -35033,11 +31344,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35065,11 +31376,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35091,14 +31402,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
     venues?: VenueCreateNestedManyWithoutHostInput
     spaces?: SpaceCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingCreateNestedManyWithoutGuestInput
@@ -35119,14 +31425,9 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
-    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
-    hostApplicationPending?: boolean
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
-    refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
-    hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
-    passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
     spaces?: SpaceUncheckedCreateNestedManyWithoutHostInput
     bookingsAsGuest?: BookingUncheckedCreateNestedManyWithoutGuestInput
@@ -35163,14 +31464,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
     venues?: VenueUpdateManyWithoutHostNestedInput
     spaces?: SpaceUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUpdateManyWithoutGuestNestedInput
@@ -35191,14 +31487,9 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
-    refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
-    hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
-    passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
     spaces?: SpaceUncheckedUpdateManyWithoutHostNestedInput
     bookingsAsGuest?: BookingUncheckedUpdateManyWithoutGuestNestedInput
@@ -35211,33 +31502,6 @@ export namespace Prisma {
     token: string
     expiresAt: Date | string
     createdAt?: Date | string
-  }
-
-  export type RefreshTokenCreateManyUserInput = {
-    id?: string
-    jti: string
-    expiresAt: Date | string
-    createdAt?: Date | string
-    usedAt?: Date | string | null
-    replacedBy?: string | null
-    revoked?: boolean
-  }
-
-  export type HostApplicationCreateManyUserInput = {
-    id?: string
-    status?: $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: string | null
-    decisionAt?: Date | string | null
-    decisionNotes?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type PasswordResetUseCreateManyUserInput = {
-    id?: string
-    jti: string
-    usedAt?: Date | string
   }
 
   export type VenueCreateManyHostInput = {
@@ -35283,6 +31547,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -35308,11 +31579,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35336,11 +31607,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35366,7 +31637,6 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
-    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -35393,87 +31663,6 @@ export namespace Prisma {
     token?: StringFieldUpdateOperationsInput | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type RefreshTokenUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type RefreshTokenUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type RefreshTokenUncheckedUpdateManyWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    usedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    replacedBy?: NullableStringFieldUpdateOperationsInput | string | null
-    revoked?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type HostApplicationUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type HostApplicationUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type HostApplicationUncheckedUpdateManyWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    status?: EnumHostApplicationStatusFieldUpdateOperationsInput | $Enums.HostApplicationStatus
-    applicationData?: NullableJsonNullValueInput | InputJsonValue
-    decisionBy?: NullableStringFieldUpdateOperationsInput | string | null
-    decisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    decisionNotes?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetUseUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetUseUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type PasswordResetUseUncheckedUpdateManyWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    jti?: StringFieldUpdateOperationsInput | string
-    usedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type VenueUpdateWithoutHostInput = {
@@ -35567,6 +31756,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -35602,6 +31798,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -35637,6 +31840,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -35660,11 +31870,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35691,11 +31901,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35720,11 +31930,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35746,11 +31956,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35777,11 +31987,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35806,11 +32016,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -35856,10 +32066,9 @@ export namespace Prisma {
 
   export type PayoutUpdateWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35869,10 +32078,9 @@ export namespace Prisma {
 
   export type PayoutUncheckedUpdateWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35882,10 +32090,9 @@ export namespace Prisma {
 
   export type PayoutUncheckedUpdateManyWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
-    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35912,6 +32119,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -35940,6 +32154,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -35975,6 +32196,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -36010,6 +32238,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -36061,11 +32296,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: Decimal | DecimalJsLike | number | string
+    exchangeRate?: number
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledByRole?: $Enums.BookingActor | null
+    cancelledBy?: string | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36173,11 +32408,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36204,11 +32439,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36233,11 +32468,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    exchangeRate?: FloatFieldUpdateOperationsInput | number
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36300,6 +32535,13 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
+    address: string
+    city: string
+    state?: string | null
+    country: string
+    postalCode?: string | null
+    latitude?: number | null
+    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -36328,6 +32570,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -36363,6 +32612,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -36398,6 +32654,13 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    address?: StringFieldUpdateOperationsInput | string
+    city?: StringFieldUpdateOperationsInput | string
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: StringFieldUpdateOperationsInput | string
+    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
+    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
+    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
