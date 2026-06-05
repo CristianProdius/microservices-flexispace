@@ -5,3 +5,4 @@ export * from "./review";
 export * from "./payout";
 export * from "./currency";
 export * from "./venue";
+export * from "./events";
