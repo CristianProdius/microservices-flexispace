@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import useAuthStore from "@/stores/authStore";
 import {
   Hotel,
@@ -16,6 +17,7 @@ import {
 
 import {
   DashboardActionCard,
+  DataLoadError,
   DashboardPageHeader,
   DashboardSection,
   DashboardStatCard,
@@ -39,9 +41,12 @@ const HostVenuesPage = () => {
   const { getToken } = useAuthStore();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
 
   const fetchVenues = useCallback(async () => {
+    setError(null);
+    setLoading(true);
     try {
       const resolvedToken = await getToken();
 
@@ -61,9 +66,14 @@ const HostVenuesPage = () => {
         setVenues(data);
       } else if (res.status === 401) {
         router.push("/login");
+      } else {
+        throw new Error("Failed to fetch venues");
       }
-    } catch (error) {
-      console.error("Error fetching venues:", error);
+    } catch (err) {
+      console.error("Error fetching venues:", err);
+      setError(
+        "Venues could not be loaded. Check the product service and retry."
+      );
     }
     setLoading(false);
   }, [getToken, router]);
@@ -93,12 +103,17 @@ const HostVenuesPage = () => {
 
       if (res.ok) {
         setVenues((prev) => prev.filter((venue) => venue.id !== venueId));
+        toast.success("Venue deleted");
       } else if (res.status === 401) {
         router.push("/login");
         return;
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.message || "Failed to delete venue");
       }
-    } catch (error) {
-      console.error("Error deleting venue:", error);
+    } catch (err) {
+      console.error("Error deleting venue:", err);
+      toast.error("Error deleting venue");
     }
     setMenuOpen(null);
   };
@@ -150,6 +165,27 @@ const HostVenuesPage = () => {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <DashboardPageHeader
+          title="My Venues"
+          description="Manage your venue properties"
+          action={
+            <Link
+              href="/host/venues/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <Plus className="size-4" />
+              Add Venue
+            </Link>
+          }
+        />
+        <DataLoadError message={error} onRetry={fetchVenues} />
       </div>
     );
   }

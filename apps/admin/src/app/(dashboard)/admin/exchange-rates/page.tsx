@@ -24,7 +24,9 @@ const ExchangeRatesPage = () => {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editedRates, setEditedRates] = useState<Record<number, number>>({});
+  // Store the raw string from the input so partial typing ("0", "1.", "")
+  // round-trips correctly. We only parse at save time.
+  const [editedRates, setEditedRates] = useState<Record<number, string>>({});
 
   useEffect(() => {
     fetchRates();
@@ -50,10 +52,18 @@ const ExchangeRatesPage = () => {
   };
 
   const handleRateChange = (id: number, value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue > 0) {
-      setEditedRates((prev) => ({ ...prev, [id]: numValue }));
-    }
+    setEditedRates((prev) => {
+      const original = rates.find((rate) => rate.id === id);
+      // Treat "edited value equals original" as not-dirty so the Save All
+      // button correctly disables once the user reverts their edit.
+      if (original && value === String(original.rate)) {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      return { ...prev, [id]: value };
+    });
   };
 
   const hasChanges = Object.keys(editedRates).length > 0;
@@ -61,13 +71,36 @@ const ExchangeRatesPage = () => {
   const handleSaveAll = async () => {
     if (!hasChanges) return;
 
+    // Validate every dirty row before issuing the request.
+    const invalid: string[] = [];
+    const parsedEdits: Record<number, number> = {};
+    for (const [idStr, raw] of Object.entries(editedRates)) {
+      const id = Number(idStr);
+      const original = rates.find((rate) => rate.id === id);
+      const numValue = parseFloat(raw);
+      if (Number.isNaN(numValue) || numValue <= 0) {
+        invalid.push(
+          original
+            ? `${original.fromCurrency} → ${original.toCurrency}`
+            : `rate #${id}`
+        );
+        continue;
+      }
+      parsedEdits[id] = numValue;
+    }
+
+    if (invalid.length > 0) {
+      toast.error(`Enter a positive rate for: ${invalid.join(", ")}`);
+      return;
+    }
+
     setSaving(true);
     try {
       const updatedRates = rates.map((rate) => ({
         id: rate.id,
         fromCurrency: rate.fromCurrency,
         toCurrency: rate.toCurrency,
-        rate: editedRates[rate.id] ?? rate.rate,
+        rate: parsedEdits[rate.id] ?? rate.rate,
       }));
 
       const res = await fetch(`${PRODUCT_SERVICE_URL}/currencies/rates`, {
@@ -161,7 +194,7 @@ const ExchangeRatesPage = () => {
                     type="number"
                     step="0.000001"
                     min="0"
-                    value={editedRates[rate.id] ?? rate.rate}
+                    value={editedRates[rate.id] ?? String(rate.rate)}
                     onChange={(e) => handleRateChange(rate.id, e.target.value)}
                     className="w-36 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
                   />
