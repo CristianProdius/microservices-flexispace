@@ -6,6 +6,7 @@ import Image from "next/image";
 import useBookingStore from "@/stores/bookingStore";
 import useAuthStore from "@/stores/authStore";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { ORDER_SERVICE_URL } from "@/lib/config";
 import { useTranslations } from "next-intl";
 import { Calendar, Clock, Users, AlertCircle, Check } from "lucide-react";
 import { formatPriceFull } from "@/lib/utils";
@@ -40,7 +41,7 @@ const CheckoutPage = () => {
 
     try {
       const bookingRes = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings`,
+        `${ORDER_SERVICE_URL}/bookings`,
         {
           method: "POST",
           body: JSON.stringify({

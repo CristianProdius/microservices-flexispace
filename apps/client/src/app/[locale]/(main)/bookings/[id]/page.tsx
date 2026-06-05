@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import useAuthStore from "@/stores/authStore";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { ORDER_SERVICE_URL } from "@/lib/config";
 import { useTranslations } from "next-intl";
 import {
   Calendar,
@@ -120,21 +121,10 @@ const BookingDetailPage = () => {
     },
   };
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/login?redirect=/bookings/" + params.id);
-      return;
-    }
-
-    if (!authLoading && isAuthenticated && token) {
-      fetchBooking();
-    }
-  }, [authLoading, isAuthenticated, token, params.id, router]);
-
-  const fetchBooking = async () => {
+  const fetchBooking = useCallback(async () => {
     try {
       const res = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${params.id}`
+        `${ORDER_SERVICE_URL}/bookings/${params.id}`
       );
 
       if (!res.ok) {
@@ -148,7 +138,18 @@ const BookingDetailPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login?redirect=/bookings/" + params.id);
+      return;
+    }
+
+    if (!authLoading && isAuthenticated && token) {
+      fetchBooking();
+    }
+  }, [authLoading, isAuthenticated, token, params.id, router, fetchBooking]);
 
   const cancelBooking = async () => {
     if (!booking || !token || cancelling) return;
@@ -158,7 +159,7 @@ const BookingDetailPage = () => {
     setCancelling(true);
     try {
       const res = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${booking.id}/cancel`,
+        `${ORDER_SERVICE_URL}/bookings/${booking.id}/cancel`,
         {
           method: "POST",
           body: JSON.stringify({ reason: t("cancelledByGuest") }),

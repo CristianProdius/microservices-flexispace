@@ -19,9 +19,11 @@ export async function getValidToken(): Promise<string | null> {
     try {
       const refreshToken = getRefreshToken();
       if (!refreshToken) return null;
-      const newToken = await refreshAccessToken(refreshToken);
-      saveTokens(newToken, refreshToken);
-      return newToken;
+      const refreshed = await refreshAccessToken(refreshToken);
+      // Persist whichever refresh token the server returned; rotation-enabled
+      // backends invalidate the old one immediately.
+      saveTokens(refreshed.accessToken, refreshed.refreshToken ?? refreshToken);
+      return refreshed.accessToken;
     } catch {
       return null;
     } finally {

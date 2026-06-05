@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
+import { safeRedirectPath } from "@/lib/safeRedirect";
 import { useTranslations } from "next-intl";
 
 const inputClass =
@@ -28,11 +29,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       const redirectTo = new URLSearchParams(window.location.search).get("redirect");
-      router.push(
-        redirectTo?.startsWith("/") && !redirectTo.startsWith("//")
-          ? redirectTo
-          : "/"
-      );
+      router.push(safeRedirectPath(redirectTo));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loginFailed"));
     } finally {

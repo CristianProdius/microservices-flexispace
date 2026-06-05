@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import useAuthStore from "@/stores/authStore";
 import { fetchWithAuth } from "@/lib/apiClient";
+import { ORDER_SERVICE_URL } from "@/lib/config";
 import { useTranslations } from "next-intl";
 import {
   Calendar,
@@ -104,22 +105,9 @@ const BookingsPage = () => {
     all: t("all"),
   };
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/login?redirect=/bookings");
-      return;
-    }
-
-    if (!authLoading && isAuthenticated && token) {
-      fetchBookings();
-    }
-  }, [authLoading, isAuthenticated, token, router]);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
-      const res = await fetchWithAuth(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/my`
-      );
+      const res = await fetchWithAuth(`${ORDER_SERVICE_URL}/bookings/my`);
 
       if (!res.ok) {
         throw new Error("Failed to fetch bookings");
@@ -132,7 +120,18 @@ const BookingsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/login?redirect=/bookings");
+      return;
+    }
+
+    if (!authLoading && isAuthenticated && token) {
+      fetchBookings();
+    }
+  }, [authLoading, isAuthenticated, token, router, fetchBookings]);
 
   const filteredBookings = bookings.filter((booking) => {
     const bookingDate = new Date(booking.startDate);
