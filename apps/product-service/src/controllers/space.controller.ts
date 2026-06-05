@@ -496,13 +496,7 @@ export const createSpace = async (req: Request, res: Response) => {
       ...buildCategoryPayload(spaceData),
       hostId,
       venueId,
-      address: venue.address,
-      city: venue.city,
-      state: venue.state,
-      country: venue.country,
-      postalCode: venue.postalCode,
-      latitude: venue.latitude,
-      longitude: venue.longitude,
+      // Location lives on Venue (see DB-010); no longer denormalised onto Space.
       amenities: amenityIds
         ? {
             create: amenityIds.map((amenityId: number) => ({ amenityId })),
@@ -622,14 +616,8 @@ export const updateSpace = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Venue does not belong to you" });
     }
     allowed.venueId = venueId;
-    // Update denormalized location fields from new venue
-    allowed.address = venue.address;
-    allowed.city = venue.city;
-    allowed.state = venue.state;
-    allowed.country = venue.country;
-    allowed.postalCode = venue.postalCode;
-    allowed.latitude = venue.latitude;
-    allowed.longitude = venue.longitude;
+    // Location now lives on Venue (DB-010); switching venues automatically updates
+    // the location surfaced via flattenVenue() — no copy required.
   }
 
   // Handle categorySlug → spaceType resolution

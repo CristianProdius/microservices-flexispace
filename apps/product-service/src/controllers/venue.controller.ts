@@ -43,8 +43,7 @@ export const getVenue = async (req: Request, res: Response) => {
           currency: true,
           images: true,
           isActive: true,
-          city: true,
-          country: true,
+          // city/country live on the parent Venue (DB-010) and are already in the response.
           instantBook: true,
         },
         orderBy: { createdAt: "asc" },

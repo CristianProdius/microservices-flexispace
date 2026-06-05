@@ -6,7 +6,9 @@ export const getRates = async (_req: Request, res: Response) => {
   const rates = await prisma.exchangeRate.findMany({
     orderBy: [{ fromCurrency: "asc" }, { toCurrency: "asc" }],
   });
-  res.status(200).json(rates);
+  // rate is Prisma.Decimal — serialise as a plain number so existing
+  // consumers (admin UI, mobile clients) keep their `typeof rate === "number"` contract.
+  res.status(200).json(rates.map((row) => ({ ...row, rate: Number(row.rate) })));
 };
 
 export const updateRates = async (req: Request, res: Response) => {
@@ -33,5 +35,7 @@ export const updateRates = async (req: Request, res: Response) => {
   }
 
   invalidateRateCache();
-  res.status(200).json(results);
+  res
+    .status(200)
+    .json(results.map((row) => ({ ...row, rate: Number(row.rate) })));
 };

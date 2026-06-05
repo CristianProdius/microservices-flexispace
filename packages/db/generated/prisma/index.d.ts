@@ -164,6 +164,15 @@ export const Currency: {
 
 export type Currency = (typeof Currency)[keyof typeof Currency]
 
+
+export const BookingActor: {
+  GUEST: 'GUEST',
+  HOST: 'HOST',
+  ADMIN: 'ADMIN'
+};
+
+export type BookingActor = (typeof BookingActor)[keyof typeof BookingActor]
+
 }
 
 export type Role = $Enums.Role
@@ -193,6 +202,10 @@ export const PayoutStatus: typeof $Enums.PayoutStatus
 export type Currency = $Enums.Currency
 
 export const Currency: typeof $Enums.Currency
+
+export type BookingActor = $Enums.BookingActor
+
+export const BookingActor: typeof $Enums.BookingActor
 
 /**
  * ##  Prisma Client ʲˢ
@@ -6294,19 +6307,19 @@ export namespace Prisma {
 
   export type ExchangeRateAvgAggregateOutputType = {
     id: number | null
-    rate: number | null
+    rate: Decimal | null
   }
 
   export type ExchangeRateSumAggregateOutputType = {
     id: number | null
-    rate: number | null
+    rate: Decimal | null
   }
 
   export type ExchangeRateMinAggregateOutputType = {
     id: number | null
     fromCurrency: $Enums.Currency | null
     toCurrency: $Enums.Currency | null
-    rate: number | null
+    rate: Decimal | null
     updatedAt: Date | null
     updatedBy: string | null
   }
@@ -6315,7 +6328,7 @@ export namespace Prisma {
     id: number | null
     fromCurrency: $Enums.Currency | null
     toCurrency: $Enums.Currency | null
-    rate: number | null
+    rate: Decimal | null
     updatedAt: Date | null
     updatedBy: string | null
   }
@@ -6459,7 +6472,7 @@ export namespace Prisma {
     id: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: number
+    rate: Decimal
     updatedAt: Date
     updatedBy: string | null
     _count: ExchangeRateCountAggregateOutputType | null
@@ -6528,7 +6541,7 @@ export namespace Prisma {
       id: number
       fromCurrency: $Enums.Currency
       toCurrency: $Enums.Currency
-      rate: number
+      rate: Prisma.Decimal
       updatedAt: Date
       updatedBy: string | null
     }, ExtArgs["result"]["exchangeRate"]>
@@ -6957,7 +6970,7 @@ export namespace Prisma {
     readonly id: FieldRef<"ExchangeRate", 'Int'>
     readonly fromCurrency: FieldRef<"ExchangeRate", 'Currency'>
     readonly toCurrency: FieldRef<"ExchangeRate", 'Currency'>
-    readonly rate: FieldRef<"ExchangeRate", 'Float'>
+    readonly rate: FieldRef<"ExchangeRate", 'Decimal'>
     readonly updatedAt: FieldRef<"ExchangeRate", 'DateTime'>
     readonly updatedBy: FieldRef<"ExchangeRate", 'String'>
   }
@@ -7346,8 +7359,6 @@ export namespace Prisma {
     capacity: number | null
     minBookingHours: number | null
     maxBookingHours: number | null
-    latitude: number | null
-    longitude: number | null
     venueId: number | null
   }
 
@@ -7359,8 +7370,6 @@ export namespace Prisma {
     capacity: number | null
     minBookingHours: number | null
     maxBookingHours: number | null
-    latitude: number | null
-    longitude: number | null
     venueId: number | null
   }
 
@@ -7379,13 +7388,6 @@ export namespace Prisma {
     minBookingHours: number | null
     maxBookingHours: number | null
     videoUrl: string | null
-    address: string | null
-    city: string | null
-    state: string | null
-    country: string | null
-    postalCode: string | null
-    latitude: number | null
-    longitude: number | null
     isActive: boolean | null
     instantBook: boolean | null
     cancellationPolicy: $Enums.CancellationPolicy | null
@@ -7412,13 +7414,6 @@ export namespace Prisma {
     minBookingHours: number | null
     maxBookingHours: number | null
     videoUrl: string | null
-    address: string | null
-    city: string | null
-    state: string | null
-    country: string | null
-    postalCode: string | null
-    latitude: number | null
-    longitude: number | null
     isActive: boolean | null
     instantBook: boolean | null
     cancellationPolicy: $Enums.CancellationPolicy | null
@@ -7449,13 +7444,6 @@ export namespace Prisma {
     maxBookingHours: number
     images: number
     videoUrl: number
-    address: number
-    city: number
-    state: number
-    country: number
-    postalCode: number
-    latitude: number
-    longitude: number
     isActive: number
     instantBook: number
     cancellationPolicy: number
@@ -7477,8 +7465,6 @@ export namespace Prisma {
     capacity?: true
     minBookingHours?: true
     maxBookingHours?: true
-    latitude?: true
-    longitude?: true
     venueId?: true
   }
 
@@ -7490,8 +7476,6 @@ export namespace Prisma {
     capacity?: true
     minBookingHours?: true
     maxBookingHours?: true
-    latitude?: true
-    longitude?: true
     venueId?: true
   }
 
@@ -7510,13 +7494,6 @@ export namespace Prisma {
     minBookingHours?: true
     maxBookingHours?: true
     videoUrl?: true
-    address?: true
-    city?: true
-    state?: true
-    country?: true
-    postalCode?: true
-    latitude?: true
-    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -7543,13 +7520,6 @@ export namespace Prisma {
     minBookingHours?: true
     maxBookingHours?: true
     videoUrl?: true
-    address?: true
-    city?: true
-    state?: true
-    country?: true
-    postalCode?: true
-    latitude?: true
-    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -7580,13 +7550,6 @@ export namespace Prisma {
     maxBookingHours?: true
     images?: true
     videoUrl?: true
-    address?: true
-    city?: true
-    state?: true
-    country?: true
-    postalCode?: true
-    latitude?: true
-    longitude?: true
     isActive?: true
     instantBook?: true
     cancellationPolicy?: true
@@ -7704,13 +7667,6 @@ export namespace Prisma {
     maxBookingHours: number | null
     images: JsonValue
     videoUrl: string | null
-    address: string
-    city: string
-    state: string | null
-    country: string
-    postalCode: string | null
-    latitude: number | null
-    longitude: number | null
     isActive: boolean
     instantBook: boolean
     cancellationPolicy: $Enums.CancellationPolicy
@@ -7760,13 +7716,6 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
-    address?: boolean
-    city?: boolean
-    state?: boolean
-    country?: boolean
-    postalCode?: boolean
-    latitude?: boolean
-    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -7807,13 +7756,6 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
-    address?: boolean
-    city?: boolean
-    state?: boolean
-    country?: boolean
-    postalCode?: boolean
-    latitude?: boolean
-    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -7847,13 +7789,6 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
-    address?: boolean
-    city?: boolean
-    state?: boolean
-    country?: boolean
-    postalCode?: boolean
-    latitude?: boolean
-    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -7887,13 +7822,6 @@ export namespace Prisma {
     maxBookingHours?: boolean
     images?: boolean
     videoUrl?: boolean
-    address?: boolean
-    city?: boolean
-    state?: boolean
-    country?: boolean
-    postalCode?: boolean
-    latitude?: boolean
-    longitude?: boolean
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: boolean
@@ -7905,7 +7833,7 @@ export namespace Prisma {
     categorySlug?: boolean
   }
 
-  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
+  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
   export type SpaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     venue?: boolean | VenueDefaultArgs<ExtArgs>
@@ -7961,13 +7889,6 @@ export namespace Prisma {
       maxBookingHours: number | null
       images: Prisma.JsonValue
       videoUrl: string | null
-      address: string
-      city: string
-      state: string | null
-      country: string
-      postalCode: string | null
-      latitude: number | null
-      longitude: number | null
       isActive: boolean
       instantBook: boolean
       cancellationPolicy: $Enums.CancellationPolicy
@@ -8427,13 +8348,6 @@ export namespace Prisma {
     readonly maxBookingHours: FieldRef<"Space", 'Int'>
     readonly images: FieldRef<"Space", 'Json'>
     readonly videoUrl: FieldRef<"Space", 'String'>
-    readonly address: FieldRef<"Space", 'String'>
-    readonly city: FieldRef<"Space", 'String'>
-    readonly state: FieldRef<"Space", 'String'>
-    readonly country: FieldRef<"Space", 'String'>
-    readonly postalCode: FieldRef<"Space", 'String'>
-    readonly latitude: FieldRef<"Space", 'Float'>
-    readonly longitude: FieldRef<"Space", 'Float'>
     readonly isActive: FieldRef<"Space", 'Boolean'>
     readonly instantBook: FieldRef<"Space", 'Boolean'>
     readonly cancellationPolicy: FieldRef<"Space", 'CancellationPolicy'>
@@ -16749,7 +16663,7 @@ export namespace Prisma {
     cleaningFee: number | null
     serviceFee: number | null
     totalAmount: number | null
-    exchangeRate: number | null
+    exchangeRate: Decimal | null
   }
 
   export type BookingSumAggregateOutputType = {
@@ -16759,7 +16673,7 @@ export namespace Prisma {
     cleaningFee: number | null
     serviceFee: number | null
     totalAmount: number | null
-    exchangeRate: number | null
+    exchangeRate: Decimal | null
   }
 
   export type BookingMinAggregateOutputType = {
@@ -16778,11 +16692,11 @@ export namespace Prisma {
     serviceFee: number | null
     totalAmount: number | null
     currency: $Enums.Currency | null
-    exchangeRate: number | null
+    exchangeRate: Decimal | null
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
-    cancelledBy: string | null
+    cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16807,11 +16721,11 @@ export namespace Prisma {
     serviceFee: number | null
     totalAmount: number | null
     currency: $Enums.Currency | null
-    exchangeRate: number | null
+    exchangeRate: Decimal | null
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
-    cancelledBy: string | null
+    cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16840,7 +16754,7 @@ export namespace Prisma {
     status: number
     guestMessage: number
     hostMessage: number
-    cancelledBy: number
+    cancelledByRole: number
     cancellationReason: number
     createdAt: number
     updatedAt: number
@@ -16891,7 +16805,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledBy?: true
+    cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -16920,7 +16834,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledBy?: true
+    cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -16949,7 +16863,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
-    cancelledBy?: true
+    cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
     updatedAt?: true
@@ -17061,11 +16975,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency: $Enums.Currency
-    exchangeRate: number
+    exchangeRate: Decimal
     status: $Enums.BookingStatus
     guestMessage: string | null
     hostMessage: string | null
-    cancelledBy: string | null
+    cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date
     updatedAt: Date
@@ -17113,7 +17027,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledBy?: boolean
+    cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -17146,7 +17060,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledBy?: boolean
+    cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -17178,7 +17092,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledBy?: boolean
+    cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -17210,7 +17124,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
-    cancelledBy?: boolean
+    cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -17219,7 +17133,7 @@ export namespace Prisma {
     completedAt?: boolean
   }
 
-  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "cancelledBy" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
+  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
   export type BookingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
@@ -17261,11 +17175,11 @@ export namespace Prisma {
       serviceFee: number
       totalAmount: number
       currency: $Enums.Currency
-      exchangeRate: number
+      exchangeRate: Prisma.Decimal
       status: $Enums.BookingStatus
       guestMessage: string | null
       hostMessage: string | null
-      cancelledBy: string | null
+      cancelledByRole: $Enums.BookingActor | null
       cancellationReason: string | null
       createdAt: Date
       updatedAt: Date
@@ -17714,11 +17628,11 @@ export namespace Prisma {
     readonly serviceFee: FieldRef<"Booking", 'Float'>
     readonly totalAmount: FieldRef<"Booking", 'Float'>
     readonly currency: FieldRef<"Booking", 'Currency'>
-    readonly exchangeRate: FieldRef<"Booking", 'Float'>
+    readonly exchangeRate: FieldRef<"Booking", 'Decimal'>
     readonly status: FieldRef<"Booking", 'BookingStatus'>
     readonly guestMessage: FieldRef<"Booking", 'String'>
     readonly hostMessage: FieldRef<"Booking", 'String'>
-    readonly cancelledBy: FieldRef<"Booking", 'String'>
+    readonly cancelledByRole: FieldRef<"Booking", 'BookingActor'>
     readonly cancellationReason: FieldRef<"Booking", 'String'>
     readonly createdAt: FieldRef<"Booking", 'DateTime'>
     readonly updatedAt: FieldRef<"Booking", 'DateTime'>
@@ -20618,13 +20532,6 @@ export namespace Prisma {
     maxBookingHours: 'maxBookingHours',
     images: 'images',
     videoUrl: 'videoUrl',
-    address: 'address',
-    city: 'city',
-    state: 'state',
-    country: 'country',
-    postalCode: 'postalCode',
-    latitude: 'latitude',
-    longitude: 'longitude',
     isActive: 'isActive',
     instantBook: 'instantBook',
     cancellationPolicy: 'cancellationPolicy',
@@ -20735,7 +20642,7 @@ export namespace Prisma {
     status: 'status',
     guestMessage: 'guestMessage',
     hostMessage: 'hostMessage',
-    cancelledBy: 'cancelledBy',
+    cancelledByRole: 'cancelledByRole',
     cancellationReason: 'cancellationReason',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
@@ -20939,6 +20846,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
    * Reference to a field of type 'SpaceType'
    */
   export type EnumSpaceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SpaceType'>
@@ -20991,6 +20912,20 @@ export namespace Prisma {
    * Reference to a field of type 'BookingStatus[]'
    */
   export type ListEnumBookingStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'BookingActor'
+   */
+  export type EnumBookingActorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingActor'>
+    
+
+
+  /**
+   * Reference to a field of type 'BookingActor[]'
+   */
+  export type ListEnumBookingActorFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BookingActor[]'>
     
 
 
@@ -21341,7 +21276,7 @@ export namespace Prisma {
     id?: IntFilter<"ExchangeRate"> | number
     fromCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: FloatFilter<"ExchangeRate"> | number
+    rate?: DecimalFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableFilter<"ExchangeRate"> | string | null
   }
@@ -21363,7 +21298,7 @@ export namespace Prisma {
     NOT?: ExchangeRateWhereInput | ExchangeRateWhereInput[]
     fromCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: FloatFilter<"ExchangeRate"> | number
+    rate?: DecimalFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableFilter<"ExchangeRate"> | string | null
   }, "id" | "fromCurrency_toCurrency">
@@ -21389,7 +21324,7 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"ExchangeRate"> | number
     fromCurrency?: EnumCurrencyWithAggregatesFilter<"ExchangeRate"> | $Enums.Currency
     toCurrency?: EnumCurrencyWithAggregatesFilter<"ExchangeRate"> | $Enums.Currency
-    rate?: FloatWithAggregatesFilter<"ExchangeRate"> | number
+    rate?: DecimalWithAggregatesFilter<"ExchangeRate"> | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeWithAggregatesFilter<"ExchangeRate"> | Date | string
     updatedBy?: StringNullableWithAggregatesFilter<"ExchangeRate"> | string | null
   }
@@ -21416,13 +21351,6 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
-    address?: StringFilter<"Space"> | string
-    city?: StringFilter<"Space"> | string
-    state?: StringNullableFilter<"Space"> | string | null
-    country?: StringFilter<"Space"> | string
-    postalCode?: StringNullableFilter<"Space"> | string | null
-    latitude?: FloatNullableFilter<"Space"> | number | null
-    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -21462,13 +21390,6 @@ export namespace Prisma {
     maxBookingHours?: SortOrderInput | SortOrder
     images?: SortOrder
     videoUrl?: SortOrderInput | SortOrder
-    address?: SortOrder
-    city?: SortOrder
-    state?: SortOrderInput | SortOrder
-    country?: SortOrder
-    postalCode?: SortOrderInput | SortOrder
-    latitude?: SortOrderInput | SortOrder
-    longitude?: SortOrderInput | SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -21511,13 +21432,6 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
-    address?: StringFilter<"Space"> | string
-    city?: StringFilter<"Space"> | string
-    state?: StringNullableFilter<"Space"> | string | null
-    country?: StringFilter<"Space"> | string
-    postalCode?: StringNullableFilter<"Space"> | string | null
-    latitude?: FloatNullableFilter<"Space"> | number | null
-    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -21557,13 +21471,6 @@ export namespace Prisma {
     maxBookingHours?: SortOrderInput | SortOrder
     images?: SortOrder
     videoUrl?: SortOrderInput | SortOrder
-    address?: SortOrder
-    city?: SortOrder
-    state?: SortOrderInput | SortOrder
-    country?: SortOrder
-    postalCode?: SortOrderInput | SortOrder
-    latitude?: SortOrderInput | SortOrder
-    longitude?: SortOrderInput | SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -21602,13 +21509,6 @@ export namespace Prisma {
     maxBookingHours?: IntNullableWithAggregatesFilter<"Space"> | number | null
     images?: JsonWithAggregatesFilter<"Space">
     videoUrl?: StringNullableWithAggregatesFilter<"Space"> | string | null
-    address?: StringWithAggregatesFilter<"Space"> | string
-    city?: StringWithAggregatesFilter<"Space"> | string
-    state?: StringNullableWithAggregatesFilter<"Space"> | string | null
-    country?: StringWithAggregatesFilter<"Space"> | string
-    postalCode?: StringNullableWithAggregatesFilter<"Space"> | string | null
-    latitude?: FloatNullableWithAggregatesFilter<"Space"> | number | null
-    longitude?: FloatNullableWithAggregatesFilter<"Space"> | number | null
     isActive?: BoolWithAggregatesFilter<"Space"> | boolean
     instantBook?: BoolWithAggregatesFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyWithAggregatesFilter<"Space"> | $Enums.CancellationPolicy
@@ -22042,11 +21942,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: FloatFilter<"Booking"> | number
+    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledBy?: StringNullableFilter<"Booking"> | string | null
+    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -22079,7 +21979,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
-    cancelledBy?: SortOrderInput | SortOrder
+    cancelledByRole?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -22111,11 +22011,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: FloatFilter<"Booking"> | number
+    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledBy?: StringNullableFilter<"Booking"> | string | null
+    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -22148,7 +22048,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
-    cancelledBy?: SortOrderInput | SortOrder
+    cancelledByRole?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -22181,11 +22081,11 @@ export namespace Prisma {
     serviceFee?: FloatWithAggregatesFilter<"Booking"> | number
     totalAmount?: FloatWithAggregatesFilter<"Booking"> | number
     currency?: EnumCurrencyWithAggregatesFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: FloatWithAggregatesFilter<"Booking"> | number
+    exchangeRate?: DecimalWithAggregatesFilter<"Booking"> | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusWithAggregatesFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     hostMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
-    cancelledBy?: StringNullableWithAggregatesFilter<"Booking"> | string | null
+    cancelledByRole?: EnumBookingActorNullableWithAggregatesFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
@@ -22756,7 +22656,7 @@ export namespace Prisma {
   export type ExchangeRateCreateInput = {
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: number
+    rate: Decimal | DecimalJsLike | number | string
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -22765,7 +22665,7 @@ export namespace Prisma {
     id?: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: number
+    rate: Decimal | DecimalJsLike | number | string
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -22773,7 +22673,7 @@ export namespace Prisma {
   export type ExchangeRateUpdateInput = {
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: FloatFieldUpdateOperationsInput | number
+    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -22782,7 +22682,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: FloatFieldUpdateOperationsInput | number
+    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -22791,7 +22691,7 @@ export namespace Prisma {
     id?: number
     fromCurrency: $Enums.Currency
     toCurrency: $Enums.Currency
-    rate: number
+    rate: Decimal | DecimalJsLike | number | string
     updatedAt?: Date | string
     updatedBy?: string | null
   }
@@ -22799,7 +22699,7 @@ export namespace Prisma {
   export type ExchangeRateUpdateManyMutationInput = {
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: FloatFieldUpdateOperationsInput | number
+    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -22808,7 +22708,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     fromCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     toCurrency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    rate?: FloatFieldUpdateOperationsInput | number
+    rate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedBy?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -22831,13 +22731,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -22874,13 +22767,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -22916,13 +22802,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -22959,13 +22838,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -23002,13 +22874,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -23038,13 +22903,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -23072,13 +22930,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -23474,11 +23325,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23507,11 +23358,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23534,11 +23385,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23567,11 +23418,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23597,11 +23448,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23623,11 +23474,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23652,11 +23503,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -24387,15 +24238,15 @@ export namespace Prisma {
     _max?: NestedEnumCurrencyFilter<$PrismaModel>
   }
 
-  export type FloatFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
   }
 
   export type ExchangeRateFromCurrencyToCurrencyCompoundUniqueInput = {
@@ -24440,20 +24291,20 @@ export namespace Prisma {
     rate?: SortOrder
   }
 
-  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
     _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type EnumSpaceTypeFilter<$PrismaModel = never> = {
@@ -24468,6 +24319,17 @@ export namespace Prisma {
     in?: $Enums.PricingType[] | ListEnumPricingTypeFieldRefInput<$PrismaModel>
     notIn?: $Enums.PricingType[] | ListEnumPricingTypeFieldRefInput<$PrismaModel>
     not?: NestedEnumPricingTypeFilter<$PrismaModel> | $Enums.PricingType
+  }
+
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
   export type IntNullableFilter<$PrismaModel = never> = {
@@ -24557,13 +24419,6 @@ export namespace Prisma {
     maxBookingHours?: SortOrder
     images?: SortOrder
     videoUrl?: SortOrder
-    address?: SortOrder
-    city?: SortOrder
-    state?: SortOrder
-    country?: SortOrder
-    postalCode?: SortOrder
-    latitude?: SortOrder
-    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -24583,8 +24438,6 @@ export namespace Prisma {
     capacity?: SortOrder
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
-    latitude?: SortOrder
-    longitude?: SortOrder
     venueId?: SortOrder
   }
 
@@ -24603,13 +24456,6 @@ export namespace Prisma {
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
     videoUrl?: SortOrder
-    address?: SortOrder
-    city?: SortOrder
-    state?: SortOrder
-    country?: SortOrder
-    postalCode?: SortOrder
-    latitude?: SortOrder
-    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -24636,13 +24482,6 @@ export namespace Prisma {
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
     videoUrl?: SortOrder
-    address?: SortOrder
-    city?: SortOrder
-    state?: SortOrder
-    country?: SortOrder
-    postalCode?: SortOrder
-    latitude?: SortOrder
-    longitude?: SortOrder
     isActive?: SortOrder
     instantBook?: SortOrder
     cancellationPolicy?: SortOrder
@@ -24662,8 +24501,6 @@ export namespace Prisma {
     capacity?: SortOrder
     minBookingHours?: SortOrder
     maxBookingHours?: SortOrder
-    latitude?: SortOrder
-    longitude?: SortOrder
     venueId?: SortOrder
   }
 
@@ -24685,6 +24522,22 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPricingTypeFilter<$PrismaModel>
     _max?: NestedEnumPricingTypeFilter<$PrismaModel>
+  }
+
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -25007,6 +24860,13 @@ export namespace Prisma {
     not?: NestedEnumBookingStatusFilter<$PrismaModel> | $Enums.BookingStatus
   }
 
+  export type EnumBookingActorNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
+    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumBookingActorNullableFilter<$PrismaModel> | $Enums.BookingActor | null
+  }
+
   export type ReviewNullableScalarRelationFilter = {
     is?: ReviewWhereInput | null
     isNot?: ReviewWhereInput | null
@@ -25032,7 +24892,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledBy?: SortOrder
+    cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -25071,7 +24931,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledBy?: SortOrder
+    cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -25100,7 +24960,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
-    cancelledBy?: SortOrder
+    cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -25127,6 +24987,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumBookingStatusFilter<$PrismaModel>
     _max?: NestedEnumBookingStatusFilter<$PrismaModel>
+  }
+
+  export type EnumBookingActorNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
+    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel> | $Enums.BookingActor | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumBookingActorNullableFilter<$PrismaModel>
+    _max?: NestedEnumBookingActorNullableFilter<$PrismaModel>
   }
 
   export type BookingScalarRelationFilter = {
@@ -25670,12 +25540,12 @@ export namespace Prisma {
     deleteMany?: SpaceScalarWhereInput | SpaceScalarWhereInput[]
   }
 
-  export type FloatFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
   }
 
   export type UserCreateNestedOneWithoutSpacesInput = {
@@ -25786,6 +25656,14 @@ export namespace Prisma {
 
   export type EnumPricingTypeFieldUpdateOperationsInput = {
     set?: $Enums.PricingType
+  }
+
+  export type FloatFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type NullableIntFieldUpdateOperationsInput = {
@@ -26245,6 +26123,10 @@ export namespace Prisma {
     set?: $Enums.BookingStatus
   }
 
+  export type NullableEnumBookingActorFieldUpdateOperationsInput = {
+    set?: $Enums.BookingActor | null
+  }
+
   export type UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput = {
     create?: XOR<UserCreateWithoutBookingsAsGuestInput, UserUncheckedCreateWithoutBookingsAsGuestInput>
     connectOrCreate?: UserCreateOrConnectWithoutBookingsAsGuestInput
@@ -26639,20 +26521,31 @@ export namespace Prisma {
     _max?: NestedEnumCurrencyFilter<$PrismaModel>
   }
 
-  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
     _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedFloatFilter<$PrismaModel>
-    _min?: NestedFloatFilter<$PrismaModel>
-    _max?: NestedFloatFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type NestedEnumSpaceTypeFilter<$PrismaModel = never> = {
@@ -26696,6 +26589,22 @@ export namespace Prisma {
     _max?: NestedEnumPricingTypeFilter<$PrismaModel>
   }
 
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
     in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
@@ -26729,6 +26638,13 @@ export namespace Prisma {
     not?: NestedEnumBookingStatusFilter<$PrismaModel> | $Enums.BookingStatus
   }
 
+  export type NestedEnumBookingActorNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
+    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumBookingActorNullableFilter<$PrismaModel> | $Enums.BookingActor | null
+  }
+
   export type NestedEnumBookingStatusWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.BookingStatus | EnumBookingStatusFieldRefInput<$PrismaModel>
     in?: $Enums.BookingStatus[] | ListEnumBookingStatusFieldRefInput<$PrismaModel>
@@ -26737,6 +26653,16 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumBookingStatusFilter<$PrismaModel>
     _max?: NestedEnumBookingStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.BookingActor | EnumBookingActorFieldRefInput<$PrismaModel> | null
+    in?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.BookingActor[] | ListEnumBookingActorFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumBookingActorNullableWithAggregatesFilter<$PrismaModel> | $Enums.BookingActor | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumBookingActorNullableFilter<$PrismaModel>
+    _max?: NestedEnumBookingActorNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumPayoutStatusFilter<$PrismaModel = never> = {
@@ -26857,13 +26783,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -26899,13 +26818,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -26945,11 +26857,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -26976,11 +26888,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27013,11 +26925,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27044,11 +26956,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27246,13 +27158,6 @@ export namespace Prisma {
     maxBookingHours?: IntNullableFilter<"Space"> | number | null
     images?: JsonFilter<"Space">
     videoUrl?: StringNullableFilter<"Space"> | string | null
-    address?: StringFilter<"Space"> | string
-    city?: StringFilter<"Space"> | string
-    state?: StringNullableFilter<"Space"> | string | null
-    country?: StringFilter<"Space"> | string
-    postalCode?: StringNullableFilter<"Space"> | string | null
-    latitude?: FloatNullableFilter<"Space"> | number | null
-    longitude?: FloatNullableFilter<"Space"> | number | null
     isActive?: BoolFilter<"Space"> | boolean
     instantBook?: BoolFilter<"Space"> | boolean
     cancellationPolicy?: EnumCancellationPolicyFilter<"Space"> | $Enums.CancellationPolicy
@@ -27299,11 +27204,11 @@ export namespace Prisma {
     serviceFee?: FloatFilter<"Booking"> | number
     totalAmount?: FloatFilter<"Booking"> | number
     currency?: EnumCurrencyFilter<"Booking"> | $Enums.Currency
-    exchangeRate?: FloatFilter<"Booking"> | number
+    exchangeRate?: DecimalFilter<"Booking"> | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
-    cancelledBy?: StringNullableFilter<"Booking"> | string | null
+    cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
     updatedAt?: DateTimeFilter<"Booking"> | Date | string
@@ -27576,13 +27481,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -27618,13 +27516,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -27958,11 +27849,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -27989,11 +27880,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -28369,13 +28260,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28411,13 +28295,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28595,13 +28472,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28637,13 +28507,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28714,13 +28577,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -28756,13 +28612,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -28823,13 +28672,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28865,13 +28707,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -28922,13 +28757,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -28964,13 +28792,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29005,13 +28826,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29047,13 +28861,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29104,13 +28911,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29146,13 +28946,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29187,13 +28980,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29229,13 +29015,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29286,13 +29065,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29328,13 +29100,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29475,13 +29240,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29517,13 +29275,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29720,13 +29471,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29762,13 +29506,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -29890,13 +29627,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29932,13 +29662,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -29973,11 +29696,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -30005,11 +29728,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -30111,13 +29834,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -30153,13 +29869,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -30200,11 +29909,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30232,11 +29941,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30407,13 +30116,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -30439,11 +30141,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -30467,11 +30169,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -30617,13 +30319,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -30659,13 +30354,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -30701,13 +30389,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -30731,11 +30412,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30762,11 +30443,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30791,11 +30472,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30817,11 +30498,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30848,11 +30529,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30877,11 +30558,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30983,13 +30664,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -31018,13 +30692,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -31060,13 +30727,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -31102,13 +30762,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -31160,11 +30813,11 @@ export namespace Prisma {
     serviceFee: number
     totalAmount: number
     currency?: $Enums.Currency
-    exchangeRate?: number
+    exchangeRate?: Decimal | DecimalJsLike | number | string
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
-    cancelledBy?: string | null
+    cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31272,11 +30925,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31303,11 +30956,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31332,11 +30985,11 @@ export namespace Prisma {
     serviceFee?: FloatFieldUpdateOperationsInput | number
     totalAmount?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    exchangeRate?: FloatFieldUpdateOperationsInput | number
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
-    cancelledBy?: NullableStringFieldUpdateOperationsInput | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31399,13 +31052,6 @@ export namespace Prisma {
     maxBookingHours?: number | null
     images: JsonNullValueInput | InputJsonValue
     videoUrl?: string | null
-    address: string
-    city: string
-    state?: string | null
-    country: string
-    postalCode?: string | null
-    latitude?: number | null
-    longitude?: number | null
     isActive?: boolean
     instantBook?: boolean
     cancellationPolicy?: $Enums.CancellationPolicy
@@ -31434,13 +31080,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -31476,13 +31115,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
@@ -31518,13 +31150,6 @@ export namespace Prisma {
     maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
     images?: JsonNullValueInput | InputJsonValue
     videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    address?: StringFieldUpdateOperationsInput | string
-    city?: StringFieldUpdateOperationsInput | string
-    state?: NullableStringFieldUpdateOperationsInput | string | null
-    country?: StringFieldUpdateOperationsInput | string
-    postalCode?: NullableStringFieldUpdateOperationsInput | string | null
-    latitude?: NullableFloatFieldUpdateOperationsInput | number | null
-    longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     instantBook?: BoolFieldUpdateOperationsInput | boolean
     cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy

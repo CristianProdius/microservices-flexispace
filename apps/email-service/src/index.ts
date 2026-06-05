@@ -29,7 +29,7 @@ type EmailEventMessage = {
     spaceName?: string;
     status?: string;
     reason?: string;
-    cancelledBy?: string;
+    cancelledByRole?: string;
     totalAmount?: number;
   };
 };
@@ -105,8 +105,8 @@ const subscriptions = [
   {
     topicName: "booking.cancelled",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, hostEmail, spaceName, cancelledBy } = message.value || {};
-      const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledBy ? ` by ${cancelledBy.toLowerCase()}` : ""}.`;
+      const { guestEmail, hostEmail, spaceName, cancelledByRole } = message.value || {};
+      const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledByRole ? ` by ${cancelledByRole.toLowerCase()}` : ""}.`;
 
       if (guestEmail) {
         await sendMail({
