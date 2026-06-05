@@ -62,6 +62,12 @@ enum Currency {
   MDL
 }
 
+enum BookingActor {
+  GUEST
+  HOST
+  ADMIN
+}
+
 // ==================== AUTH ====================
 
 model User {
@@ -156,7 +162,7 @@ model ExchangeRate {
   id           Int      @id @default(autoincrement())
   fromCurrency Currency
   toCurrency   Currency
-  rate         Float // 1 fromCurrency = rate toCurrency
+  rate         Decimal  @db.Decimal(12, 6) // 1 fromCurrency = rate toCurrency (decimal for monetary precision)
   updatedAt    DateTime @updatedAt
   updatedBy    String? // admin user ID who last updated
 
@@ -185,14 +191,7 @@ model Space {
   images                  Json // Array of image URLs
   videoUrl                String? // YouTube URL
 
-  // Location
-  address    String
-  city       String
-  state      String?
-  country    String
-  postalCode String?
-  latitude   Float?
-  longitude  Float?
+  // Location now lives on the related Venue (see DB-010). Read via space.venue.*
 
   // Settings
   isActive           Boolean            @default(true)
@@ -221,7 +220,6 @@ model Space {
   @@index([venueId])
   @@index([categorySlug])
   @@index([spaceType])
-  @@index([city])
   @@index([isActive])
 }
 
@@ -334,7 +332,7 @@ model Booking {
   serviceFee   Float
   totalAmount  Float
   currency     Currency @default(USD)
-  exchangeRate Float    @default(1.0) // Rate to USD at time of booking
+  exchangeRate Decimal  @default(1.0) @db.Decimal(12, 6) // Rate to USD at time of booking
 
   // Status
   status       BookingStatus @default(PENDING)
@@ -342,7 +340,7 @@ model Booking {
   hostMessage  String?
 
   // Cancellation
-  cancelledBy        String?
+  cancelledByRole    BookingActor?
   cancellationReason String?
 
   // Timestamps

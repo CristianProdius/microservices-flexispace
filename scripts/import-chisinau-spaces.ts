@@ -263,6 +263,8 @@ export const main = async () => {
     );
     const availability = buildAvailability(space);
 
+    // Location fields live exclusively on Venue (DB-010). The Space row no
+    // longer carries address/city/state/country/postalCode/latitude/longitude.
     const data = {
       name: space.name,
       shortDescription: space.shortDescription,
@@ -276,13 +278,6 @@ export const main = async () => {
       minBookingHours: space.minBookingHours,
       maxBookingHours: space.maxBookingHours,
       images: uploadedImages,
-      address: space.address,
-      city: space.city,
-      state: space.state,
-      country: space.country,
-      postalCode: space.postalCode,
-      latitude: space.latitude,
-      longitude: space.longitude,
       isActive: true,
       instantBook: false,
       houseRules: space.houseRules,
@@ -291,13 +286,14 @@ export const main = async () => {
     } satisfies Omit<Prisma.SpaceUncheckedCreateInput, "venueId">;
 
     const savedSpace = await prisma.$transaction(async (tx) => {
+      // Identify existing spaces by name; verify against the venue address so
+      // we do not collide with same-named spaces elsewhere.
       const matches = await tx.space.findMany({
         where: {
           name: space.name,
-          address: space.address,
-          city: space.city,
+          venue: { address: space.address, city: space.city },
         },
-        select: { id: true },
+        select: { id: true, venueId: true },
         orderBy: { id: "asc" },
       });
 
@@ -372,7 +368,7 @@ export const main = async () => {
 
   const total = await prisma.space.count({
     where: {
-      city: "Chisinau",
+      venue: { city: "Chisinau" },
       hostId: { in: Array.from(hostsBySlug.values()).map((host) => host.id) },
     },
   });

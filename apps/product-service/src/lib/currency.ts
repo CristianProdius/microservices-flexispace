@@ -17,7 +17,8 @@ async function loadRates(): Promise<Map<string, number>> {
   const rates = new Map<string, number>();
 
   for (const row of rows) {
-    rates.set(`${row.fromCurrency}_${row.toCurrency}`, row.rate);
+    // row.rate is Prisma.Decimal; convert to Number for arithmetic.
+    rates.set(`${row.fromCurrency}_${row.toCurrency}`, Number(row.rate));
   }
 
   for (const c of ["USD", "EUR", "MDL"]) {

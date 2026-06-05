@@ -249,7 +249,7 @@ async function getExchangeRate(fromCurrency: string): Promise<number> {
     console.error(`Exchange rate not configured: ${fromCurrency} -> USD, defaulting to 1.0`);
     return 1.0; // Log error but don't break booking flow
   }
-  return rate.rate;
+  return Number(rate.rate); // rate.rate is Prisma.Decimal
 }
 
 export const bookingRoute = async (fastify: FastifyInstance) => {
@@ -320,8 +320,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       const exchangeRate = await getExchangeRate(space.currency);
 
-      // Check for conflicts and create booking in a serializable transaction to prevent race conditions
-      const conflictingStatuses: BookingStatus[] = ["PENDING", "CONFIRMED"];
+      // Check for conflicts and create booking in a serializable transaction to prevent race conditions.
+      // APPROVED is included even though the current flow goes PENDING -> CONFIRMED directly,
+      // because the enum still permits it and any APPROVED-but-not-yet-CONFIRMED booking
+      // must reserve its window. EXPIRED bookings are released and intentionally excluded.
+      const conflictingStatuses: BookingStatus[] = ["PENDING", "APPROVED", "CONFIRMED"];
       const conflictWhere = {
         spaceId,
         status: {
@@ -661,12 +664,13 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
+      const actor = isGuest ? "GUEST" : isHost ? "HOST" : "ADMIN";
       const updatedBooking = await prisma.booking.update({
         where: { id },
         data: {
           status: "CANCELLED",
           cancelledAt: new Date(),
-          cancelledBy: isGuest ? "GUEST" : isHost ? "HOST" : "ADMIN",
+          cancelledByRole: actor,
           cancellationReason: reason,
         },
       });
@@ -674,7 +678,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       producer.send("booking.cancelled", {
         value: {
           bookingId: id,
-          cancelledBy: isGuest ? "GUEST" : isHost ? "HOST" : "ADMIN",
+          cancelledByRole: actor,
           guestEmail: booking.guest.email,
           guestName: booking.guest.name,
           hostEmail: booking.host.email,

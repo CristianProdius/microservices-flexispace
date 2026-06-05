@@ -45,7 +45,9 @@ export const deriveLegacySpaceTypeFromCategorySlug = (
   return SPACE_TYPE_BY_CATEGORY_SLUG[normalizedCategorySlug] ?? null;
 };
 
-export const buildCategoryPayload = <T extends Record<string, unknown>>(data: T) => {
+export const buildCategoryPayload = <T extends Record<string, unknown>>(
+  data: T,
+): T & { categorySlug?: unknown; spaceType?: SpaceType } => {
   const normalizedCategorySlug =
     typeof data.categorySlug === "string"
       ? normalizeCategorySlug(data.categorySlug)

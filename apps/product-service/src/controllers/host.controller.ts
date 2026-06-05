@@ -204,8 +204,7 @@ export const getHost = async (req: Request, res: Response) => {
               currency: true,
               images: true,
               isActive: true,
-              city: true,
-              country: true,
+              // city/country removed (DB-010); the parent Venue already carries them.
               instantBook: true,
             },
             orderBy: { createdAt: "asc" },

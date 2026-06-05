@@ -56,7 +56,7 @@ export interface Booking {
   hostMessage: string | null;
 
   // Cancellation
-  cancelledBy: string | null;
+  cancelledByRole: "GUEST" | "HOST" | "ADMIN" | null;
   cancellationReason: string | null;
 
   // Timestamps

@@ -421,9 +421,22 @@ async function main() {
       },
     });
 
+    // Location lives on Venue (DB-010); strip the legacy duplicates before
+    // passing the rest to Space.create.
+    const {
+      address: _address,
+      city: _city,
+      state: _state,
+      country: _country,
+      postalCode: _postalCode,
+      latitude: _latitude,
+      longitude: _longitude,
+      ...spaceCreate
+    } = spaceData;
+
     const space = await prisma.space.create({
       data: {
-        ...spaceData,
+        ...spaceCreate,
         venueId: venue.id,
       },
     });

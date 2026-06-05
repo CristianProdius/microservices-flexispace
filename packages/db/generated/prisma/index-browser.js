@@ -198,13 +198,6 @@ exports.Prisma.SpaceScalarFieldEnum = {
   maxBookingHours: 'maxBookingHours',
   images: 'images',
   videoUrl: 'videoUrl',
-  address: 'address',
-  city: 'city',
-  state: 'state',
-  country: 'country',
-  postalCode: 'postalCode',
-  latitude: 'latitude',
-  longitude: 'longitude',
   isActive: 'isActive',
   instantBook: 'instantBook',
   cancellationPolicy: 'cancellationPolicy',
@@ -291,7 +284,7 @@ exports.Prisma.BookingScalarFieldEnum = {
   status: 'status',
   guestMessage: 'guestMessage',
   hostMessage: 'hostMessage',
-  cancelledBy: 'cancelledBy',
+  cancelledByRole: 'cancelledByRole',
   cancellationReason: 'cancellationReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -397,6 +390,12 @@ exports.BookingStatus = exports.$Enums.BookingStatus = {
   CANCELLED: 'CANCELLED',
   REJECTED: 'REJECTED',
   EXPIRED: 'EXPIRED'
+};
+
+exports.BookingActor = exports.$Enums.BookingActor = {
+  GUEST: 'GUEST',
+  HOST: 'HOST',
+  ADMIN: 'ADMIN'
 };
 
 exports.PayoutStatus = exports.$Enums.PayoutStatus = {
