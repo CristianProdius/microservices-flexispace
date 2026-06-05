@@ -19356,6 +19356,7 @@ export namespace Prisma {
     amount: number | null
     platformFee: number | null
     netAmount: number | null
+    currency: $Enums.Currency | null
     status: $Enums.PayoutStatus | null
     processedAt: Date | null
     createdAt: Date | null
@@ -19368,6 +19369,7 @@ export namespace Prisma {
     amount: number | null
     platformFee: number | null
     netAmount: number | null
+    currency: $Enums.Currency | null
     status: $Enums.PayoutStatus | null
     processedAt: Date | null
     createdAt: Date | null
@@ -19380,6 +19382,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency: number
     status: number
     bookingIds: number
     processedAt: number
@@ -19407,6 +19410,7 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
+    currency?: true
     status?: true
     processedAt?: true
     createdAt?: true
@@ -19419,6 +19423,7 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
+    currency?: true
     status?: true
     processedAt?: true
     createdAt?: true
@@ -19431,6 +19436,7 @@ export namespace Prisma {
     amount?: true
     platformFee?: true
     netAmount?: true
+    currency?: true
     status?: true
     bookingIds?: true
     processedAt?: true
@@ -19531,6 +19537,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency: $Enums.Currency
     status: $Enums.PayoutStatus
     bookingIds: string[]
     processedAt: Date | null
@@ -19563,6 +19570,7 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
+    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -19577,6 +19585,7 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
+    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -19591,6 +19600,7 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
+    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -19605,6 +19615,7 @@ export namespace Prisma {
     amount?: boolean
     platformFee?: boolean
     netAmount?: boolean
+    currency?: boolean
     status?: boolean
     bookingIds?: boolean
     processedAt?: boolean
@@ -19612,7 +19623,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type PayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "hostId" | "amount" | "platformFee" | "netAmount" | "status" | "bookingIds" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["payout"]>
+  export type PayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "hostId" | "amount" | "platformFee" | "netAmount" | "currency" | "status" | "bookingIds" | "processedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["payout"]>
   export type PayoutInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -19634,6 +19645,7 @@ export namespace Prisma {
       amount: number
       platformFee: number
       netAmount: number
+      currency: $Enums.Currency
       status: $Enums.PayoutStatus
       bookingIds: string[]
       processedAt: Date | null
@@ -20065,9 +20077,10 @@ export namespace Prisma {
   interface PayoutFieldRefs {
     readonly id: FieldRef<"Payout", 'String'>
     readonly hostId: FieldRef<"Payout", 'String'>
-    readonly amount: FieldRef<"Payout", 'Float'>
-    readonly platformFee: FieldRef<"Payout", 'Float'>
-    readonly netAmount: FieldRef<"Payout", 'Float'>
+    readonly amount: FieldRef<"Payout", 'Int'>
+    readonly platformFee: FieldRef<"Payout", 'Int'>
+    readonly netAmount: FieldRef<"Payout", 'Int'>
+    readonly currency: FieldRef<"Payout", 'Currency'>
     readonly status: FieldRef<"Payout", 'PayoutStatus'>
     readonly bookingIds: FieldRef<"Payout", 'String[]'>
     readonly processedAt: FieldRef<"Payout", 'DateTime'>
@@ -20742,6 +20755,7 @@ export namespace Prisma {
     amount: 'amount',
     platformFee: 'platformFee',
     netAmount: 'netAmount',
+    currency: 'currency',
     status: 'status',
     bookingIds: 'bookingIds',
     processedAt: 'processedAt',
@@ -22255,9 +22269,10 @@ export namespace Prisma {
     NOT?: PayoutWhereInput | PayoutWhereInput[]
     id?: StringFilter<"Payout"> | string
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
+    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -22272,6 +22287,7 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
+    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrderInput | SortOrder
@@ -22286,9 +22302,10 @@ export namespace Prisma {
     OR?: PayoutWhereInput[]
     NOT?: PayoutWhereInput | PayoutWhereInput[]
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
+    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -22303,6 +22320,7 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
+    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrderInput | SortOrder
@@ -22321,9 +22339,10 @@ export namespace Prisma {
     NOT?: PayoutScalarWhereWithAggregatesInput | PayoutScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Payout"> | string
     hostId?: StringWithAggregatesFilter<"Payout"> | string
-    amount?: FloatWithAggregatesFilter<"Payout"> | number
-    platformFee?: FloatWithAggregatesFilter<"Payout"> | number
-    netAmount?: FloatWithAggregatesFilter<"Payout"> | number
+    amount?: IntWithAggregatesFilter<"Payout"> | number
+    platformFee?: IntWithAggregatesFilter<"Payout"> | number
+    netAmount?: IntWithAggregatesFilter<"Payout"> | number
+    currency?: EnumCurrencyWithAggregatesFilter<"Payout"> | $Enums.Currency
     status?: EnumPayoutStatusWithAggregatesFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableWithAggregatesFilter<"Payout"> | Date | string | null
@@ -23710,6 +23729,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -23724,6 +23744,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -23733,9 +23754,10 @@ export namespace Prisma {
 
   export type PayoutUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -23747,9 +23769,10 @@ export namespace Prisma {
   export type PayoutUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -23763,6 +23786,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -23772,9 +23796,10 @@ export namespace Prisma {
 
   export type PayoutUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -23785,9 +23810,10 @@ export namespace Prisma {
   export type PayoutUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -25151,6 +25177,7 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
+    currency?: SortOrder
     status?: SortOrder
     bookingIds?: SortOrder
     processedAt?: SortOrder
@@ -25170,6 +25197,7 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
+    currency?: SortOrder
     status?: SortOrder
     processedAt?: SortOrder
     createdAt?: SortOrder
@@ -25182,6 +25210,7 @@ export namespace Prisma {
     amount?: SortOrder
     platformFee?: SortOrder
     netAmount?: SortOrder
+    currency?: SortOrder
     status?: SortOrder
     processedAt?: SortOrder
     createdAt?: SortOrder
@@ -27048,6 +27077,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -27060,6 +27090,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -27322,9 +27353,10 @@ export namespace Prisma {
     NOT?: PayoutScalarWhereInput | PayoutScalarWhereInput[]
     id?: StringFilter<"Payout"> | string
     hostId?: StringFilter<"Payout"> | string
-    amount?: FloatFilter<"Payout"> | number
-    platformFee?: FloatFilter<"Payout"> | number
-    netAmount?: FloatFilter<"Payout"> | number
+    amount?: IntFilter<"Payout"> | number
+    platformFee?: IntFilter<"Payout"> | number
+    netAmount?: IntFilter<"Payout"> | number
+    currency?: EnumCurrencyFilter<"Payout"> | $Enums.Currency
     status?: EnumPayoutStatusFilter<"Payout"> | $Enums.PayoutStatus
     bookingIds?: StringNullableListFilter<"Payout">
     processedAt?: DateTimeNullableFilter<"Payout"> | Date | string | null
@@ -30408,6 +30440,7 @@ export namespace Prisma {
     amount: number
     platformFee: number
     netAmount: number
+    currency?: $Enums.Currency
     status?: $Enums.PayoutStatus
     bookingIds?: PayoutCreatebookingIdsInput | string[]
     processedAt?: Date | string | null
@@ -30837,9 +30870,10 @@ export namespace Prisma {
 
   export type PayoutUpdateWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -30849,9 +30883,10 @@ export namespace Prisma {
 
   export type PayoutUncheckedUpdateWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -30861,9 +30896,10 @@ export namespace Prisma {
 
   export type PayoutUncheckedUpdateManyWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
-    amount?: FloatFieldUpdateOperationsInput | number
-    platformFee?: FloatFieldUpdateOperationsInput | number
-    netAmount?: FloatFieldUpdateOperationsInput | number
+    amount?: IntFieldUpdateOperationsInput | number
+    platformFee?: IntFieldUpdateOperationsInput | number
+    netAmount?: IntFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     status?: EnumPayoutStatusFieldUpdateOperationsInput | $Enums.PayoutStatus
     bookingIds?: PayoutUpdatebookingIdsInput | string[]
     processedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
