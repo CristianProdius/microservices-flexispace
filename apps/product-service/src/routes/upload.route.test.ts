@@ -421,6 +421,46 @@ describe("upload routes", () => {
     expect(command.input.Key).toBe("spaces/host-user-1/example.png");
   });
 
+  it("returns not found for keys outside the public allow-list (PRODSVC-003)", async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: Readable.from(ONE_BY_ONE_PNG),
+      ContentType: "image/png",
+    });
+
+    vi.spyOn(uploadUtils, "getS3Client").mockReturnValue({
+      send,
+    } as unknown as ReturnType<typeof uploadUtils.getS3Client>);
+
+    const response = await invokeApp({
+      method: "GET",
+      url: "/uploads/backups/db-dump.sql",
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.json).toEqual({ message: "Upload not found" });
+    // The guard must short-circuit before any S3 request fires.
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("rejects traversal attempts even under an allowed prefix (PRODSVC-003)", async () => {
+    const send = vi.fn().mockResolvedValue({
+      Body: Readable.from(ONE_BY_ONE_PNG),
+      ContentType: "image/png",
+    });
+
+    vi.spyOn(uploadUtils, "getS3Client").mockReturnValue({
+      send,
+    } as unknown as ReturnType<typeof uploadUtils.getS3Client>);
+
+    const response = await invokeApp({
+      method: "GET",
+      url: "/uploads/spaces/../backups/db-dump.sql",
+    });
+
+    expect(response.status).toBe(404);
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("returns not found when the proxied upload is missing", async () => {
     const error = Object.assign(new Error("missing"), {
       name: "NoSuchKey",

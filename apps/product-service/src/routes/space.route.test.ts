@@ -31,22 +31,28 @@ const mocks = vi.hoisted(() => ({
   venueFindUnique: vi.fn(),
 }));
 
-vi.mock("@repo/db", () => ({
-  Currency: {
-    EUR: "EUR",
-    MDL: "MDL",
-    USD: "USD",
-  },
-  SpaceType: {
-    COWORKING_SPACE: "COWORKING_SPACE",
-    EVENT_VENUE: "EVENT_VENUE",
-    MEETING_ROOM: "MEETING_ROOM",
-    OFFICE_DESK: "OFFICE_DESK",
-    PRIVATE_OFFICE: "PRIVATE_OFFICE",
-    WEDDING_VENUE: "WEDDING_VENUE",
-  },
-  prisma: {
-    $transaction: vi.fn((operations) => Promise.all(operations)),
+// Mock prisma client shared between the module export and the `tx` argument
+// passed to callback-style `prisma.$transaction(async (tx) => ...)` calls
+// added in PRODSVC-004. Hoisted so it's available inside `vi.mock` factories.
+const mockPrismaClient = vi.hoisted(() => {
+  // Defined as a `let` we mutate below so the closure inside `$transaction`
+  // can refer back to the same object.
+  const client: Record<string, unknown> = {};
+  return client;
+});
+
+vi.mock("@repo/db", () => {
+  Object.assign(mockPrismaClient, {
+    // Supports both forms used by the controllers:
+    //   - array form: `prisma.$transaction([op1, op2])` -> Promise.all
+    //   - callback form (PRODSVC-004): `prisma.$transaction(async tx => ...)`
+    //     where `tx` is the prisma client itself for the mock.
+    $transaction: vi.fn((arg: unknown) => {
+      if (typeof arg === "function") {
+        return (arg as (tx: unknown) => unknown)(mockPrismaClient);
+      }
+      return Promise.all(arg as Promise<unknown>[]);
+    }),
     availability: {
       createMany: mocks.availabilityCreateMany,
       deleteMany: mocks.availabilityDeleteMany,
@@ -83,8 +89,24 @@ vi.mock("@repo/db", () => ({
     venue: {
       findUnique: mocks.venueFindUnique,
     },
-  },
-}));
+  });
+  return {
+    Currency: {
+      EUR: "EUR",
+      MDL: "MDL",
+      USD: "USD",
+    },
+    SpaceType: {
+      COWORKING_SPACE: "COWORKING_SPACE",
+      EVENT_VENUE: "EVENT_VENUE",
+      MEETING_ROOM: "MEETING_ROOM",
+      OFFICE_DESK: "OFFICE_DESK",
+      PRIVATE_OFFICE: "PRIVATE_OFFICE",
+      WEDDING_VENUE: "WEDDING_VENUE",
+    },
+    prisma: mockPrismaClient,
+  };
+});
 
 vi.mock("../utils/kafka.js", () => ({
   producer: {
@@ -709,5 +731,57 @@ describe("space routes", () => {
     });
     expect(mocks.findUnique).not.toHaveBeenCalled();
     expect(mocks.bookingFindMany).not.toHaveBeenCalled();
+  });
+
+  it("does not emit space.created when a downstream insert fails inside the transaction (PRODSVC-004)", async () => {
+    mocks.spaceCategoryFindUnique.mockResolvedValue({
+      slug: "retail-store-shop-front",
+    });
+    mocks.venueFindUnique.mockResolvedValue({
+      address: "Main Street 1",
+      city: "Chisinau",
+      country: "Moldova",
+      hostId: "host-user-1",
+      id: 22,
+      latitude: null,
+      longitude: null,
+      postalCode: null,
+      state: null,
+    });
+    // space.create succeeds, then pricingTier.createMany blows up: the
+    // controller must propagate the error and NOT publish a Kafka event
+    // for a space that gets rolled back.
+    mocks.create.mockResolvedValue({
+      amenities: [],
+      category: null,
+      id: 999,
+      spaceType: "PRIVATE_OFFICE",
+    });
+    mocks.pricingTierCreateMany.mockRejectedValue(
+      new Error("simulated DB failure"),
+    );
+
+    const response = await invokeApp({
+      authorization: `Bearer ${createToken("HOST", "host-user-1")}`,
+      body: {
+        availability: validAvailability,
+        categorySlug: "retail-store-shop-front",
+        description: "Will fail mid-fan-out",
+        images: ["/space.png"],
+        name: "Doomed space",
+        pricingTiers: [{ label: "1 hr", minutes: 60, price: 50 }],
+        pricingType: "HOURLY",
+        shortDescription: "Doomed",
+        venueId: 22,
+      },
+      method: "POST",
+      url: "/spaces",
+    });
+
+    expect(response.status).toBe(500);
+    expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.pricingTierCreateMany).toHaveBeenCalledTimes(1);
+    // The whole point of the fix: no event for a transaction that failed.
+    expect(mocks.producerSend).not.toHaveBeenCalled();
   });
 });

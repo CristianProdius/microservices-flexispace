@@ -491,48 +491,64 @@ export const createSpace = async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Venue does not belong to you" });
   }
 
-  const space = await prisma.space.create({
-    data: {
-      ...buildCategoryPayload(spaceData),
-      hostId,
-      venueId,
-      address: venue.address,
-      city: venue.city,
-      state: venue.state,
-      country: venue.country,
-      postalCode: venue.postalCode,
-      latitude: venue.latitude,
-      longitude: venue.longitude,
-      amenities: amenityIds
-        ? {
-            create: amenityIds.map((amenityId: number) => ({ amenityId })),
-          }
-        : undefined,
-      availability: {
-        create: availabilityResult.availability,
+  // PRODSVC-004: wrap the fan-out writes (space + amenities + availability +
+  // pricing tiers) in a single transaction so a failure in any leg rolls back
+  // the parent Space row. Default isolation (READ COMMITTED) is sufficient for
+  // a write-only fan-out — no retry loop required.
+  //
+  // S3 uploads are NOT included here. Image uploads happen via the dedicated
+  // `POST /uploads/images` endpoint before this handler runs, so the only
+  // S3 references reaching this code are URLs in `spaceData.images`. Rolling
+  // back the DB on a Kafka or S3 failure cannot un-upload an object, so we
+  // deliberately keep external side effects outside the transaction.
+  const space = await prisma.$transaction(async (tx) => {
+    const created = await tx.space.create({
+      data: {
+        ...buildCategoryPayload(spaceData),
+        hostId,
+        venueId,
+        address: venue.address,
+        city: venue.city,
+        state: venue.state,
+        country: venue.country,
+        postalCode: venue.postalCode,
+        latitude: venue.latitude,
+        longitude: venue.longitude,
+        amenities: amenityIds
+          ? {
+              create: amenityIds.map((amenityId: number) => ({ amenityId })),
+            }
+          : undefined,
+        availability: {
+          create: availabilityResult.availability,
+        },
       },
-    },
-    include: {
-      category: true,
-      amenities: {
-        include: { amenity: true },
+      include: {
+        category: true,
+        amenities: {
+          include: { amenity: true },
+        },
       },
-    },
+    });
+
+    if (Array.isArray(pricingTiers) && pricingTiers.length > 0) {
+      await tx.pricingTier.createMany({
+        data: pricingTiers.map(
+          (tier: { minutes: number; label: string; price: number }) => ({
+            spaceId: created.id,
+            minutes: tier.minutes,
+            label: tier.label,
+            price: tier.price,
+          }),
+        ),
+      });
+    }
+
+    return created;
   });
 
-  if (Array.isArray(pricingTiers) && pricingTiers.length > 0) {
-    await prisma.pricingTier.createMany({
-      data: pricingTiers.map(
-        (tier: { minutes: number; label: string; price: number }) => ({
-          spaceId: space.id,
-          minutes: tier.minutes,
-          label: tier.label,
-          price: tier.price,
-        }),
-      ),
-    });
-  }
-
+  // Emit Kafka AFTER the transaction commits — events are not transactional
+  // and we must not announce a row that may still be rolled back.
   producer.send("space.created", { value: { id: space.id, hostId } });
 
   res.status(201).json(space);
@@ -642,75 +658,67 @@ export const updateSpace = async (req: Request, res: Response) => {
     allowed.spaceType = resolved.spaceType;
   }
 
-  const space = await prisma.space.update({
-    where: { id: spaceId },
-    data: allowed,
-    include: {
-      category: true,
-      amenities: {
-        include: { amenity: true },
-      },
-    },
-  });
+  // PRODSVC-004: previously the parent `space.update` and each child
+  // delete/createMany ran as independent transactions, so a failure in
+  // (e.g.) pricingTiers would leave the Space row updated but the related
+  // collections half-rewritten. Run the full mutation as one transaction
+  // so any failure rolls every leg back.
+  //
+  // Kafka emission happens after commit (events are not transactional).
+  const freshSpace = await prisma.$transaction(async (tx) => {
+    await tx.space.update({
+      where: { id: spaceId },
+      data: allowed,
+    });
 
-  // Update amenities if provided
-  if (amenityIds !== undefined) {
-    await prisma.$transaction([
-      prisma.spaceAmenity.deleteMany({ where: { spaceId } }),
-      ...(amenityIds.length > 0
-        ? [
-            prisma.spaceAmenity.createMany({
-              data: amenityIds.map((amenityId: number) => ({
-                spaceId,
-                amenityId,
-              })),
-            }),
-          ]
-        : []),
-    ]);
-  }
+    if (amenityIds !== undefined) {
+      await tx.spaceAmenity.deleteMany({ where: { spaceId } });
+      if (amenityIds.length > 0) {
+        await tx.spaceAmenity.createMany({
+          data: amenityIds.map((amenityId: number) => ({
+            spaceId,
+            amenityId,
+          })),
+        });
+      }
+    }
 
-  // Update pricing tiers if provided
-  if (pricingTiers !== undefined) {
-    await prisma.$transaction([
-      prisma.pricingTier.deleteMany({ where: { spaceId } }),
-      ...(Array.isArray(pricingTiers) && pricingTiers.length > 0
-        ? [
-            prisma.pricingTier.createMany({
-              data: pricingTiers.map((t: any) => ({
-                spaceId,
-                minutes: t.minutes,
-                label: t.label,
-                price: t.price,
-              })),
-            }),
-          ]
-        : []),
-    ]);
-  }
+    if (pricingTiers !== undefined) {
+      await tx.pricingTier.deleteMany({ where: { spaceId } });
+      if (Array.isArray(pricingTiers) && pricingTiers.length > 0) {
+        await tx.pricingTier.createMany({
+          data: pricingTiers.map((t: any) => ({
+            spaceId,
+            minutes: t.minutes,
+            label: t.label,
+            price: t.price,
+          })),
+        });
+      }
+    }
 
-  if (availabilityResult && "availability" in availabilityResult) {
-    await prisma.$transaction([
-      prisma.availability.deleteMany({ where: { spaceId } }),
-      prisma.availability.createMany({
+    if (availabilityResult && "availability" in availabilityResult) {
+      await tx.availability.deleteMany({ where: { spaceId } });
+      await tx.availability.createMany({
         data: availabilityResult.availability.map((entry) => ({
           ...entry,
           spaceId,
         })),
-      }),
-    ]);
-  }
+      });
+    }
 
-  // Re-fetch space after updates for fresh response (I2)
-  const freshSpace = await prisma.space.findUnique({
-    where: { id: spaceId },
-    include: {
-      category: true,
-      venue: venueInclude,
-      amenities: { include: { amenity: true } },
-      pricingTiers: { orderBy: { minutes: "asc" } },
-      availability: { orderBy: { dayOfWeek: "asc" } },
-    },
+    // Re-fetch inside the transaction so the response reflects committed
+    // state (I2) atomically with the writes above.
+    return tx.space.findUnique({
+      where: { id: spaceId },
+      include: {
+        category: true,
+        venue: venueInclude,
+        amenities: { include: { amenity: true } },
+        pricingTiers: { orderBy: { minutes: "asc" } },
+        availability: { orderBy: { dayOfWeek: "asc" } },
+      },
+    });
   });
 
   producer.send("space.updated", { value: { id: spaceId } });
