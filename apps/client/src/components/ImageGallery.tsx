@@ -76,7 +76,7 @@ const ImageGallery = ({ images, spaceName }: ImageGalleryProps) => {
 
           {images.length > 5 && (
             <button
-              onClick={() => openLightbox(0)}
+              onClick={() => openLightbox(5)}
               className="absolute bottom-3 right-3 flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-foreground text-sm font-medium rounded-lg shadow-[var(--shadow-md)] backdrop-blur-sm transition-colors cursor-pointer"
             >
               <Camera className="size-4" />

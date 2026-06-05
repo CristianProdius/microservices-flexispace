@@ -51,7 +51,6 @@ const Lightbox = ({ images, initialIndex, open, onClose, alt }: LightboxProps) =
   // Preload adjacent images
   useEffect(() => {
     if (!open) return;
-    const preloaded: HTMLImageElement[] = [];
     const toPreload = [currentIndex - 1, currentIndex + 1].filter(
       (i) => i >= 0 && i < images.length
     );
@@ -60,11 +59,11 @@ const Lightbox = ({ images, initialIndex, open, onClose, alt }: LightboxProps) =
       if (!src) return;
       const img = new window.Image();
       img.src = src;
-      preloaded.push(img);
     });
-    return () => {
-      preloaded.forEach((img) => { img.src = ""; });
-    };
+    // No cleanup: the HTMLImageElement instances are never attached to the DOM
+    // and will be garbage-collected when this effect re-runs. Resetting
+    // `img.src = ""` would otherwise trigger a spurious request for the page
+    // URL (browsers resolve the empty string against the document).
   }, [open, currentIndex, images]);
 
   // Auto-scroll active thumbnail into view
