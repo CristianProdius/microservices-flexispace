@@ -133,8 +133,10 @@ exports.Prisma.UserScalarFieldEnum = {
   bio: 'bio',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
-  hostingSince: 'hostingSince'
+  hostingSince: 'hostingSince',
+  hostApplicationPending: 'hostApplicationPending'
 };
 
 exports.Prisma.SessionScalarFieldEnum = {
@@ -143,6 +145,36 @@ exports.Prisma.SessionScalarFieldEnum = {
   token: 'token',
   expiresAt: 'expiresAt',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.RefreshTokenScalarFieldEnum = {
+  id: 'id',
+  jti: 'jti',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  usedAt: 'usedAt',
+  replacedBy: 'replacedBy',
+  revoked: 'revoked'
+};
+
+exports.Prisma.HostApplicationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  status: 'status',
+  applicationData: 'applicationData',
+  decisionBy: 'decisionBy',
+  decisionAt: 'decisionAt',
+  decisionNotes: 'decisionNotes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PasswordResetUseScalarFieldEnum = {
+  id: 'id',
+  jti: 'jti',
+  userId: 'userId',
+  usedAt: 'usedAt'
 };
 
 exports.Prisma.RevokedAccessTokenScalarFieldEnum = {
@@ -206,13 +238,6 @@ exports.Prisma.SpaceScalarFieldEnum = {
   maxBookingHours: 'maxBookingHours',
   images: 'images',
   videoUrl: 'videoUrl',
-  address: 'address',
-  city: 'city',
-  state: 'state',
-  country: 'country',
-  postalCode: 'postalCode',
-  latitude: 'latitude',
-  longitude: 'longitude',
   isActive: 'isActive',
   instantBook: 'instantBook',
   cancellationPolicy: 'cancellationPolicy',
@@ -299,7 +324,7 @@ exports.Prisma.BookingScalarFieldEnum = {
   status: 'status',
   guestMessage: 'guestMessage',
   hostMessage: 'hostMessage',
-  cancelledBy: 'cancelledBy',
+  cancelledByRole: 'cancelledByRole',
   cancellationReason: 'cancellationReason',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -327,6 +352,7 @@ exports.Prisma.PayoutScalarFieldEnum = {
   amount: 'amount',
   platformFee: 'platformFee',
   netAmount: 'netAmount',
+  currency: 'currency',
   status: 'status',
   bookingIds: 'bookingIds',
   processedAt: 'processedAt',
@@ -369,6 +395,12 @@ exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN'
 };
 
+exports.HostApplicationStatus = exports.$Enums.HostApplicationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
 exports.Currency = exports.$Enums.Currency = {
   USD: 'USD',
   EUR: 'EUR',
@@ -399,12 +431,17 @@ exports.CancellationPolicy = exports.$Enums.CancellationPolicy = {
 
 exports.BookingStatus = exports.$Enums.BookingStatus = {
   PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
   CONFIRMED: 'CONFIRMED',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
   REJECTED: 'REJECTED',
   EXPIRED: 'EXPIRED'
+};
+
+exports.BookingActor = exports.$Enums.BookingActor = {
+  GUEST: 'GUEST',
+  HOST: 'HOST',
+  ADMIN: 'ADMIN'
 };
 
 exports.PayoutStatus = exports.$Enums.PayoutStatus = {
@@ -417,6 +454,9 @@ exports.PayoutStatus = exports.$Enums.PayoutStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Session: 'Session',
+  RefreshToken: 'RefreshToken',
+  HostApplication: 'HostApplication',
+  PasswordResetUse: 'PasswordResetUse',
   RevokedAccessToken: 'RevokedAccessToken',
   Venue: 'Venue',
   ExchangeRate: 'ExchangeRate',
