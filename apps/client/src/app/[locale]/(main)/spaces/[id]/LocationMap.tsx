@@ -1,9 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { MapContainer, TileLayer, Marker, Circle } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+const MapViewUpdater = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([latitude, longitude]);
+  }, [map, latitude, longitude]);
+  return null;
+};
 
 const orangePin = L.divIcon({
   className: "",
@@ -54,6 +63,7 @@ const LocationMap = ({ latitude, longitude, address }: LocationMapProps) => {
               weight: 1,
             }}
           />
+          <MapViewUpdater latitude={latitude} longitude={longitude} />
         </MapContainer>
       </div>
       <p className="text-sm text-muted mt-2">{address}</p>

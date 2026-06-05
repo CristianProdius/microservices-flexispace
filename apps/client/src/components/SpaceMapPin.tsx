@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, parseImages } from "@/lib/utils";
 
 interface SpaceMapPinProps {
   space: {
@@ -18,7 +18,7 @@ interface SpaceMapPinProps {
 }
 
 const SpaceMapPin = ({ space }: SpaceMapPinProps) => {
-  const images = Array.isArray(space.images) ? space.images : [];
+  const images = parseImages(space.images);
   const price = space.pricingType === "DAILY" ? space.pricePerDay : space.pricePerHour;
   const priceLabel = space.pricingType === "DAILY" ? "/day" : "/hr";
   const currency = (space as any).currency;
@@ -27,7 +27,7 @@ const SpaceMapPin = ({ space }: SpaceMapPinProps) => {
     <div className="w-[200px]">
       {images[0] && (
         <div className="relative h-[80px] w-full rounded-t overflow-hidden">
-          <Image src={images[0] as string} alt={space.name} fill className="object-cover" sizes="200px" />
+          <Image src={images[0]} alt={space.name} fill className="object-cover" sizes="200px" />
         </div>
       )}
       <div className="p-2">

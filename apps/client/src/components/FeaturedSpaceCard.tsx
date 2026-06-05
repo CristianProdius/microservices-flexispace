@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { MapPin, Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { parseImages } from "@/lib/utils";
+import { parseImages, getPriceDisplay, type PriceLabels } from "@/lib/utils";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
 
 const fetchFeaturedSpace = async (): Promise<Space | null> => {
@@ -44,8 +44,13 @@ const FeaturedSpaceCard = async () => {
   }
 
   const images = parseImages(space.images);
-  const price = space.pricePerHour ?? space.pricePerDay;
-  const priceLabel = space.pricePerHour ? tCommon("perHour") : tCommon("perDay");
+  const priceLabels: PriceLabels = {
+    perHr: tCommon("perHour"),
+    perDay: tCommon("perDay"),
+    from: tCommon("from"),
+    contactForPricing: tCommon("contactForPricing"),
+  };
+  const priceDisplay = getPriceDisplay(space, priceLabels);
 
   return (
     <Link
@@ -92,12 +97,9 @@ const FeaturedSpaceCard = async () => {
             {space.shortDescription}
           </p>
           <div className="flex items-center justify-between mt-4">
-            {price != null && (
-              <span className="text-xl font-bold text-foreground tabular-nums">
-                ${price}
-                <span className="text-sm font-normal text-muted">{priceLabel}</span>
-              </span>
-            )}
+            <span className="text-xl font-bold text-foreground tabular-nums">
+              {priceDisplay}
+            </span>
             <span className="px-4 py-2 text-sm font-medium text-white bg-foreground rounded-lg">
               {tCommon("viewDetails")}
             </span>
