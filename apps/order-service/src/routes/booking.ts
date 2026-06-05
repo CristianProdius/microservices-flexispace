@@ -4,10 +4,63 @@ import {
   shouldBeUser,
   shouldBeHost,
 } from "@repo/auth-middleware/fastify";
-import { prisma, BookingStatus } from "@repo/db";
+import { prisma, BookingStatus, Prisma } from "@repo/db";
 import { startOfMonth, subMonths, differenceInDays } from "date-fns";
 import { CreateBookingSchema } from "@repo/types";
 import { producer } from "../utils/kafka.js";
+
+// Statuses that occupy a slot and therefore block other bookings from
+// overlapping it. Kept exported (via the module scope) so the conflict scan
+// in both POST /bookings and the host-approve handler stay in sync.
+// BOOKSVC-002/003: APPROVED is still in the BookingStatus schema enum, so it
+// MUST be treated as occupying — even though no current producer emits it.
+const CONFLICTING_BOOKING_STATUSES: BookingStatus[] = [
+  "PENDING",
+  "APPROVED",
+  "CONFIRMED",
+];
+
+// BOOKSVC-011: Postgres Serializable transactions abort with SQLSTATE 40001
+// (Prisma code P2034) under write contention. Real, non-conflicting bookings
+// would otherwise 500. Retry a small number of times with exponential backoff
+// before surfacing 503 to the caller.
+const SERIALIZABLE_RETRY_ATTEMPTS = 3;
+const SERIALIZABLE_RETRY_BASE_DELAY_MS = 25;
+
+const isSerializationFailure = (err: unknown): boolean => {
+  if (!err || typeof err !== "object") return false;
+  const anyErr = err as { code?: unknown; meta?: { code?: unknown } };
+  if (anyErr.code === "P2034") return true;
+  // Some drivers surface the underlying Postgres SQLSTATE in meta.code.
+  if (anyErr.meta && anyErr.meta.code === "40001") return true;
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
+    return true;
+  }
+  return false;
+};
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function runWithSerializableRetry<T>(work: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < SERIALIZABLE_RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await work();
+    } catch (err) {
+      if (!isSerializationFailure(err)) {
+        throw err;
+      }
+      lastError = err;
+      if (attempt < SERIALIZABLE_RETRY_ATTEMPTS - 1) {
+        const delay = SERIALIZABLE_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+        await sleep(delay);
+      }
+    }
+  }
+  // Exhausted retries — re-throw the last serialization failure so the caller
+  // can map it to a 503.
+  throw lastError;
+}
 
 const roundCurrency = (amount: number) => Math.round(amount * 100) / 100;
 
@@ -320,12 +373,14 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       const exchangeRate = await getExchangeRate(space.currency);
 
-      // Check for conflicts and create booking in a serializable transaction to prevent race conditions
-      const conflictingStatuses: BookingStatus[] = ["PENDING", "CONFIRMED"];
+      // Check for conflicts and create booking in a serializable transaction
+      // to prevent race conditions. BOOKSVC-002: use the shared
+      // CONFLICTING_BOOKING_STATUSES set so PENDING/APPROVED/CONFIRMED are
+      // all treated as occupying the slot.
       const conflictWhere = {
         spaceId,
         status: {
-          in: conflictingStatuses,
+          in: CONFLICTING_BOOKING_STATUSES,
         },
         startDate: { lte: requestedEndDate },
         endDate: { gte: requestedStartDate },
@@ -333,61 +388,69 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       let booking;
       try {
-        booking = await prisma.$transaction(async (tx) => {
-          const candidateConflicts = await tx.booking.findMany({ where: conflictWhere });
-          const conflict = candidateConflicts.find((candidate) =>
-            bookingIntervalsOverlap(
-              {
-                endDate: candidate.endDate,
-                endTime: candidate.endTime,
-                isHourly: candidate.isHourly,
-                startDate: candidate.startDate,
-                startTime: candidate.startTime,
-              },
-              {
-                endDate: requestedEndDate,
-                endTime: endTime || null,
-                isHourly,
+        // BOOKSVC-011: retry the serializable transaction on 40001/P2034.
+        booking = await runWithSerializableRetry(() =>
+          prisma.$transaction(async (tx) => {
+            const candidateConflicts = await tx.booking.findMany({ where: conflictWhere });
+            const conflict = candidateConflicts.find((candidate) =>
+              bookingIntervalsOverlap(
+                {
+                  endDate: candidate.endDate,
+                  endTime: candidate.endTime,
+                  isHourly: candidate.isHourly,
+                  startDate: candidate.startDate,
+                  startTime: candidate.startTime,
+                },
+                {
+                  endDate: requestedEndDate,
+                  endTime: endTime || null,
+                  isHourly,
+                  startDate: requestedStartDate,
+                  startTime: startTime || null,
+                }
+              )
+            );
+            if (conflict) throw new Error("CONFLICT");
+            return tx.booking.create({
+              data: {
+                spaceId,
+                guestId,
+                hostId: space.hostId,
                 startDate: requestedStartDate,
-                startTime: startTime || null,
-              }
-            )
-          );
-          if (conflict) throw new Error("CONFLICT");
-          return tx.booking.create({
-            data: {
-              spaceId,
-              guestId,
-              hostId: space.hostId,
-              startDate: requestedStartDate,
-              endDate: requestedEndDate,
-              startTime,
-              endTime,
-              guests: guests || 1,
-              isHourly,
-              status: space.instantBook ? "CONFIRMED" : "PENDING",
-              subtotal: pricing.subtotal,
-              cleaningFee: pricing.cleaningFee,
-              serviceFee: pricing.serviceFee,
-              totalAmount: pricing.total,
-              guestMessage: message,
-              currency: space.currency,
-              exchangeRate,
-            },
-            include: {
-              space: {
-                include: { host: true },
+                endDate: requestedEndDate,
+                startTime,
+                endTime,
+                guests: guests || 1,
+                isHourly,
+                status: space.instantBook ? "CONFIRMED" : "PENDING",
+                subtotal: pricing.subtotal,
+                cleaningFee: pricing.cleaningFee,
+                serviceFee: pricing.serviceFee,
+                totalAmount: pricing.total,
+                guestMessage: message,
+                currency: space.currency,
+                exchangeRate,
               },
-              guest: {
-                select: { id: true, name: true, email: true },
+              include: {
+                space: {
+                  include: { host: true },
+                },
+                guest: {
+                  select: { id: true, name: true, email: true },
+                },
               },
-            },
-          });
-        }, { isolationLevel: 'Serializable' });
+            });
+          }, { isolationLevel: 'Serializable' })
+        );
       } catch (err: any) {
-        if (err.message === "CONFLICT") {
+        if (err?.message === "CONFLICT") {
           return reply.status(409).send({
             message: "These dates conflict with an existing booking",
+          });
+        }
+        if (isSerializationFailure(err)) {
+          return reply.status(503).send({
+            message: "Booking system is busy, please retry shortly",
           });
         }
         throw err;
@@ -556,9 +619,125 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
-      const updatedBooking = await prisma.booking.update({
+      // BOOKSVC-001: even though create-path blocks new overlapping PENDINGs
+      // via CONFLICTING_BOOKING_STATUSES, the host can have multiple
+      // overlapping PENDINGs that were all submitted while none of them were
+      // approved. Re-scan inside a serializable transaction against the
+      // currently-occupying statuses (excluding this booking), 409 if a
+      // confirmed/approved overlap now exists, otherwise approve via CAS and
+      // auto-reject every other overlapping PENDING for the same window.
+      // BOOKSVC-011: wrap with the retry helper.
+      // BOOKSVC-012: use updateMany CAS for the approve write itself so a
+      // racing cancel/reject can't lose.
+      type ApproveResult =
+        | { kind: "ok"; rejected: string[] }
+        | { kind: "conflict" }
+        | { kind: "stale"; status: BookingStatus };
+
+      let result: ApproveResult;
+      try {
+        result = await runWithSerializableRetry(() =>
+          prisma.$transaction(async (tx): Promise<ApproveResult> => {
+            const overlappingCandidates = await tx.booking.findMany({
+              where: {
+                spaceId: booking.spaceId,
+                id: { not: id },
+                status: { in: CONFLICTING_BOOKING_STATUSES },
+                startDate: { lte: booking.endDate },
+                endDate: { gte: booking.startDate },
+              },
+              select: {
+                id: true,
+                status: true,
+                startDate: true,
+                endDate: true,
+                startTime: true,
+                endTime: true,
+                isHourly: true,
+              },
+            });
+
+            const overlapping = overlappingCandidates.filter((candidate) =>
+              bookingIntervalsOverlap(
+                {
+                  endDate: candidate.endDate,
+                  endTime: candidate.endTime,
+                  isHourly: candidate.isHourly,
+                  startDate: candidate.startDate,
+                  startTime: candidate.startTime,
+                },
+                {
+                  endDate: booking.endDate,
+                  endTime: booking.endTime,
+                  isHourly: booking.isHourly,
+                  startDate: booking.startDate,
+                  startTime: booking.startTime,
+                }
+              )
+            );
+
+            const blocking = overlapping.find(
+              (c) => c.status === "CONFIRMED" || c.status === "APPROVED"
+            );
+            if (blocking) {
+              return { kind: "conflict" };
+            }
+
+            // BOOKSVC-012 CAS: only flip PENDING -> CONFIRMED, never overwrite
+            // a row that another handler has already moved off PENDING.
+            const cas = await tx.booking.updateMany({
+              where: { id, status: "PENDING" },
+              data: { status: "CONFIRMED", approvedAt: new Date() },
+            });
+            if (cas.count === 0) {
+              const refreshed = await tx.booking.findUnique({
+                where: { id },
+                select: { status: true },
+              });
+              return { kind: "stale", status: refreshed?.status ?? booking.status };
+            }
+
+            // BOOKSVC-001 auto-reject: every other PENDING for the same slot
+            // is now unfulfillable. Reject them in the same txn.
+            const pendingOverlapIds = overlapping
+              .filter((c) => c.status === "PENDING")
+              .map((c) => c.id);
+            if (pendingOverlapIds.length > 0) {
+              await tx.booking.updateMany({
+                where: { id: { in: pendingOverlapIds }, status: "PENDING" },
+                data: {
+                  status: "REJECTED",
+                  hostMessage: "Automatically rejected: slot was awarded to another booking",
+                },
+              });
+            }
+
+            return { kind: "ok", rejected: pendingOverlapIds };
+          }, { isolationLevel: 'Serializable' })
+        );
+      } catch (err) {
+        if (isSerializationFailure(err)) {
+          return reply.status(503).send({
+            message: "Booking system is busy, please retry shortly",
+          });
+        }
+        throw err;
+      }
+
+      if (result.kind === "conflict") {
+        return reply.status(409).send({
+          message: "Slot is no longer available — another booking has been confirmed for this window",
+        });
+      }
+
+      if (result.kind === "stale") {
+        return reply.status(409).send({
+          message: `Cannot approve booking with status ${result.status}`,
+        });
+      }
+
+      const updatedBooking = await prisma.booking.findUnique({
         where: { id },
-        data: { status: "CONFIRMED" },
         include: { space: true, guest: true },
       });
 
@@ -570,6 +749,18 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           spaceName: booking.space.name,
         },
       });
+
+      // Fire rejection events for every PENDING auto-rejected as a side effect
+      // of this approval so downstream consumers (email, notifications) react.
+      for (const rejectedId of result.rejected) {
+        producer.send("booking.rejected", {
+          value: {
+            bookingId: rejectedId,
+            reason: "Automatically rejected: slot was awarded to another booking",
+            spaceName: booking.space.name,
+          },
+        });
+      }
 
       return reply.send(updatedBooking);
     }
@@ -603,12 +794,26 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
-      const updatedBooking = await prisma.booking.update({
-        where: { id },
+      // BOOKSVC-012: compare-and-swap so a concurrent approve/cancel can't
+      // be silently overwritten.
+      const cas = await prisma.booking.updateMany({
+        where: { id, status: "PENDING" },
         data: {
           status: "REJECTED",
           hostMessage: reason,
         },
+      });
+      if (cas.count === 0) {
+        const refreshed = await prisma.booking.findUnique({
+          where: { id },
+          select: { status: true },
+        });
+        return reply.status(409).send({
+          message: `Cannot reject booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+        });
+      }
+      const updatedBooking = await prisma.booking.findUnique({
+        where: { id },
       });
 
       producer.send("booking.rejected", {
@@ -654,21 +859,35 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(403).send({ message: "Not authorized" });
       }
 
-      const cancellableStatuses: BookingStatus[] = ["PENDING", "CONFIRMED"];
+      const cancellableStatuses: BookingStatus[] = ["PENDING", "APPROVED", "CONFIRMED"];
       if (!cancellableStatuses.includes(booking.status)) {
         return reply.status(400).send({
           message: `Cannot cancel booking with status ${booking.status}`,
         });
       }
 
-      const updatedBooking = await prisma.booking.update({
-        where: { id },
+      // BOOKSVC-012: compare-and-swap so a concurrent approve/reject/complete
+      // can't be silently overwritten.
+      const cas = await prisma.booking.updateMany({
+        where: { id, status: { in: cancellableStatuses } },
         data: {
           status: "CANCELLED",
           cancelledAt: new Date(),
           cancelledBy: isGuest ? "GUEST" : isHost ? "HOST" : "ADMIN",
           cancellationReason: reason,
         },
+      });
+      if (cas.count === 0) {
+        const refreshed = await prisma.booking.findUnique({
+          where: { id },
+          select: { status: true },
+        });
+        return reply.status(409).send({
+          message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+        });
+      }
+      const updatedBooking = await prisma.booking.findUnique({
+        where: { id },
       });
 
       producer.send("booking.cancelled", {
@@ -715,12 +934,26 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
-      const updatedBooking = await prisma.booking.update({
-        where: { id },
+      // BOOKSVC-012: compare-and-swap so a concurrent cancel can't be silently
+      // overwritten by completion.
+      const cas = await prisma.booking.updateMany({
+        where: { id, status: "CONFIRMED" },
         data: {
           status: "COMPLETED",
           completedAt: new Date(),
         },
+      });
+      if (cas.count === 0) {
+        const refreshed = await prisma.booking.findUnique({
+          where: { id },
+          select: { status: true },
+        });
+        return reply.status(409).send({
+          message: `Cannot complete booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+        });
+      }
+      const updatedBooking = await prisma.booking.findUnique({
+        where: { id },
       });
 
       producer.send("booking.completed", {

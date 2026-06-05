@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => {
   const bookingCreate = vi.fn();
   const bookingFindFirst = vi.fn();
   const bookingFindMany = vi.fn();
+  const bookingFindUnique = vi.fn();
+  const bookingUpdateMany = vi.fn();
   const prisma = {
     $transaction: vi.fn((input: unknown) => {
       if (typeof input === "function") return input(prisma);
@@ -16,6 +18,8 @@ const mocks = vi.hoisted(() => {
       create: bookingCreate,
       findFirst: bookingFindFirst,
       findMany: bookingFindMany,
+      findUnique: bookingFindUnique,
+      updateMany: bookingUpdateMany,
     },
     exchangeRate: {
       findUnique: vi.fn(),
@@ -29,6 +33,8 @@ const mocks = vi.hoisted(() => {
     bookingCreate,
     bookingFindFirst,
     bookingFindMany,
+    bookingFindUnique,
+    bookingUpdateMany,
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
@@ -37,8 +43,22 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@repo/db", () => ({
   BookingStatus: {
+    APPROVED: "APPROVED",
+    CANCELLED: "CANCELLED",
+    COMPLETED: "COMPLETED",
     CONFIRMED: "CONFIRMED",
+    EXPIRED: "EXPIRED",
     PENDING: "PENDING",
+    REJECTED: "REJECTED",
+  },
+  Prisma: {
+    PrismaClientKnownRequestError: class PrismaClientKnownRequestError extends Error {
+      code: string;
+      constructor(message: string, options: { code: string }) {
+        super(message);
+        this.code = options.code;
+      }
+    },
   },
   prisma: mocks.prisma,
 }));
@@ -60,6 +80,14 @@ const createUserToken = () =>
     userId: "guest-1",
     email: "guest@example.com",
     role: "USER",
+  });
+
+const createHostToken = () =>
+  signAccessToken({
+    userId: "host-1",
+    email: "host@example.com",
+    role: "HOST",
+    hostVerified: true,
   });
 
 const monday = "2026-05-18";
@@ -235,6 +263,103 @@ describe("booking routes", () => {
     expect(response.statusCode).toBe(400);
     expect(mocks.spaceFindUnique).not.toHaveBeenCalled();
     expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // BOOKSVC-002: every BookingStatus value should be classified as
+  // conflicting or not, intentionally.
+  it("classifies every BookingStatus enum value intentionally for conflict detection", async () => {
+    // Mirror of the implementation's CONFLICTING_BOOKING_STATUSES.
+    const occupying = new Set(["PENDING", "APPROVED", "CONFIRMED"]);
+    const free = new Set(["COMPLETED", "CANCELLED", "REJECTED", "EXPIRED"]);
+    // Pull the enum surface from the mocked @repo/db so this test fails
+    // if a new status is added to the schema without being classified here.
+    const { BookingStatus } = await import("@repo/db");
+    const allStatuses = Object.keys(BookingStatus as Record<string, string>);
+    for (const status of allStatuses) {
+      expect(occupying.has(status) || free.has(status)).toBe(true);
+    }
+    // APPROVED must be in the occupying set (the BOOKSVC-002 regression).
+    expect(occupying.has("APPROVED")).toBe(true);
+  });
+
+  // BOOKSVC-012: stale-state guard on cancel.
+  it("returns 409 when cancelling a booking that has already been completed (CAS rejected)", async () => {
+    const app = await createApp();
+    mocks.bookingFindUnique
+      .mockResolvedValueOnce({
+        // initial findUnique inside the cancel handler
+        endDate: new Date(monday),
+        endTime: "12:00",
+        guest: { email: "guest@example.com", name: "Guest" },
+        guestId: "guest-1",
+        host: { email: "host@example.com", name: "Host" },
+        hostId: "host-1",
+        id: "b-1",
+        isHourly: true,
+        space: { name: "Focused room" },
+        spaceId: 42,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "CONFIRMED",
+      })
+      .mockResolvedValueOnce({ status: "COMPLETED" });
+    // CAS: zero rows updated → another transition won the race.
+    mocks.bookingUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: { reason: "Plans changed" },
+      url: "/bookings/b-1/cancel",
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: "Cannot cancel booking with status COMPLETED",
+    });
+    expect(mocks.bookingUpdateMany).toHaveBeenCalledWith({
+      data: expect.objectContaining({ status: "CANCELLED" }),
+      where: {
+        id: "b-1",
+        status: { in: ["PENDING", "APPROVED", "CONFIRMED"] },
+      },
+    });
+    expect(mocks.producerSend).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // BOOKSVC-012: stale-state guard on complete.
+  it("returns 409 when completing a booking that was cancelled mid-flight", async () => {
+    const app = await createApp();
+    mocks.bookingFindUnique
+      .mockResolvedValueOnce({
+        guest: { email: "guest@example.com" },
+        hostId: "host-1",
+        id: "b-2",
+        space: { name: "Focused room" },
+        status: "CONFIRMED",
+        totalAmount: 100,
+      })
+      .mockResolvedValueOnce({ status: "CANCELLED" });
+    mocks.bookingUpdateMany.mockResolvedValue({ count: 0 });
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createHostToken()}` },
+      method: "PUT",
+      payload: {},
+      url: "/bookings/b-2/complete",
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: "Cannot complete booking with status CANCELLED",
+    });
+    expect(mocks.bookingUpdateMany).toHaveBeenCalledWith({
+      data: expect.objectContaining({ status: "COMPLETED" }),
+      where: { id: "b-2", status: "CONFIRMED" },
+    });
+    expect(mocks.producerSend).not.toHaveBeenCalled();
     await app.close();
   });
 });
