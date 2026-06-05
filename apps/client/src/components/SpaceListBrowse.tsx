@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { AlertCircle, LayoutGrid, Loader2, Map as MapIcon, RefreshCw, Search } from "lucide-react";
 import SpaceCard from "./SpaceCard";
@@ -35,6 +35,7 @@ export default function SpaceListBrowse({
 }: SpaceListBrowseProps) {
   const searchParams = useSearchParams();
   const t = useTranslations("spaces");
+  const locale = useLocale();
 
   const [spaces, setSpaces] = useState(initialSpaces);
   const [page, setPage] = useState(initialPagination.page);
@@ -55,7 +56,6 @@ export default function SpaceListBrowse({
   const apiParamsRef = useRef(initialApiParams);
 
   // Cache key scoped to locale + search params to prevent cross-locale contamination
-  const locale = typeof window !== "undefined" ? window.location.pathname.split("/")[1] || "en" : "en";
   const cacheKey = STORAGE_KEY_PREFIX + locale + "_" + searchParams.toString();
 
   // Restore from sessionStorage on mount (back-button support)
@@ -134,7 +134,6 @@ export default function SpaceListBrowse({
       const params = new URLSearchParams(apiParamsRef.current);
       params.set("page", String(nextPage));
       params.set("limit", "20");
-      const locale = window.location.pathname.split("/")[1] || "en";
       params.set("lang", locale);
 
       const url = `${PRODUCT_SERVICE_URL}/spaces?${params.toString()}`;
@@ -164,7 +163,7 @@ export default function SpaceListBrowse({
       isLoadingRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [hasMore, page, total]);
+  }, [hasMore, page, total, locale]);
 
   const fetchMapSpaces = useCallback(async (bounds: { neLat: number; neLng: number; swLat: number; swLng: number }) => {
     setMapLoading(true);
@@ -176,7 +175,6 @@ export default function SpaceListBrowse({
       params.set("swLat", String(bounds.swLat));
       params.set("swLng", String(bounds.swLng));
       params.set("limit", "100");
-      const locale = window.location.pathname.split("/")[1] || "en";
       params.set("lang", locale);
       const url = `${PRODUCT_SERVICE_URL}/spaces?${params.toString()}`;
       const res = await fetch(url);
@@ -189,7 +187,7 @@ export default function SpaceListBrowse({
     } finally {
       setMapLoading(false);
     }
-  }, []);
+  }, [locale]);
 
   // IntersectionObserver on sentinel
   useEffect(() => {
