@@ -2,9 +2,19 @@ const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://loc
 const AUTH_SERVICE_UNREACHABLE_MESSAGE =
   "Unable to reach the authentication service. Check that it is running and allows this local app.";
 
+/**
+ * All auth-service calls must opt-in to credentialed CORS so the
+ * HttpOnly `spacefly_access` / `spacefly_refresh` cookies set by
+ * `/auth/login` & `/auth/refresh` actually round-trip the browser. The
+ * cookies are what the Next.js edge middleware (apps/admin/src/middleware.ts)
+ * reads to gate `/admin/*` and `/host/*`.
+ */
 async function fetchAuth(path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(`${AUTH_SERVICE_URL}${path}`, init);
+    return await fetch(`${AUTH_SERVICE_URL}${path}`, {
+      ...init,
+      credentials: "include",
+    });
   } catch (error) {
     if (error instanceof TypeError) {
       throw new Error(AUTH_SERVICE_UNREACHABLE_MESSAGE);
@@ -71,7 +81,15 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
   return data.accessToken;
 }
 
-// Token storage helpers
+// Token storage helpers.
+//
+// TRANSITIONAL (ADMIN-004): tokens are also persisted to localStorage so
+// the existing fetch sites that send `Authorization: Bearer ${token}`
+// keep working. The long-term direction is cookie-only auth — the
+// HttpOnly `spacefly_access` / `spacefly_refresh` cookies set by the
+// auth-service are now the primary credential. A follow-up branch will
+// remove the localStorage path entirely once every fetch site has been
+// migrated to `credentials: "include"` (no Authorization header).
 const ACCESS_TOKEN_KEY = "admin_accessToken";
 const REFRESH_TOKEN_KEY = "admin_refreshToken";
 const USER_KEY = "admin_user";

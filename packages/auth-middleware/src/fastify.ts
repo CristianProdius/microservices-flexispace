@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
@@ -23,8 +23,16 @@ function messageForReason(reason: VerifyFailureReason): string {
   }
 }
 
-async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<JwtPayload | null> {
-  const token = extractTokenFromHeader(request.headers.authorization);
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
+async function authenticate(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<JwtPayload | null> {
+  const token = extractAccessToken(request.headers.authorization, request.headers.cookie);
 
   if (!token) {
     await reply.status(401).send({ message: "No token provided" });

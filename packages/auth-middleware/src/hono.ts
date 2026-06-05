@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { Context } from "hono";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
@@ -22,10 +22,15 @@ function messageForReason(reason: VerifyFailureReason): string {
   }
 }
 
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
 function authenticate(c: Context):
   | { ok: true; payload: JwtPayload }
   | { ok: false; response: Response } {
-  const token = extractTokenFromHeader(c.req.header("Authorization"));
+  const token = extractAccessToken(c.req.header("Authorization"), c.req.header("Cookie"));
 
   if (!token) {
     return { ok: false, response: c.json({ message: "No token provided" }, 401) };

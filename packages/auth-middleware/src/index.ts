@@ -9,6 +9,10 @@ export {
   verifyAccessToken,
   verifyRefreshToken,
   extractTokenFromHeader,
+  extractTokenFromCookieHeader,
+  extractAccessToken,
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
 } from "./jwt.js";
 export type { VerifyResult, VerifyFailureReason } from "./jwt.js";
 

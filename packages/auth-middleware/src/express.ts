@@ -1,11 +1,16 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
 function authenticate(req: Request, res: Response): JwtPayload | null {
-  const token = extractTokenFromHeader(req.headers.authorization);
+  const token = extractAccessToken(req.headers.authorization, req.headers.cookie);
 
   if (!token) {
     res.status(401).json({ message: "No token provided" });

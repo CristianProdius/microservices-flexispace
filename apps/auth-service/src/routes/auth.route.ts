@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type CookieOptions, type Response } from "express";
 import { prisma } from "@repo/db";
 import {
   hashPassword,
@@ -7,6 +7,9 @@ import {
   verifyRefreshToken,
   signAccessToken,
   InvalidPasswordError,
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  extractTokenFromCookieHeader,
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import { producer } from "../utils/kafka.js";
@@ -31,6 +34,41 @@ function parseExpiry(str: string): number {
     default:
       return 7 * 24 * 60 * 60 * 1000;
   }
+}
+
+/**
+ * Build the base options shared by the access- and refresh-token cookies.
+ * `Secure` is enabled in production only so localhost dev (which is plain
+ * HTTP) keeps working; `SameSite=Strict` blocks cross-site CSRF. Cookies
+ * are HttpOnly so they are unreachable from JavaScript / XSS.
+ */
+function baseCookieOptions(): CookieOptions {
+  const isProd = process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "strict",
+    path: "/",
+  };
+}
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  res.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
+    ...baseCookieOptions(),
+    maxAge: parseExpiry(process.env.JWT_EXPIRES_IN || "15m"),
+  });
+  res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
+    ...baseCookieOptions(),
+    // Refresh tokens are only used by /auth/refresh and /auth/logout.
+    // Both live under /auth so we keep the cookie path narrow.
+    path: "/auth",
+    maxAge: parseExpiry(process.env.JWT_REFRESH_EXPIRES_IN || "30d"),
+  });
+}
+
+function clearAuthCookies(res: Response) {
+  res.clearCookie(ACCESS_TOKEN_COOKIE, { ...baseCookieOptions() });
+  res.clearCookie(REFRESH_TOKEN_COOKIE, { ...baseCookieOptions(), path: "/auth" });
 }
 
 // Register new user
@@ -107,6 +145,8 @@ router.post("/register", async (req, res) => {
       );
     }
 
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
     return res.status(201).json({
       user: {
         id: user.id,
@@ -169,6 +209,12 @@ router.post("/login", async (req, res) => {
       },
     });
 
+    // Set HttpOnly session cookies (primary mechanism going forward) and
+    // also return tokens in the JSON body so existing API clients that
+    // still send `Authorization: Bearer ...` keep working during the
+    // transition.
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
     return res.status(200).json({
       user: {
         id: user.id,
@@ -190,7 +236,9 @@ router.post("/login", async (req, res) => {
 // Logout
 router.post("/logout", shouldBeUser, async (req, res) => {
   try {
-    const refreshToken = req.body.refreshToken;
+    const refreshToken =
+      req.body?.refreshToken ||
+      extractTokenFromCookieHeader(req.headers.cookie, REFRESH_TOKEN_COOKIE);
 
     if (refreshToken) {
       // Delete the session
@@ -198,6 +246,8 @@ router.post("/logout", shouldBeUser, async (req, res) => {
         where: { token: refreshToken, userId: req.userId },
       });
     }
+
+    clearAuthCookies(res);
 
     return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
@@ -209,7 +259,9 @@ router.post("/logout", shouldBeUser, async (req, res) => {
 // Refresh token
 router.post("/refresh", async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken =
+      req.body?.refreshToken ||
+      extractTokenFromCookieHeader(req.headers.cookie, REFRESH_TOKEN_COOKIE);
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required" });
@@ -250,6 +302,14 @@ router.post("/refresh", async (req, res) => {
       email: session.user.email,
       role: session.user.role,
       hostVerified: session.user.hostVerified,
+    });
+
+    // Refresh the access-token cookie. We don't rotate the refresh token
+    // here (matches the previous behaviour), so the refresh cookie is left
+    // untouched.
+    res.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
+      ...baseCookieOptions(),
+      maxAge: parseExpiry(process.env.JWT_EXPIRES_IN || "15m"),
     });
 
     return res.status(200).json({ accessToken });
@@ -408,6 +468,8 @@ router.post("/become-host", shouldBeUser, async (req, res) => {
       role: user.role,
       hostVerified: user.hostVerified,
     });
+
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
     return res.status(200).json({
       user,
