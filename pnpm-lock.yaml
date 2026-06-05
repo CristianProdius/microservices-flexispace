@@ -308,6 +308,9 @@ importers:
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       resend:
         specifier: ^6.1.2
         version: 6.12.2
