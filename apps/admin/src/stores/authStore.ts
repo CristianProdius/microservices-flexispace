@@ -30,7 +30,7 @@ interface AuthState {
   isAdmin: boolean;
   isHost: boolean;
   isHostOrAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
   initialize: () => void;
@@ -84,6 +84,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       isHost: response.user.role === "HOST",
       isHostOrAdmin: true,
     });
+    return response.user;
   },
 
   logout: async () => {

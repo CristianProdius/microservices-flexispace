@@ -63,6 +63,22 @@ const statusBadgeClassName = (status: string) =>
             : "bg-red-500/10 text-red-700 ring-red-500/20 dark:text-red-300"
   );
 
+const KNOWN_STATUS_FILTERS = new Set([
+  "all",
+  "PENDING",
+  "APPROVED",
+  "CONFIRMED",
+  "COMPLETED",
+  "CANCELLED",
+]);
+
+const normalizeStatusFilter = (raw: string | null): string => {
+  if (!raw) return "all";
+  if (raw === "all") return "all";
+  const upper = raw.toUpperCase();
+  return KNOWN_STATUS_FILTERS.has(upper) ? upper : "all";
+};
+
 const HostBookingsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,9 +86,15 @@ const HostBookingsPage = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState(searchParams.get("status") || "all");
-  const [spaceFilter, setSpaceFilter] = useState(searchParams.get("spaceId") || "all");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [filter, setFilter] = useState(() =>
+    normalizeStatusFilter(searchParams.get("status"))
+  );
+  const [spaceFilter, setSpaceFilter] = useState(
+    () => searchParams.get("spaceId") || "all"
+  );
+  const [actionLoading, setActionLoading] = useState<Set<string>>(
+    () => new Set<string>()
+  );
 
   const statusFilters = [
     { value: "all", label: "All" },
@@ -82,6 +104,22 @@ const HostBookingsPage = () => {
     { value: "COMPLETED", label: "Completed" },
     { value: "CANCELLED", label: "Cancelled" },
   ];
+
+  // Sync filter state back into the URL so refreshes and shares preserve the
+  // active selection. Replace (not push) to avoid polluting browser history.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filter !== "all") {
+      params.set("status", filter);
+    }
+    if (spaceFilter !== "all") {
+      params.set("spaceId", spaceFilter);
+    }
+    const query = params.toString();
+    router.replace(query ? `/host/bookings?${query}` : "/host/bookings", {
+      scroll: false,
+    });
+  }, [filter, spaceFilter, router]);
 
   const fetchBookings = useCallback(async () => {
     setError(null);
@@ -118,8 +156,27 @@ const HostBookingsPage = () => {
     fetchBookings();
   }, [fetchBookings]);
 
+  const beginAction = (bookingId: string) => {
+    setActionLoading((prev) => {
+      if (prev.has(bookingId)) return prev;
+      const next = new Set(prev);
+      next.add(bookingId);
+      return next;
+    });
+  };
+
+  const endAction = (bookingId: string) => {
+    setActionLoading((prev) => {
+      if (!prev.has(bookingId)) return prev;
+      const next = new Set(prev);
+      next.delete(bookingId);
+      return next;
+    });
+  };
+
   const handleApprove = async (bookingId: string) => {
-    setActionLoading(bookingId);
+    if (actionLoading.has(bookingId)) return;
+    beginAction(bookingId);
     try {
       const resolvedToken = await getToken();
 
@@ -151,14 +208,15 @@ const HostBookingsPage = () => {
       console.error("Error approving booking:", error);
       setError("Booking could not be approved. Retry after checking the order service.");
     } finally {
-      setActionLoading(null);
+      endAction(bookingId);
     }
   };
 
   const handleReject = async (bookingId: string) => {
+    if (actionLoading.has(bookingId)) return;
     const reason = prompt("Reason for rejection (optional):");
 
-    setActionLoading(bookingId);
+    beginAction(bookingId);
     try {
       const resolvedToken = await getToken();
 
@@ -194,12 +252,13 @@ const HostBookingsPage = () => {
       console.error("Error rejecting booking:", error);
       setError("Booking could not be rejected. Retry after checking the order service.");
     } finally {
-      setActionLoading(null);
+      endAction(bookingId);
     }
   };
 
   const handleComplete = async (bookingId: string) => {
-    setActionLoading(bookingId);
+    if (actionLoading.has(bookingId)) return;
+    beginAction(bookingId);
     try {
       const resolvedToken = await getToken();
 
@@ -231,7 +290,7 @@ const HostBookingsPage = () => {
       console.error("Error completing booking:", error);
       setError("Booking could not be completed. Retry after checking the order service.");
     } finally {
-      setActionLoading(null);
+      endAction(bookingId);
     }
   };
 
@@ -504,10 +563,10 @@ const HostBookingsPage = () => {
                   <div className="mt-4 flex items-center gap-3 border-t border-border/60 pt-4">
                     <button
                       onClick={() => handleApprove(booking.id)}
-                      disabled={actionLoading === booking.id}
+                      disabled={actionLoading.has(booking.id)}
                       className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
                     >
-                      {actionLoading === booking.id ? (
+                      {actionLoading.has(booking.id) ? (
                         <Loader2 className="size-4 animate-spin" />
                       ) : (
                         <Check className="size-4" />
@@ -516,7 +575,7 @@ const HostBookingsPage = () => {
                     </button>
                     <button
                       onClick={() => handleReject(booking.id)}
-                      disabled={actionLoading === booking.id}
+                      disabled={actionLoading.has(booking.id)}
                       className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-500/15 disabled:opacity-50 dark:text-red-300"
                     >
                       <X className="size-4" />
@@ -529,10 +588,10 @@ const HostBookingsPage = () => {
                   <div className="mt-4 flex items-center gap-3 border-t border-border/60 pt-4">
                     <button
                       onClick={() => handleComplete(booking.id)}
-                      disabled={actionLoading === booking.id}
+                      disabled={actionLoading.has(booking.id)}
                       className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                     >
-                      {actionLoading === booking.id ? (
+                      {actionLoading.has(booking.id) ? (
                         <Loader2 className="size-4 animate-spin" />
                       ) : (
                         <Check className="size-4" />

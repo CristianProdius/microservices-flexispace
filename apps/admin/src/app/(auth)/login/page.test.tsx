@@ -5,11 +5,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
+const replace = vi.fn();
 const login = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push,
+    replace,
   }),
 }));
 
@@ -45,6 +47,7 @@ describe("admin login page", () => {
 
   beforeEach(() => {
     push.mockReset();
+    replace.mockReset();
     login.mockReset();
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -58,8 +61,15 @@ describe("admin login page", () => {
     container.remove();
   });
 
-  it("submits credentials and redirects on success", async () => {
-    login.mockResolvedValueOnce(undefined);
+  it("submits credentials and redirects admins to /admin on success", async () => {
+    login.mockResolvedValueOnce({
+      id: "admin-1",
+      email: "admin@spacefly.ai",
+      username: "admin",
+      name: "Admin",
+      role: "ADMIN",
+      image: null,
+    });
 
     const pageModule = await import("./page");
 
@@ -91,7 +101,47 @@ describe("admin login page", () => {
     });
 
     expect(login).toHaveBeenCalledWith("admin@spacefly.ai", "secret123");
-    expect(push).toHaveBeenCalledWith("/");
+    expect(replace).toHaveBeenCalledWith("/admin");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("redirects hosts to /host on successful login", async () => {
+    login.mockResolvedValueOnce({
+      id: "host-1",
+      email: "host@spacefly.ai",
+      username: "host",
+      name: "Host",
+      role: "HOST",
+      image: null,
+    });
+
+    const pageModule = await import("./page");
+
+    await act(async () => {
+      root.render(React.createElement(pageModule.default));
+    });
+
+    const email = container.querySelector("#email") as HTMLInputElement | null;
+    const password = container.querySelector(
+      "#password"
+    ) as HTMLInputElement | null;
+    const form = container.querySelector("form");
+
+    if (!email || !password || !form) {
+      return;
+    }
+
+    await act(async () => {
+      setInputValue(email, "host@spacefly.ai");
+      setInputValue(password, "secret123");
+    });
+
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(replace).toHaveBeenCalledWith("/host");
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("renders inline errors when login fails", async () => {

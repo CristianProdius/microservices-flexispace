@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useAuthStore from "@/stores/authStore";
 import { DashboardPageHeader } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ const PRODUCT_SERVICE_URL =
   process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL || "http://localhost:8000";
 
 const AmenitiesPage = () => {
-  const { token } = useAuthStore();
+  const { getToken } = useAuthStore();
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -30,11 +30,7 @@ const AmenitiesPage = () => {
   const [newSpaceTypes, setNewSpaceTypes] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    fetchAmenities();
-  }, []);
-
-  const fetchAmenities = async () => {
+  const fetchAmenities = useCallback(async () => {
     try {
       const res = await fetch(`${PRODUCT_SERVICE_URL}/amenities`);
       if (res.ok) {
@@ -46,18 +42,28 @@ const AmenitiesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAmenities();
+  }, [fetchAmenities]);
 
   const addAmenity = async (e: React.FormEvent) => {
     e.preventDefault();
     setAdding(true);
 
     try {
+      const resolvedToken = await getToken();
+      if (!resolvedToken) {
+        toast.error("Sign in again to add amenities");
+        return;
+      }
+
       const res = await fetch(`${PRODUCT_SERVICE_URL}/amenities`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${resolvedToken}`,
         },
         body: JSON.stringify({
           name: newName,
@@ -67,13 +73,13 @@ const AmenitiesPage = () => {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setAmenities((prev) => [...prev, data]);
         setNewName("");
         setNewCategory("");
         setNewSpaceTypes([]);
         setShowAdd(false);
         toast.success("Amenity added");
+        // Refetch so the list stays in sync with the server.
+        await fetchAmenities();
       } else {
         toast.error("Failed to add amenity");
       }
@@ -89,14 +95,21 @@ const AmenitiesPage = () => {
     if (!confirm("Are you sure you want to delete this amenity?")) return;
 
     try {
+      const resolvedToken = await getToken();
+      if (!resolvedToken) {
+        toast.error("Sign in again to delete amenities");
+        return;
+      }
+
       const res = await fetch(`${PRODUCT_SERVICE_URL}/amenities/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${resolvedToken}` },
       });
 
       if (res.ok) {
-        setAmenities((prev) => prev.filter((a) => a.id !== id));
         toast.success("Amenity deleted");
+        // Refetch so the list stays in sync with the server.
+        await fetchAmenities();
       } else {
         toast.error("Failed to delete amenity");
       }

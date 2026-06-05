@@ -146,7 +146,12 @@ export const buildSpacePayload = (
     NormalizedTaxonomyCategory,
     "legacySpaceType" | "slug" | "spaceType"
   >,
-): SpaceFormPayload => ({
+): SpaceFormPayload => {
+  if (!formData.categorySlug || formData.categorySlug.trim() === "") {
+    throw new Error("Select a category before saving the space");
+  }
+
+  return {
   ...formData,
   nameTranslations: emptyToNull(formData.nameTranslations),
   shortDescTranslations: emptyToNull(formData.shortDescTranslations),
@@ -177,7 +182,8 @@ export const buildSpacePayload = (
       isOpen,
     }))
     .sort((a, b) => a.dayOfWeek - b.dayOfWeek),
-});
+  };
+};
 
 const mapAvailabilityToFormValues = (
   availability?: Availability[] | null,
@@ -244,9 +250,9 @@ export const mapSpaceToFormValues = (
   capacity: space.capacity.toString(),
   venueId: space.venueId ?? null,
   instantBook: space.instantBook,
-  cancellationPolicy: space.cancellationPolicy,
+  cancellationPolicy: space.cancellationPolicy ?? "MODERATE",
   houseRules: space.houseRules ?? "",
-  categorySlug: space.categorySlug,
+  categorySlug: space.categorySlug ?? "",
   amenityIds:
     space.amenities?.map((spaceAmenity) => spaceAmenity.amenityId) ?? [],
   images: Array.isArray(space.images) ? space.images : [],
