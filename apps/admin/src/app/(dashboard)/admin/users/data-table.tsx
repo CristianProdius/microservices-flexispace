@@ -24,7 +24,7 @@ import { Trash2 } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { deleteUsers, type DeleteUsersResult } from "./delete-users";
 
 interface User {
   id: string;
@@ -39,11 +39,13 @@ interface User {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onUsersChanged?: () => void | Promise<void>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onUsersChanged,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -63,35 +65,33 @@ export function DataTable<TData, TValue>({
   });
 
   const { getToken } = useAuthStore();
-  const router = useRouter();
 
-  const mutation = useMutation({
+  const mutation = useMutation<DeleteUsersResult, Error>({
     mutationFn: async () => {
       const token = await getToken();
       const selectedRows = table.getSelectedRowModel().rows;
+      const selectedIds = selectedRows.map((row) => (row.original as User).id);
 
-      await Promise.all(
-        selectedRows.map(async (row) => {
-          const userId = (row.original as User).id;
-          await fetch(
-            `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${userId}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-        })
-      );
+      return deleteUsers({
+        baseUrl: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL ?? "",
+        token,
+        ids: selectedIds,
+      });
     },
-    onSuccess: () => {
-      toast.success("User(s) deleted successfully");
+    onSuccess: async ({ successCount }) => {
+      toast.success(`${successCount} user(s) deleted successfully`);
       setRowSelection({});
-      router.refresh();
+      if (onUsersChanged) {
+        await onUsersChanged();
+      }
     },
-    onError: (error) => {
+    onError: async (error) => {
       toast.error(error.message);
+      // Refresh anyway so partial successes are reflected in the list.
+      setRowSelection({});
+      if (onUsersChanged) {
+        await onUsersChanged();
+      }
     },
   });
 
