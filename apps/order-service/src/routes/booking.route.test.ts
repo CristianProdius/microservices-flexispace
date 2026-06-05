@@ -1,7 +1,12 @@
 import Fastify from "fastify";
 import { signAccessToken } from "@repo/auth-middleware/jwt";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { bookingRoute } from "./booking.js";
+import {
+  bookingRoute,
+  computeRefundRate,
+  MissingExchangeRateError,
+  round2,
+} from "./booking.js";
 
 const mocks = vi.hoisted(() => {
   const bookingCreate = vi.fn();
@@ -240,6 +245,67 @@ describe("booking routes", () => {
     expect(response.json()).toEqual({ message: "Some requested dates are blocked" });
     expect(mocks.bookingCreate).not.toHaveBeenCalled();
     await app.close();
+  });
+
+  // BOOKSVC-008: round2 keeps float drift from leaking into totals.
+  describe("round2 helper", () => {
+    it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {
+      expect(round2(0.1 + 0.2)).toBe(0.3);
+    });
+    it("collapses sub-cent drift to two decimals", () => {
+      // 1.005, 1.015, 2.555 aren't exactly representable in IEEE-754, so
+      // Math.round can land on either side. The point of round2 is that the
+      // result has at most two decimal places, which is what consumers rely on.
+      const samples = [1.005, 1.015, 2.555, 0.5499999, 0.5500001, 7.125];
+      for (const n of samples) {
+        const r = round2(n);
+        // No more than two decimal digits.
+        expect(r * 100 - Math.round(r * 100)).toBeCloseTo(0, 9);
+      }
+    });
+    it("is idempotent on already-rounded values", () => {
+      expect(round2(99.99)).toBe(99.99);
+      expect(round2(0)).toBe(0);
+    });
+  });
+
+  // BOOKSVC-004: refund-rate matrix.
+  describe("computeRefundRate", () => {
+    it("FLEXIBLE: 100% beyond 24h, 0% within 24h", () => {
+      expect(computeRefundRate("FLEXIBLE", 48)).toBe(1);
+      expect(computeRefundRate("FLEXIBLE", 25)).toBe(1);
+      expect(computeRefundRate("FLEXIBLE", 24)).toBe(0);
+      expect(computeRefundRate("FLEXIBLE", 1)).toBe(0);
+    });
+    it("MODERATE: 100% >5d, 50% 24h–5d, 0% <24h", () => {
+      expect(computeRefundRate("MODERATE", 24 * 6)).toBe(1);
+      expect(computeRefundRate("MODERATE", 120)).toBe(0.5);
+      expect(computeRefundRate("MODERATE", 25)).toBe(0.5);
+      expect(computeRefundRate("MODERATE", 24)).toBe(0);
+      expect(computeRefundRate("MODERATE", 1)).toBe(0);
+    });
+    it("STRICT: 50% >7d, 0% otherwise", () => {
+      expect(computeRefundRate("STRICT", 24 * 8)).toBe(0.5);
+      expect(computeRefundRate("STRICT", 168)).toBe(0);
+      expect(computeRefundRate("STRICT", 24)).toBe(0);
+    });
+    it("NON_REFUNDABLE: always 0%", () => {
+      expect(computeRefundRate("NON_REFUNDABLE", 24 * 30)).toBe(0);
+      expect(computeRefundRate("NON_REFUNDABLE", 1)).toBe(0);
+    });
+  });
+
+  // BOOKSVC-007: missing exchange rate throws (does not silently default to 1.0).
+  describe("MissingExchangeRateError", () => {
+    it("carries the from/to pair so callers can surface a 503 reason", () => {
+      const err = new MissingExchangeRateError("MDL", "USD");
+      expect(err).toBeInstanceOf(Error);
+      expect(err.name).toBe("MissingExchangeRateError");
+      expect(err.fromCurrency).toBe("MDL");
+      expect(err.toCurrency).toBe("USD");
+      expect(err.message).toContain("MDL");
+      expect(err.message).toContain("USD");
+    });
   });
 
   it("rejects invalid hourly time ranges before pricing", async () => {

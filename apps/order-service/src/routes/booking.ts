@@ -30,7 +30,6 @@ const isSerializationFailure = (err: unknown): boolean => {
   if (!err || typeof err !== "object") return false;
   const anyErr = err as { code?: unknown; meta?: { code?: unknown } };
   if (anyErr.code === "P2034") return true;
-  // Some drivers surface the underlying Postgres SQLSTATE in meta.code.
   if (anyErr.meta && anyErr.meta.code === "40001") return true;
   if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
     return true;
@@ -56,12 +55,100 @@ async function runWithSerializableRetry<T>(work: () => Promise<T>): Promise<T> {
       }
     }
   }
-  // Exhausted retries — re-throw the last serialization failure so the caller
-  // can map it to a 503.
   throw lastError;
 }
 
-const roundCurrency = (amount: number) => Math.round(amount * 100) / 100;
+// BOOKSVC-008: pragmatic mitigation against Float64 drift in monetary math.
+// Long-term fix is to migrate monetary columns to Decimal(12,2) (tracked as
+// DB-001). Round to cents at every assignment boundary so totals stay
+// coherent with line items.
+export const round2 = (n: number): number => Math.round(n * 100) / 100;
+const roundCurrency = round2;
+
+// BOOKSVC-007: typed error thrown when an ExchangeRate row is missing for a
+// (from, to) pair. Callers MUST surface this to the user instead of silently
+// substituting 1.0.
+export class MissingExchangeRateError extends Error {
+  readonly fromCurrency: string;
+  readonly toCurrency: string;
+  constructor(fromCurrency: string, toCurrency: string) {
+    super(`Exchange rate not configured: ${fromCurrency} -> ${toCurrency}`);
+    this.name = "MissingExchangeRateError";
+    this.fromCurrency = fromCurrency;
+    this.toCurrency = toCurrency;
+  }
+}
+
+// BOOKSVC-004: refund-rate matrix applied at cancel time.
+// FLEXIBLE      : 100% if >24h, else 0%
+// MODERATE      : 100% if >5d (120h), 50% if 24h–5d, else 0%
+// STRICT        : 50% if >7d (168h), else 0%
+// NON_REFUNDABLE: always 0%
+export const computeRefundRate = (
+  policy: "FLEXIBLE" | "MODERATE" | "STRICT" | "NON_REFUNDABLE",
+  hoursUntilCheckin: number
+): number => {
+  if (policy === "NON_REFUNDABLE") return 0;
+  if (policy === "FLEXIBLE") return hoursUntilCheckin > 24 ? 1 : 0;
+  if (policy === "MODERATE") {
+    if (hoursUntilCheckin > 120) return 1;
+    if (hoursUntilCheckin > 24) return 0.5;
+    return 0;
+  }
+  return hoursUntilCheckin > 168 ? 0.5 : 0;
+};
+
+// BOOKSVC-006: compute UTC-based [start, end) bounds for "today"/"week"/"month"
+// in a caller-supplied IANA timezone. Falls back to UTC on invalid tz.
+export const getTzPeriodBounds = (
+  now: Date,
+  tz: string
+): { todayStart: Date; weekStart: Date; monthStart: Date } => {
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      weekday: "short",
+    }).formatToParts(now);
+  } catch {
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      weekday: "short",
+    }).formatToParts(now);
+  }
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  const day = Number(pick("day"));
+  let hour = Number(pick("hour"));
+  if (hour === 24) hour = 0;
+  const minute = Number(pick("minute"));
+  const second = Number(pick("second"));
+  const weekdayShort = pick("weekday");
+  const weekdayIndex = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekdayShort);
+
+  const elapsedMs =
+    (hour * 3600 + minute * 60 + second) * 1000 + (now.getTime() % 1000);
+  const todayStart = new Date(now.getTime() - elapsedMs);
+  const daysSinceMonday = weekdayIndex >= 0 ? (weekdayIndex + 6) % 7 : 0;
+  const weekStart = new Date(todayStart.getTime() - daysSinceMonday * 86_400_000);
+  const monthStart = new Date(todayStart.getTime() - (day - 1) * 86_400_000);
+
+  return { todayStart, weekStart, monthStart };
+};
 
 const BOOKING_STATUSES = new Set<BookingStatus>([
   "PENDING",
@@ -286,19 +373,24 @@ const calculateBookingPrice = (
   return { subtotal, cleaningFee, serviceFee, total };
 };
 
-async function getExchangeRate(fromCurrency: string): Promise<number> {
-  if (fromCurrency === "USD") return 1.0;
+// BOOKSVC-007: never default to 1.0 when an exchange rate is missing — that
+// silently under-reports cross-currency bookings (e.g. USD↔MDL by ~18x).
+// Throw a typed error so the caller can return 503 / show "rate unavailable".
+async function getExchangeRate(
+  fromCurrency: string,
+  toCurrency: string = "USD"
+): Promise<number> {
+  if (fromCurrency === toCurrency) return 1.0;
   const rate = await prisma.exchangeRate.findUnique({
     where: {
       fromCurrency_toCurrency: {
         fromCurrency: fromCurrency as any,
-        toCurrency: "USD" as any,
+        toCurrency: toCurrency as any,
       },
     },
   });
   if (!rate) {
-    console.error(`Exchange rate not configured: ${fromCurrency} -> USD, defaulting to 1.0`);
-    return 1.0; // Log error but don't break booking flow
+    throw new MissingExchangeRateError(fromCurrency, toCurrency);
   }
   return Number(rate.rate); // rate.rate is Prisma.Decimal
 }
@@ -369,7 +461,17 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         endTime || null
       );
 
-      const exchangeRate = await getExchangeRate(space.currency);
+      let exchangeRate: number;
+      try {
+        exchangeRate = await getExchangeRate(space.currency);
+      } catch (err) {
+        if (err instanceof MissingExchangeRateError) {
+          return reply.status(503).send({
+            message: `Exchange rate unavailable for ${err.fromCurrency} -> ${err.toCurrency}`,
+          });
+        }
+        throw err;
+      }
 
       // BOOKSVC-001/002: use the shared CONFLICTING_BOOKING_STATUSES set so
       // every status that occupies a slot (PENDING/CONFIRMED post-APPROVED-removal)
@@ -894,14 +996,41 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
+      // BOOKSVC-004+012: apply the space's cancellation policy AND use
+      // compare-and-swap so a concurrent approve/reject can't be silently
+      // overwritten. Refund policy (FLEXIBLE/MODERATE/STRICT/NON_REFUNDABLE)
+      // is enforced only for GUEST cancellations of CONFIRMED bookings; HOST
+      // and ADMIN cancellations always refund 100%.
       const actor = isGuest ? "GUEST" : isHost ? "HOST" : "ADMIN";
-      // BOOKSVC-012: compare-and-swap so a concurrent approve/reject/complete
-      // can't be silently overwritten.
+      const now = new Date();
+      const policy = booking.space.cancellationPolicy as
+        | "FLEXIBLE"
+        | "MODERATE"
+        | "STRICT"
+        | "NON_REFUNDABLE";
+
+      let checkinAt = new Date(booking.startDate);
+      if (booking.startTime) {
+        const [h, m] = booking.startTime.split(":").map(Number);
+        checkinAt = new Date(checkinAt);
+        checkinAt.setUTCHours(h ?? 0, m ?? 0, 0, 0);
+      }
+      const hoursUntilCheckin = (checkinAt.getTime() - now.getTime()) / 3_600_000;
+
+      let refundRate: number;
+      if (actor !== "GUEST" || booking.status === "PENDING") {
+        refundRate = 1;
+      } else {
+        refundRate = computeRefundRate(policy, hoursUntilCheckin);
+      }
+      const refundAmount = round2(booking.totalAmount * refundRate);
+
+      // BOOKSVC-012: compare-and-swap to avoid a concurrent state transition.
       const cas = await prisma.booking.updateMany({
         where: { id, status: { in: cancellableStatuses } },
         data: {
           status: "CANCELLED",
-          cancelledAt: new Date(),
+          cancelledAt: now,
           cancelledByRole: actor,
           cancellationReason: reason,
         },
@@ -915,9 +1044,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
         });
       }
-      const updatedBooking = await prisma.booking.findUnique({
-        where: { id },
-      });
+      const updatedBooking = await prisma.booking.findUnique({ where: { id } });
 
       // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
       // committed; log + continue rather than reverse a successful cancel.
@@ -932,6 +1059,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
             hostName: booking.host.name,
             spaceName: booking.space.name,
             reason,
+            cancellationPolicy: policy,
+            hoursUntilCheckin: round2(hoursUntilCheckin),
+            refundRate,
+            refundAmount,
+            currency: booking.currency,
           },
         });
       } catch (err) {
@@ -941,7 +1073,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         );
       }
 
-      return reply.send(updatedBooking);
+      return reply.send({
+        ...updatedBooking,
+        refund: {
+          policy,
+          rate: refundRate,
+          amount: refundAmount,
+          currency: booking.currency,
+          hoursUntilCheckin: round2(hoursUntilCheckin),
+        },
+      });
     }
   );
 
@@ -1073,20 +1214,36 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
     "/bookings/stats",
     { preHandler: shouldBeAdmin },
     async (request, reply) => {
+      const { tz: tzParam } = request.query as { tz?: string };
+      const tz = typeof tzParam === "string" && tzParam.length > 0 ? tzParam : "UTC";
+
       const now = new Date();
       const sixMonthsAgo = startOfMonth(subMonths(now, 5));
+
+      // BOOKSVC-006: bucket boundaries should follow the admin's tz, not the
+      // server's local clock. The chartData below still buckets by UTC month to
+      // stay stable across deploys, but `todayStart`/`weekStart`/`monthStart`
+      // surface tz-aware bounds for the dashboard's "today / this week / this
+      // month" tiles.
+      const { todayStart, weekStart, monthStart } = getTzPeriodBounds(now, tz);
 
       const [
         totalBookings,
         pendingBookings,
         completedBookings,
-        totalRevenue,
+        revenueByCurrency,
         monthlyData,
+        revenueTodayByCurrency,
+        revenueThisWeekByCurrency,
+        revenueThisMonthByCurrency,
       ] = await Promise.all([
         prisma.booking.count(),
         prisma.booking.count({ where: { status: "PENDING" } }),
         prisma.booking.count({ where: { status: "COMPLETED" } }),
-        prisma.booking.aggregate({
+        // BOOKSVC-006 (+005): group by currency so admins never see
+        // meaningless cross-currency sums.
+        prisma.booking.groupBy({
+          by: ["currency"],
           where: { status: "COMPLETED" },
           _sum: { totalAmount: true },
         }),
@@ -1096,10 +1253,34 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
             createdAt: true,
             status: true,
             totalAmount: true,
+            currency: true,
             exchangeRate: true,
           },
         }),
+        prisma.booking.groupBy({
+          by: ["currency"],
+          where: { status: "COMPLETED", completedAt: { gte: todayStart } },
+          _sum: { totalAmount: true },
+        }),
+        prisma.booking.groupBy({
+          by: ["currency"],
+          where: { status: "COMPLETED", completedAt: { gte: weekStart } },
+          _sum: { totalAmount: true },
+        }),
+        prisma.booking.groupBy({
+          by: ["currency"],
+          where: { status: "COMPLETED", completedAt: { gte: monthStart } },
+          _sum: { totalAmount: true },
+        }),
       ]);
+
+      const groupRowsToTotals = (
+        rows: Array<{ currency: string; _sum: { totalAmount: number | null } }>
+      ) =>
+        rows.map((row) => ({
+          currency: row.currency,
+          total: round2(row._sum.totalAmount ?? 0),
+        }));
 
       // Group by month
       const monthNames = [
@@ -1121,27 +1302,52 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           return bDate.getFullYear() === year && bDate.getMonth() === month;
         });
 
+        // Build revenue per currency for this month bucket.
+        const revenueByCurrencyForMonth = new Map<string, number>();
+        for (const b of monthBookings) {
+          if (b.status !== "COMPLETED") continue;
+          const prev = revenueByCurrencyForMonth.get(b.currency) ?? 0;
+          revenueByCurrencyForMonth.set(b.currency, prev + b.totalAmount);
+        }
+
         chartData.push({
           month: monthNames[month]!,
           total: monthBookings.length,
           confirmed: monthBookings.filter(
             (b) => b.status === "CONFIRMED" || b.status === "COMPLETED"
           ).length,
-          revenue: monthBookings
-            .filter((b) => b.status === "COMPLETED")
-            .reduce(
-              (sum, b) => sum + b.totalAmount * Number(b.exchangeRate ?? 1),
-              0
-            ),
+          // TYPES-002: chart `revenue` is a single number, USD-normalized via
+          // the exchangeRate recorded at booking time. Per-currency breakdowns
+          // are surfaced separately in the parent stats response.
+          revenue: round2(
+            monthBookings
+              .filter((b) => b.status === "COMPLETED")
+              .reduce(
+                (sum, b) => sum + b.totalAmount * Number(b.exchangeRate ?? 1),
+                0
+              )
+          ),
           currency: "USD",
         });
       }
 
       return reply.send({
+        timezone: tz,
         totalBookings,
         pendingBookings,
         completedBookings,
-        totalRevenue: totalRevenue._sum.totalAmount || 0,
+        revenueByCurrency: groupRowsToTotals(
+          revenueByCurrency as Array<{ currency: string; _sum: { totalAmount: number | null } }>
+        ),
+        revenueToday: groupRowsToTotals(
+          revenueTodayByCurrency as Array<{ currency: string; _sum: { totalAmount: number | null } }>
+        ),
+        revenueThisWeek: groupRowsToTotals(
+          revenueThisWeekByCurrency as Array<{ currency: string; _sum: { totalAmount: number | null } }>
+        ),
+        revenueThisMonth: groupRowsToTotals(
+          revenueThisMonthByCurrency as Array<{ currency: string; _sum: { totalAmount: number | null } }>
+        ),
         chartData,
       });
     }
@@ -1154,13 +1360,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
     async (request, reply) => {
       const hostId = request.userId!;
 
-      const [completedBookings, pendingPayouts, earnings] = await Promise.all([
-        prisma.booking.findMany({
+      // BOOKSVC-005: aggregate by currency so we never produce meaningless
+      // mixed-currency totals like "USD 100 + MDL 1800 = 1900".
+      const [completedByCurrency, pendingPayouts, earnings] = await Promise.all([
+        prisma.booking.groupBy({
+          by: ["currency"],
           where: {
             hostId,
             status: "COMPLETED",
           },
-          select: {
+          _sum: {
             totalAmount: true,
             serviceFee: true,
           },
@@ -1181,17 +1390,23 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         }),
       ]);
 
-      const totalEarnings = completedBookings.reduce(
-        (sum, b) => sum + b.totalAmount - b.serviceFee,
-        0
-      );
-      const platformFees = completedBookings.reduce((sum, b) => sum + b.serviceFee, 0);
+      const earningsByCurrency = completedByCurrency.map((row) => {
+        const total = row._sum.totalAmount ?? 0;
+        const fees = row._sum.serviceFee ?? 0;
+        return {
+          currency: row.currency,
+          totalEarnings: round2(total - fees),
+          platformFees: round2(fees),
+          grossRevenue: round2(total),
+        };
+      });
 
       return reply.send({
-        totalEarnings,
-        pendingPayout: pendingPayouts._sum.netAmount || 0,
-        completedPayouts: earnings._sum.netAmount || 0,
-        platformFees,
+        earningsByCurrency,
+        // Payouts are denominated in a single currency (USD per Payout model);
+        // surface them separately rather than mixing with multi-currency totals.
+        pendingPayout: round2(pendingPayouts._sum.netAmount || 0),
+        completedPayouts: round2(earnings._sum.netAmount || 0),
       });
     }
   );
