@@ -1,9 +1,18 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import { shouldBeAdmin } from "@repo/auth-middleware/express";
+import { setRevocationChecker } from "@repo/auth-middleware";
+import { prisma } from "@repo/db";
 import userRoute from "./routes/user.route.js";
 import authRoute from "./routes/auth.route.js";
 import { producer } from "./utils/kafka.js";
+
+// Wire DB-backed access-token revocation check into the middleware.
+// Middleware itself stays DB-free; auth-service owns the store.
+setRevocationChecker(async (jti) => {
+  const revoked = await prisma.revokedAccessToken.findUnique({ where: { jti } });
+  return revoked !== null;
+});
 
 const PORT = Number(process.env.PORT || 8003);
 const DEFAULT_CORS_ORIGINS = [

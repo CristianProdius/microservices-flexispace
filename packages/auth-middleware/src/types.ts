@@ -7,6 +7,20 @@ export interface JwtPayload {
   hostVerified?: boolean;
   iat?: number;
   exp?: number;
+  jti?: string;
+}
+
+/**
+ * Single-purpose, non-session JWTs (email verification, password reset, etc).
+ * Kept separate from session JwtPayload so middleware cannot accidentally
+ * accept a verification token as an access token.
+ */
+export interface PurposeTokenPayload {
+  userId: string;
+  email: string;
+  purpose: "email-verification";
+  iat?: number;
+  exp?: number;
 }
 
 export interface AuthUser {

@@ -109,6 +109,21 @@ model Session {
   @@index([userId])
 }
 
+// Revocation list for access tokens (logout, password change, etc).
+// Each entry corresponds to a JWT `jti`. Middleware rejects any access token
+// whose `jti` appears here. Expired rows can be reaped by a periodic job
+// (see ops follow-up: no scheduler exists yet in this repo).
+model RevokedAccessToken {
+  jti       String   @id
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime @default(now())
+  reason    String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 // ==================== VENUES ====================
 
 model Venue {

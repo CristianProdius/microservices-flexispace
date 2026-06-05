@@ -1,5 +1,5 @@
 // Types
-export type { JwtPayload, AuthUser, TokenPair, Role } from "./types.js";
+export type { JwtPayload, AuthUser, TokenPair, Role, PurposeTokenPayload } from "./types.js";
 
 // JWT utilities
 export {
@@ -8,11 +8,20 @@ export {
   signTokenPair,
   verifyAccessToken,
   verifyRefreshToken,
+  signEmailVerificationToken,
+  verifyEmailVerificationToken,
   extractTokenFromHeader,
 } from "./jwt.js";
 
 // Password utilities
 export { hashPassword, comparePassword } from "./password.js";
+
+// Access-token revocation hook
+export {
+  setRevocationChecker,
+  isAccessTokenRevoked,
+  type RevocationChecker,
+} from "./revocation.js";
 
 // Express middleware
 export {

@@ -145,6 +145,14 @@ exports.Prisma.SessionScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.RevokedAccessTokenScalarFieldEnum = {
+  jti: 'jti',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  reason: 'reason'
+};
+
 exports.Prisma.VenueScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -409,6 +417,7 @@ exports.PayoutStatus = exports.$Enums.PayoutStatus = {
 exports.Prisma.ModelName = {
   User: 'User',
   Session: 'Session',
+  RevokedAccessToken: 'RevokedAccessToken',
   Venue: 'Venue',
   ExchangeRate: 'ExchangeRate',
   Space: 'Space',

@@ -24,6 +24,11 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export type Session = $Result.DefaultSelection<Prisma.$SessionPayload>
 /**
+ * Model RevokedAccessToken
+ * 
+ */
+export type RevokedAccessToken = $Result.DefaultSelection<Prisma.$RevokedAccessTokenPayload>
+/**
  * Model Venue
  * 
  */
@@ -331,6 +336,16 @@ export class PrismaClient<
     * ```
     */
   get session(): Prisma.SessionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.revokedAccessToken`: Exposes CRUD operations for the **RevokedAccessToken** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more RevokedAccessTokens
+    * const revokedAccessTokens = await prisma.revokedAccessToken.findMany()
+    * ```
+    */
+  get revokedAccessToken(): Prisma.RevokedAccessTokenDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.venue`: Exposes CRUD operations for the **Venue** model.
@@ -903,6 +918,7 @@ export namespace Prisma {
   export const ModelName: {
     User: 'User',
     Session: 'Session',
+    RevokedAccessToken: 'RevokedAccessToken',
     Venue: 'Venue',
     ExchangeRate: 'ExchangeRate',
     Space: 'Space',
@@ -934,7 +950,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "session" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "availability" | "blockedDate" | "booking" | "review" | "payout"
+      modelProps: "user" | "session" | "revokedAccessToken" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "availability" | "blockedDate" | "booking" | "review" | "payout"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1083,6 +1099,80 @@ export namespace Prisma {
           count: {
             args: Prisma.SessionCountArgs<ExtArgs>
             result: $Utils.Optional<SessionCountAggregateOutputType> | number
+          }
+        }
+      }
+      RevokedAccessToken: {
+        payload: Prisma.$RevokedAccessTokenPayload<ExtArgs>
+        fields: Prisma.RevokedAccessTokenFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.RevokedAccessTokenFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          findFirst: {
+            args: Prisma.RevokedAccessTokenFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          findMany: {
+            args: Prisma.RevokedAccessTokenFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
+          }
+          create: {
+            args: Prisma.RevokedAccessTokenCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          createMany: {
+            args: Prisma.RevokedAccessTokenCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
+          }
+          delete: {
+            args: Prisma.RevokedAccessTokenDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          update: {
+            args: Prisma.RevokedAccessTokenUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          deleteMany: {
+            args: Prisma.RevokedAccessTokenDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.RevokedAccessTokenUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>[]
+          }
+          upsert: {
+            args: Prisma.RevokedAccessTokenUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$RevokedAccessTokenPayload>
+          }
+          aggregate: {
+            args: Prisma.RevokedAccessTokenAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateRevokedAccessToken>
+          }
+          groupBy: {
+            args: Prisma.RevokedAccessTokenGroupByArgs<ExtArgs>
+            result: $Utils.Optional<RevokedAccessTokenGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.RevokedAccessTokenCountArgs<ExtArgs>
+            result: $Utils.Optional<RevokedAccessTokenCountAggregateOutputType> | number
           }
         }
       }
@@ -2146,6 +2236,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     user?: UserOmit
     session?: SessionOmit
+    revokedAccessToken?: RevokedAccessTokenOmit
     venue?: VenueOmit
     exchangeRate?: ExchangeRateOmit
     space?: SpaceOmit
@@ -4933,6 +5024,1001 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: SessionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model RevokedAccessToken
+   */
+
+  export type AggregateRevokedAccessToken = {
+    _count: RevokedAccessTokenCountAggregateOutputType | null
+    _min: RevokedAccessTokenMinAggregateOutputType | null
+    _max: RevokedAccessTokenMaxAggregateOutputType | null
+  }
+
+  export type RevokedAccessTokenMinAggregateOutputType = {
+    jti: string | null
+    userId: string | null
+    expiresAt: Date | null
+    revokedAt: Date | null
+    reason: string | null
+  }
+
+  export type RevokedAccessTokenMaxAggregateOutputType = {
+    jti: string | null
+    userId: string | null
+    expiresAt: Date | null
+    revokedAt: Date | null
+    reason: string | null
+  }
+
+  export type RevokedAccessTokenCountAggregateOutputType = {
+    jti: number
+    userId: number
+    expiresAt: number
+    revokedAt: number
+    reason: number
+    _all: number
+  }
+
+
+  export type RevokedAccessTokenMinAggregateInputType = {
+    jti?: true
+    userId?: true
+    expiresAt?: true
+    revokedAt?: true
+    reason?: true
+  }
+
+  export type RevokedAccessTokenMaxAggregateInputType = {
+    jti?: true
+    userId?: true
+    expiresAt?: true
+    revokedAt?: true
+    reason?: true
+  }
+
+  export type RevokedAccessTokenCountAggregateInputType = {
+    jti?: true
+    userId?: true
+    expiresAt?: true
+    revokedAt?: true
+    reason?: true
+    _all?: true
+  }
+
+  export type RevokedAccessTokenAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RevokedAccessToken to aggregate.
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RevokedAccessTokens to fetch.
+     */
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: RevokedAccessTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RevokedAccessTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned RevokedAccessTokens
+    **/
+    _count?: true | RevokedAccessTokenCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RevokedAccessTokenMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RevokedAccessTokenMaxAggregateInputType
+  }
+
+  export type GetRevokedAccessTokenAggregateType<T extends RevokedAccessTokenAggregateArgs> = {
+        [P in keyof T & keyof AggregateRevokedAccessToken]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRevokedAccessToken[P]>
+      : GetScalarType<T[P], AggregateRevokedAccessToken[P]>
+  }
+
+
+
+
+  export type RevokedAccessTokenGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RevokedAccessTokenWhereInput
+    orderBy?: RevokedAccessTokenOrderByWithAggregationInput | RevokedAccessTokenOrderByWithAggregationInput[]
+    by: RevokedAccessTokenScalarFieldEnum[] | RevokedAccessTokenScalarFieldEnum
+    having?: RevokedAccessTokenScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RevokedAccessTokenCountAggregateInputType | true
+    _min?: RevokedAccessTokenMinAggregateInputType
+    _max?: RevokedAccessTokenMaxAggregateInputType
+  }
+
+  export type RevokedAccessTokenGroupByOutputType = {
+    jti: string
+    userId: string
+    expiresAt: Date
+    revokedAt: Date
+    reason: string | null
+    _count: RevokedAccessTokenCountAggregateOutputType | null
+    _min: RevokedAccessTokenMinAggregateOutputType | null
+    _max: RevokedAccessTokenMaxAggregateOutputType | null
+  }
+
+  type GetRevokedAccessTokenGroupByPayload<T extends RevokedAccessTokenGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<RevokedAccessTokenGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RevokedAccessTokenGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RevokedAccessTokenGroupByOutputType[P]>
+            : GetScalarType<T[P], RevokedAccessTokenGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type RevokedAccessTokenSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    jti?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
+
+  export type RevokedAccessTokenSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    jti?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
+
+  export type RevokedAccessTokenSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    jti?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+    revokedAt?: boolean
+    reason?: boolean
+  }, ExtArgs["result"]["revokedAccessToken"]>
+
+  export type RevokedAccessTokenSelectScalar = {
+    jti?: boolean
+    userId?: boolean
+    expiresAt?: boolean
+    revokedAt?: boolean
+    reason?: boolean
+  }
+
+  export type RevokedAccessTokenOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"jti" | "userId" | "expiresAt" | "revokedAt" | "reason", ExtArgs["result"]["revokedAccessToken"]>
+
+  export type $RevokedAccessTokenPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "RevokedAccessToken"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      jti: string
+      userId: string
+      expiresAt: Date
+      revokedAt: Date
+      reason: string | null
+    }, ExtArgs["result"]["revokedAccessToken"]>
+    composites: {}
+  }
+
+  type RevokedAccessTokenGetPayload<S extends boolean | null | undefined | RevokedAccessTokenDefaultArgs> = $Result.GetResult<Prisma.$RevokedAccessTokenPayload, S>
+
+  type RevokedAccessTokenCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<RevokedAccessTokenFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: RevokedAccessTokenCountAggregateInputType | true
+    }
+
+  export interface RevokedAccessTokenDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['RevokedAccessToken'], meta: { name: 'RevokedAccessToken' } }
+    /**
+     * Find zero or one RevokedAccessToken that matches the filter.
+     * @param {RevokedAccessTokenFindUniqueArgs} args - Arguments to find a RevokedAccessToken
+     * @example
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends RevokedAccessTokenFindUniqueArgs>(args: SelectSubset<T, RevokedAccessTokenFindUniqueArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one RevokedAccessToken that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {RevokedAccessTokenFindUniqueOrThrowArgs} args - Arguments to find a RevokedAccessToken
+     * @example
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends RevokedAccessTokenFindUniqueOrThrowArgs>(args: SelectSubset<T, RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RevokedAccessToken that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenFindFirstArgs} args - Arguments to find a RevokedAccessToken
+     * @example
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends RevokedAccessTokenFindFirstArgs>(args?: SelectSubset<T, RevokedAccessTokenFindFirstArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first RevokedAccessToken that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenFindFirstOrThrowArgs} args - Arguments to find a RevokedAccessToken
+     * @example
+     * // Get one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends RevokedAccessTokenFindFirstOrThrowArgs>(args?: SelectSubset<T, RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more RevokedAccessTokens that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all RevokedAccessTokens
+     * const revokedAccessTokens = await prisma.revokedAccessToken.findMany()
+     * 
+     * // Get first 10 RevokedAccessTokens
+     * const revokedAccessTokens = await prisma.revokedAccessToken.findMany({ take: 10 })
+     * 
+     * // Only select the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.findMany({ select: { jti: true } })
+     * 
+     */
+    findMany<T extends RevokedAccessTokenFindManyArgs>(args?: SelectSubset<T, RevokedAccessTokenFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a RevokedAccessToken.
+     * @param {RevokedAccessTokenCreateArgs} args - Arguments to create a RevokedAccessToken.
+     * @example
+     * // Create one RevokedAccessToken
+     * const RevokedAccessToken = await prisma.revokedAccessToken.create({
+     *   data: {
+     *     // ... data to create a RevokedAccessToken
+     *   }
+     * })
+     * 
+     */
+    create<T extends RevokedAccessTokenCreateArgs>(args: SelectSubset<T, RevokedAccessTokenCreateArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many RevokedAccessTokens.
+     * @param {RevokedAccessTokenCreateManyArgs} args - Arguments to create many RevokedAccessTokens.
+     * @example
+     * // Create many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends RevokedAccessTokenCreateManyArgs>(args?: SelectSubset<T, RevokedAccessTokenCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many RevokedAccessTokens and returns the data saved in the database.
+     * @param {RevokedAccessTokenCreateManyAndReturnArgs} args - Arguments to create many RevokedAccessTokens.
+     * @example
+     * // Create many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many RevokedAccessTokens and only return the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.createManyAndReturn({
+     *   select: { jti: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends RevokedAccessTokenCreateManyAndReturnArgs>(args?: SelectSubset<T, RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a RevokedAccessToken.
+     * @param {RevokedAccessTokenDeleteArgs} args - Arguments to delete one RevokedAccessToken.
+     * @example
+     * // Delete one RevokedAccessToken
+     * const RevokedAccessToken = await prisma.revokedAccessToken.delete({
+     *   where: {
+     *     // ... filter to delete one RevokedAccessToken
+     *   }
+     * })
+     * 
+     */
+    delete<T extends RevokedAccessTokenDeleteArgs>(args: SelectSubset<T, RevokedAccessTokenDeleteArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one RevokedAccessToken.
+     * @param {RevokedAccessTokenUpdateArgs} args - Arguments to update one RevokedAccessToken.
+     * @example
+     * // Update one RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends RevokedAccessTokenUpdateArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more RevokedAccessTokens.
+     * @param {RevokedAccessTokenDeleteManyArgs} args - Arguments to filter RevokedAccessTokens to delete.
+     * @example
+     * // Delete a few RevokedAccessTokens
+     * const { count } = await prisma.revokedAccessToken.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends RevokedAccessTokenDeleteManyArgs>(args?: SelectSubset<T, RevokedAccessTokenDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RevokedAccessTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends RevokedAccessTokenUpdateManyArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more RevokedAccessTokens and returns the data updated in the database.
+     * @param {RevokedAccessTokenUpdateManyAndReturnArgs} args - Arguments to update many RevokedAccessTokens.
+     * @example
+     * // Update many RevokedAccessTokens
+     * const revokedAccessToken = await prisma.revokedAccessToken.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more RevokedAccessTokens and only return the `jti`
+     * const revokedAccessTokenWithJtiOnly = await prisma.revokedAccessToken.updateManyAndReturn({
+     *   select: { jti: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends RevokedAccessTokenUpdateManyAndReturnArgs>(args: SelectSubset<T, RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one RevokedAccessToken.
+     * @param {RevokedAccessTokenUpsertArgs} args - Arguments to update or create a RevokedAccessToken.
+     * @example
+     * // Update or create a RevokedAccessToken
+     * const revokedAccessToken = await prisma.revokedAccessToken.upsert({
+     *   create: {
+     *     // ... data to create a RevokedAccessToken
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the RevokedAccessToken we want to update
+     *   }
+     * })
+     */
+    upsert<T extends RevokedAccessTokenUpsertArgs>(args: SelectSubset<T, RevokedAccessTokenUpsertArgs<ExtArgs>>): Prisma__RevokedAccessTokenClient<$Result.GetResult<Prisma.$RevokedAccessTokenPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of RevokedAccessTokens.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenCountArgs} args - Arguments to filter RevokedAccessTokens to count.
+     * @example
+     * // Count the number of RevokedAccessTokens
+     * const count = await prisma.revokedAccessToken.count({
+     *   where: {
+     *     // ... the filter for the RevokedAccessTokens we want to count
+     *   }
+     * })
+    **/
+    count<T extends RevokedAccessTokenCountArgs>(
+      args?: Subset<T, RevokedAccessTokenCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RevokedAccessTokenCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a RevokedAccessToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RevokedAccessTokenAggregateArgs>(args: Subset<T, RevokedAccessTokenAggregateArgs>): Prisma.PrismaPromise<GetRevokedAccessTokenAggregateType<T>>
+
+    /**
+     * Group by RevokedAccessToken.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RevokedAccessTokenGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RevokedAccessTokenGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RevokedAccessTokenGroupByArgs['orderBy'] }
+        : { orderBy?: RevokedAccessTokenGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RevokedAccessTokenGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRevokedAccessTokenGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the RevokedAccessToken model
+   */
+  readonly fields: RevokedAccessTokenFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for RevokedAccessToken.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__RevokedAccessTokenClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the RevokedAccessToken model
+   */
+  interface RevokedAccessTokenFieldRefs {
+    readonly jti: FieldRef<"RevokedAccessToken", 'String'>
+    readonly userId: FieldRef<"RevokedAccessToken", 'String'>
+    readonly expiresAt: FieldRef<"RevokedAccessToken", 'DateTime'>
+    readonly revokedAt: FieldRef<"RevokedAccessToken", 'DateTime'>
+    readonly reason: FieldRef<"RevokedAccessToken", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * RevokedAccessToken findUnique
+   */
+  export type RevokedAccessTokenFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which RevokedAccessToken to fetch.
+     */
+    where: RevokedAccessTokenWhereUniqueInput
+  }
+
+  /**
+   * RevokedAccessToken findUniqueOrThrow
+   */
+  export type RevokedAccessTokenFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which RevokedAccessToken to fetch.
+     */
+    where: RevokedAccessTokenWhereUniqueInput
+  }
+
+  /**
+   * RevokedAccessToken findFirst
+   */
+  export type RevokedAccessTokenFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which RevokedAccessToken to fetch.
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RevokedAccessTokens to fetch.
+     */
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RevokedAccessTokens.
+     */
+    cursor?: RevokedAccessTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RevokedAccessTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RevokedAccessTokens.
+     */
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
+  }
+
+  /**
+   * RevokedAccessToken findFirstOrThrow
+   */
+  export type RevokedAccessTokenFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which RevokedAccessToken to fetch.
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RevokedAccessTokens to fetch.
+     */
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for RevokedAccessTokens.
+     */
+    cursor?: RevokedAccessTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RevokedAccessTokens.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of RevokedAccessTokens.
+     */
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
+  }
+
+  /**
+   * RevokedAccessToken findMany
+   */
+  export type RevokedAccessTokenFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter, which RevokedAccessTokens to fetch.
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of RevokedAccessTokens to fetch.
+     */
+    orderBy?: RevokedAccessTokenOrderByWithRelationInput | RevokedAccessTokenOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing RevokedAccessTokens.
+     */
+    cursor?: RevokedAccessTokenWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` RevokedAccessTokens from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` RevokedAccessTokens.
+     */
+    skip?: number
+    distinct?: RevokedAccessTokenScalarFieldEnum | RevokedAccessTokenScalarFieldEnum[]
+  }
+
+  /**
+   * RevokedAccessToken create
+   */
+  export type RevokedAccessTokenCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * The data needed to create a RevokedAccessToken.
+     */
+    data: XOR<RevokedAccessTokenCreateInput, RevokedAccessTokenUncheckedCreateInput>
+  }
+
+  /**
+   * RevokedAccessToken createMany
+   */
+  export type RevokedAccessTokenCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many RevokedAccessTokens.
+     */
+    data: RevokedAccessTokenCreateManyInput | RevokedAccessTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RevokedAccessToken createManyAndReturn
+   */
+  export type RevokedAccessTokenCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * The data used to create many RevokedAccessTokens.
+     */
+    data: RevokedAccessTokenCreateManyInput | RevokedAccessTokenCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * RevokedAccessToken update
+   */
+  export type RevokedAccessTokenUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * The data needed to update a RevokedAccessToken.
+     */
+    data: XOR<RevokedAccessTokenUpdateInput, RevokedAccessTokenUncheckedUpdateInput>
+    /**
+     * Choose, which RevokedAccessToken to update.
+     */
+    where: RevokedAccessTokenWhereUniqueInput
+  }
+
+  /**
+   * RevokedAccessToken updateMany
+   */
+  export type RevokedAccessTokenUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update RevokedAccessTokens.
+     */
+    data: XOR<RevokedAccessTokenUpdateManyMutationInput, RevokedAccessTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which RevokedAccessTokens to update
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * Limit how many RevokedAccessTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RevokedAccessToken updateManyAndReturn
+   */
+  export type RevokedAccessTokenUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * The data used to update RevokedAccessTokens.
+     */
+    data: XOR<RevokedAccessTokenUpdateManyMutationInput, RevokedAccessTokenUncheckedUpdateManyInput>
+    /**
+     * Filter which RevokedAccessTokens to update
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * Limit how many RevokedAccessTokens to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * RevokedAccessToken upsert
+   */
+  export type RevokedAccessTokenUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * The filter to search for the RevokedAccessToken to update in case it exists.
+     */
+    where: RevokedAccessTokenWhereUniqueInput
+    /**
+     * In case the RevokedAccessToken found by the `where` argument doesn't exist, create a new RevokedAccessToken with this data.
+     */
+    create: XOR<RevokedAccessTokenCreateInput, RevokedAccessTokenUncheckedCreateInput>
+    /**
+     * In case the RevokedAccessToken was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<RevokedAccessTokenUpdateInput, RevokedAccessTokenUncheckedUpdateInput>
+  }
+
+  /**
+   * RevokedAccessToken delete
+   */
+  export type RevokedAccessTokenDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
+    /**
+     * Filter which RevokedAccessToken to delete.
+     */
+    where: RevokedAccessTokenWhereUniqueInput
+  }
+
+  /**
+   * RevokedAccessToken deleteMany
+   */
+  export type RevokedAccessTokenDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which RevokedAccessTokens to delete
+     */
+    where?: RevokedAccessTokenWhereInput
+    /**
+     * Limit how many RevokedAccessTokens to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * RevokedAccessToken without action
+   */
+  export type RevokedAccessTokenDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the RevokedAccessToken
+     */
+    select?: RevokedAccessTokenSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the RevokedAccessToken
+     */
+    omit?: RevokedAccessTokenOmit<ExtArgs> | null
   }
 
 
@@ -20532,6 +21618,17 @@ export namespace Prisma {
   export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
 
 
+  export const RevokedAccessTokenScalarFieldEnum: {
+    jti: 'jti',
+    userId: 'userId',
+    expiresAt: 'expiresAt',
+    revokedAt: 'revokedAt',
+    reason: 'reason'
+  };
+
+  export type RevokedAccessTokenScalarFieldEnum = (typeof RevokedAccessTokenScalarFieldEnum)[keyof typeof RevokedAccessTokenScalarFieldEnum]
+
+
   export const VenueScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -21154,6 +22251,58 @@ export namespace Prisma {
     token?: StringWithAggregatesFilter<"Session"> | string
     expiresAt?: DateTimeWithAggregatesFilter<"Session"> | Date | string
     createdAt?: DateTimeWithAggregatesFilter<"Session"> | Date | string
+  }
+
+  export type RevokedAccessTokenWhereInput = {
+    AND?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    OR?: RevokedAccessTokenWhereInput[]
+    NOT?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    jti?: StringFilter<"RevokedAccessToken"> | string
+    userId?: StringFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableFilter<"RevokedAccessToken"> | string | null
+  }
+
+  export type RevokedAccessTokenOrderByWithRelationInput = {
+    jti?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrderInput | SortOrder
+  }
+
+  export type RevokedAccessTokenWhereUniqueInput = Prisma.AtLeast<{
+    jti?: string
+    AND?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    OR?: RevokedAccessTokenWhereInput[]
+    NOT?: RevokedAccessTokenWhereInput | RevokedAccessTokenWhereInput[]
+    userId?: StringFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableFilter<"RevokedAccessToken"> | string | null
+  }, "jti">
+
+  export type RevokedAccessTokenOrderByWithAggregationInput = {
+    jti?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrderInput | SortOrder
+    _count?: RevokedAccessTokenCountOrderByAggregateInput
+    _max?: RevokedAccessTokenMaxOrderByAggregateInput
+    _min?: RevokedAccessTokenMinOrderByAggregateInput
+  }
+
+  export type RevokedAccessTokenScalarWhereWithAggregatesInput = {
+    AND?: RevokedAccessTokenScalarWhereWithAggregatesInput | RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    OR?: RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    NOT?: RevokedAccessTokenScalarWhereWithAggregatesInput | RevokedAccessTokenScalarWhereWithAggregatesInput[]
+    jti?: StringWithAggregatesFilter<"RevokedAccessToken"> | string
+    userId?: StringWithAggregatesFilter<"RevokedAccessToken"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"RevokedAccessToken"> | Date | string
+    revokedAt?: DateTimeWithAggregatesFilter<"RevokedAccessToken"> | Date | string
+    reason?: StringNullableWithAggregatesFilter<"RevokedAccessToken"> | string | null
   }
 
   export type VenueWhereInput = {
@@ -22531,6 +23680,62 @@ export namespace Prisma {
     token?: StringFieldUpdateOperationsInput | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type RevokedAccessTokenCreateInput = {
+    jti: string
+    userId: string
+    expiresAt: Date | string
+    revokedAt?: Date | string
+    reason?: string | null
+  }
+
+  export type RevokedAccessTokenUncheckedCreateInput = {
+    jti: string
+    userId: string
+    expiresAt: Date | string
+    revokedAt?: Date | string
+    reason?: string | null
+  }
+
+  export type RevokedAccessTokenUpdateInput = {
+    jti?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type RevokedAccessTokenUncheckedUpdateInput = {
+    jti?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type RevokedAccessTokenCreateManyInput = {
+    jti: string
+    userId: string
+    expiresAt: Date | string
+    revokedAt?: Date | string
+    reason?: string | null
+  }
+
+  export type RevokedAccessTokenUpdateManyMutationInput = {
+    jti?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type RevokedAccessTokenUncheckedUpdateManyInput = {
+    jti?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    revokedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VenueCreateInput = {
@@ -24084,6 +25289,30 @@ export namespace Prisma {
     token?: SortOrder
     expiresAt?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type RevokedAccessTokenCountOrderByAggregateInput = {
+    jti?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
+  }
+
+  export type RevokedAccessTokenMaxOrderByAggregateInput = {
+    jti?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
+  }
+
+  export type RevokedAccessTokenMinOrderByAggregateInput = {
+    jti?: SortOrder
+    userId?: SortOrder
+    expiresAt?: SortOrder
+    revokedAt?: SortOrder
+    reason?: SortOrder
   }
 
   export type IntFilter<$PrismaModel = never> = {

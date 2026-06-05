@@ -1,7 +1,8 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
-import type { AuthUser } from "./types.js";
+import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
+import { isAccessTokenRevoked } from "./revocation.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -10,19 +11,33 @@ declare module "fastify" {
   }
 }
 
-export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply) {
+async function resolveAuth(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<{ payload: JwtPayload } | null> {
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
+    await reply.status(401).send({ message: "No token provided" });
+    return null;
   }
 
   const payload = verifyAccessToken(token);
 
   if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
+    await reply.status(401).send({ message: "Invalid or expired token" });
+    return null;
   }
 
+  if (await isAccessTokenRevoked(payload.jti)) {
+    await reply.status(401).send({ message: "Token revoked" });
+    return null;
+  }
+
+  return { payload };
+}
+
+function attachUser(request: FastifyRequest, payload: JwtPayload): void {
   const user: AuthUser = {
     userId: payload.userId,
     email: payload.email,
@@ -32,88 +47,43 @@ export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply)
 
   request.user = user;
   request.userId = payload.userId;
+}
+
+export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply) {
+  const result = await resolveAuth(request, reply);
+  if (!result) return;
+  attachUser(request, result.payload);
 }
 
 export async function shouldBeAdmin(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const result = await resolveAuth(request, reply);
+  if (!result) return;
 
-  if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
-  }
-
-  if (payload.role !== "ADMIN") {
+  if (result.payload.role !== "ADMIN") {
     return reply.status(403).send({ message: "Admin access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  request.user = user;
-  request.userId = payload.userId;
+  attachUser(request, result.payload);
 }
 
 export async function shouldBeHost(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const result = await resolveAuth(request, reply);
+  if (!result) return;
 
-  if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
-  }
-
-  if (!hasVerifiedHostAccess(payload)) {
+  if (!hasVerifiedHostAccess(result.payload)) {
     return reply.status(403).send({ message: "Verified host access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  request.user = user;
-  request.userId = payload.userId;
+  attachUser(request, result.payload);
 }
 
 export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const result = await resolveAuth(request, reply);
+  if (!result) return;
 
-  if (!token) {
-    return reply.status(401).send({ message: "No token provided" });
-  }
-
-  const payload = verifyAccessToken(token);
-
-  if (!payload) {
-    return reply.status(401).send({ message: "Invalid or expired token" });
-  }
-
-  if (!hasVerifiedHostAccess(payload)) {
+  if (!hasVerifiedHostAccess(result.payload)) {
     return reply.status(403).send({ message: "Verified host or Admin access required" });
   }
 
-  const user: AuthUser = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    hostVerified: payload.hostVerified,
-  };
-
-  request.user = user;
-  request.userId = payload.userId;
+  attachUser(request, result.payload);
 }
