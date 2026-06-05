@@ -28,15 +28,41 @@ const parseBookingStatus = (value: unknown) => {
     : null;
 };
 
-const parsePositiveInteger = (value: unknown, fallback?: number, max?: number) => {
-  if ((value === undefined || value === null || value === "") && fallback !== undefined) {
+export class InvalidParameterError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidParameterError";
+  }
+}
+
+/**
+ * Parses `value` as a positive integer.
+ *
+ * BOOKSVC-016: distinguish "absent" from "invalid".
+ *   - absent (undefined/null/"") -> returns `fallback` (which may itself be undefined)
+ *   - present-but-invalid (non-numeric, negative, zero, non-integer, unsafe) -> throws
+ *     InvalidParameterError. Callers convert to HTTP 400.
+ *   - valid positive integer -> returns the number, clamped to `max` when provided.
+ */
+export const parsePositiveInteger = (
+  value: unknown,
+  fallback?: number,
+  max?: number
+): number | undefined => {
+  if (value === undefined || value === null || value === "") {
     return fallback;
   }
-  if (typeof value !== "string" && typeof value !== "number") return null;
+  if (typeof value !== "string" && typeof value !== "number") {
+    throw new InvalidParameterError("Expected a positive integer");
+  }
   const normalized = String(value);
-  if (!/^\d+$/.test(normalized)) return null;
+  if (!/^\d+$/.test(normalized)) {
+    throw new InvalidParameterError("Expected a positive integer");
+  }
   const parsed = Number(normalized);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) return null;
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new InvalidParameterError("Expected a positive integer");
+  }
   return max ? Math.min(parsed, max) : parsed;
 };
 
@@ -59,15 +85,77 @@ const datesBetweenInclusive = (startDate: Date, endDate: Date) => {
   return dates;
 };
 
-const bookingHours = (
+/**
+ * BOOKSVC-010: single source of truth for "hours per day" used by both
+ * validation (bookingHours) and pricing (calculateBookingPrice).
+ *
+ * Returns the number of hours occupied between startTime and endTime on a
+ * single day. If either time is missing, the booking is treated as a full
+ * 24-hour day. Handles midnight-crossing (endTime <= startTime) by treating
+ * the booking as continuing into the following day.
+ */
+export const computeBookingHours = (
+  startTime: string | null,
+  endTime: string | null
+): number => {
+  if (!startTime || !endTime) return 24;
+  let minutes = minutesFromTime(endTime) - minutesFromTime(startTime);
+  if (minutes <= 0) minutes += 24 * 60; // cross-midnight
+  return minutes / 60;
+};
+
+export const bookingHours = (
   startDate: Date,
   endDate: Date,
   startTime: string | null,
   endTime: string | null
 ) => {
   const days = datesBetweenInclusive(startDate, endDate).length;
-  if (!startTime || !endTime) return days * 24;
-  return ((minutesFromTime(endTime) - minutesFromTime(startTime)) / 60) * days;
+  return days * computeBookingHours(startTime, endTime);
+};
+
+/**
+ * BOOKSVC-014: build an absolute UTC [start, end) interval for a booking so
+ * the same overlap predicate works for hourly, daily, and midnight-crossing
+ * bookings. End is exclusive.
+ *
+ * For full-day bookings: [startDate 00:00, endDate + 1 day 00:00).
+ * For hourly bookings:   [startDate + startTime, endDate + endTime); if the
+ * hourly window crosses midnight (endTime <= startTime) the end is rolled
+ * forward by an extra day so the interval stays well-formed.
+ */
+const bookingInstantRange = (booking: {
+  startDate: Date;
+  endDate: Date;
+  startTime: string | null;
+  endTime: string | null;
+  isHourly: boolean;
+}): { start: Date; end: Date } => {
+  if (!booking.isHourly || !booking.startTime || !booking.endTime) {
+    const start = new Date(booking.startDate);
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(booking.endDate);
+    end.setUTCHours(0, 0, 0, 0);
+    end.setUTCDate(end.getUTCDate() + 1);
+    return { start, end };
+  }
+
+  const startMinutes = minutesFromTime(booking.startTime);
+  const endMinutes = minutesFromTime(booking.endTime);
+
+  const start = new Date(booking.startDate);
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCMinutes(startMinutes);
+
+  const end = new Date(booking.endDate);
+  end.setUTCHours(0, 0, 0, 0);
+  end.setUTCMinutes(endMinutes);
+  if (endMinutes <= startMinutes) {
+    // Cross-midnight hourly window: roll end forward by one day.
+    end.setUTCDate(end.getUTCDate() + 1);
+  }
+
+  return { start, end };
 };
 
 const validateAvailabilityRules = (
@@ -124,10 +212,17 @@ const validateAvailabilityRules = (
   return null;
 };
 
-const dateRangesOverlap = (aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) =>
-  aStart <= bEnd && aEnd >= bStart;
+/**
+ * BOOKSVC-013: half-open overlap predicate. Both ends are EXCLUSIVE so
+ * back-to-back intervals (a.end === b.start) do NOT overlap.
+ *
+ * Callers must pass exclusive-end timestamps. For booking ranges, build them
+ * via `bookingInstantRange`.
+ */
+export const dateRangesOverlap = (aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) =>
+  aStart < bEnd && bStart < aEnd;
 
-const bookingIntervalsOverlap = (
+export const bookingIntervalsOverlap = (
   existing: {
     startDate: Date;
     endDate: Date;
@@ -143,29 +238,64 @@ const bookingIntervalsOverlap = (
     isHourly: boolean;
   }
 ) => {
-  if (!dateRangesOverlap(existing.startDate, existing.endDate, incoming.startDate, incoming.endDate)) {
-    return false;
-  }
-
-  if (
-    !existing.isHourly ||
-    !incoming.isHourly ||
-    !existing.startTime ||
-    !existing.endTime ||
-    !incoming.startTime ||
-    !incoming.endTime
-  ) {
-    return true;
-  }
-
-  return (
-    minutesFromTime(incoming.startTime) < minutesFromTime(existing.endTime) &&
-    minutesFromTime(incoming.endTime) > minutesFromTime(existing.startTime)
+  const existingRange = bookingInstantRange(existing);
+  const incomingRange = bookingInstantRange(incoming);
+  return dateRangesOverlap(
+    existingRange.start,
+    existingRange.end,
+    incomingRange.start,
+    incomingRange.end
   );
 };
 
+/**
+ * BOOKSVC-009: for HOURLY (and BOTH-as-hourly) pricing on multi-day bookings,
+ * each day in the range may have a different availability window. The
+ * requested [startTime, endTime] window is intersected with that day's
+ * availability before being charged, so a Mon 9-18 + Tue 9-12 booking is only
+ * charged 9 hours for Monday and 3 hours for Tuesday.
+ *
+ * If a day has no availability or is closed, contributes 0 hours (validation
+ * would normally have already rejected this).
+ */
+const billableHourlyHours = (
+  availability: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    isOpen: boolean;
+  }> | undefined,
+  startDate: Date,
+  endDate: Date,
+  startTime: string,
+  endTime: string
+): number => {
+  const requestedStart = minutesFromTime(startTime);
+  const requestedEnd = minutesFromTime(endTime);
+  if (requestedEnd <= requestedStart) {
+    // Cross-midnight or zero-length: fall back to the simple per-day duration.
+    // Validation rejects this case via CreateBookingSchema, so this is defensive.
+    return datesBetweenInclusive(startDate, endDate).length *
+      computeBookingHours(startTime, endTime);
+  }
+
+  let totalHours = 0;
+  for (const date of datesBetweenInclusive(startDate, endDate)) {
+    const day = availability?.find(
+      (item) => item.dayOfWeek === date.getUTCDay() && item.isOpen
+    );
+    if (!day) continue;
+    const windowStart = Math.max(requestedStart, minutesFromTime(day.startTime));
+    const windowEnd = Math.min(requestedEnd, minutesFromTime(day.endTime));
+    if (windowEnd > windowStart) {
+      totalHours += (windowEnd - windowStart) / 60;
+    }
+  }
+  return totalHours;
+};
+
 // Calculate booking price based on space pricing and duration
-const calculateBookingPrice = (
+export const calculateBookingPrice = (
   space: {
     pricingType: string;
     pricePerHour: number | null;
@@ -173,6 +303,12 @@ const calculateBookingPrice = (
     cleaningFee: number;
     currency: string;
     pricingTiers?: Array<{ minutes: number; price: number }>;
+    availability?: Array<{
+      dayOfWeek: number;
+      startTime: string;
+      endTime: string;
+      isOpen: boolean;
+    }>;
   },
   startDate: Date,
   endDate: Date,
@@ -185,10 +321,9 @@ const calculateBookingPrice = (
   const days = differenceInDays(endDate, startDate) + 1;
   let totalMinutes = days * 24 * 60; // default to full days
   if (startTime && endTime) {
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const minutesPerDay = (endH! - startH!) * 60 + (endM! - startM!);
-    totalMinutes = minutesPerDay * days;
+    // BOOKSVC-010: share the hours-per-day formula with validation.
+    const hoursPerDay = computeBookingHours(startTime, endTime);
+    totalMinutes = Math.round(hoursPerDay * 60) * days;
   }
 
   // Pricing tiers use per-block pricing: if a booking spans 300 minutes
@@ -209,19 +344,29 @@ const calculateBookingPrice = (
   // Fall back to pricePerHour / pricePerDay if no tier matched
   if (!usedTier) {
     if (space.pricingType === "HOURLY" && space.pricePerHour && startTime && endTime) {
-      const [startH, startM] = startTime.split(":").map(Number);
-      const [endH, endM] = endTime.split(":").map(Number);
-      const hours = (endH! - startH!) + (endM! - startM!) / 60;
-      subtotal = roundCurrency(space.pricePerHour * hours * days);
+      // BOOKSVC-009: per-day intersection with availability windows.
+      const hours = billableHourlyHours(
+        space.availability,
+        startDate,
+        endDate,
+        startTime,
+        endTime
+      );
+      subtotal = roundCurrency(space.pricePerHour * hours);
     } else if (space.pricingType === "DAILY" && space.pricePerDay) {
       subtotal = roundCurrency(space.pricePerDay * days);
     } else if (space.pricingType === "BOTH") {
       // For BOTH, calculate based on what's provided
       if (startTime && endTime && space.pricePerHour) {
-        const [startH, startM] = startTime.split(":").map(Number);
-        const [endH, endM] = endTime.split(":").map(Number);
-        const hours = (endH! - startH!) + (endM! - startM!) / 60;
-        subtotal = roundCurrency(space.pricePerHour * hours * days);
+        // BOOKSVC-009: per-day intersection here too.
+        const hours = billableHourlyHours(
+          space.availability,
+          startDate,
+          endDate,
+          startTime,
+          endTime
+        );
+        subtotal = roundCurrency(space.pricePerHour * hours);
       } else if (space.pricePerDay) {
         subtotal = roundCurrency(space.pricePerDay * days);
       }
@@ -459,9 +604,14 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(400).send({ message: "Invalid booking status" });
       }
 
-      const spaceIdFilter = spaceId ? parsePositiveInteger(spaceId) : undefined;
-      if (spaceIdFilter === null) {
-        return reply.status(400).send({ message: "spaceId must be a positive integer" });
+      let spaceIdFilter: number | undefined;
+      try {
+        spaceIdFilter = parsePositiveInteger(spaceId);
+      } catch (err) {
+        if (err instanceof InvalidParameterError) {
+          return reply.status(400).send({ message: "spaceId must be a positive integer" });
+        }
+        throw err;
       }
 
       const bookings = await prisma.booking.findMany({
@@ -752,10 +902,17 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(400).send({ message: "Invalid booking status" });
       }
 
-      const take = parsePositiveInteger(limit, 20, 100);
-      const pageNumber = parsePositiveInteger(page, 1);
-      if (take === null || pageNumber === null) {
-        return reply.status(400).send({ message: "Invalid pagination" });
+      let take: number;
+      let pageNumber: number;
+      try {
+        // Both calls have a fallback so they always return a number.
+        take = parsePositiveInteger(limit, 20, 100)!;
+        pageNumber = parsePositiveInteger(page, 1)!;
+      } catch (err) {
+        if (err instanceof InvalidParameterError) {
+          return reply.status(400).send({ message: "Invalid pagination" });
+        }
+        throw err;
       }
       const skip = (pageNumber - 1) * take;
       const where = parsedStatus ? { status: parsedStatus } : undefined;
