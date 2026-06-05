@@ -41,9 +41,11 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Email, username, and password are required" });
     }
 
-    // Check if user already exists
+    // Check if user already exists (ignore soft-deleted rows so freed-up
+    // email/username can be re-used after anonymization).
     const existingUser = await prisma.user.findFirst({
       where: {
+        deletedAt: null,
         OR: [{ email }, { username }],
       },
     });
@@ -116,9 +118,9 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Find user (soft-deleted accounts can never log in).
+    const user = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
     });
 
     if (!user) {
@@ -212,6 +214,12 @@ router.post("/refresh", async (req, res) => {
       return res.status(401).json({ message: "Session expired" });
     }
 
+    // Block refresh for soft-deleted accounts (admin DELETE also wipes
+    // sessions, so this is a belt-and-braces check).
+    if (session.user.deletedAt !== null) {
+      return res.status(401).json({ message: "Session expired" });
+    }
+
     // Generate new access token
     const accessToken = signAccessToken({
       userId: session.user.id,
@@ -232,8 +240,8 @@ router.get("/me", shouldBeUser, async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -265,6 +273,14 @@ router.put("/me", shouldBeUser, async (req, res) => {
   try {
     const userId = req.userId;
     const { name, image, phone, bio } = req.body;
+
+    const existing = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -303,8 +319,8 @@ router.post("/become-host", shouldBeUser, async (req, res) => {
     const { phone, bio } = req.body;
 
     // Get current user
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
+    const currentUser = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
     });
 
     if (!currentUser) {

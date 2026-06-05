@@ -25,7 +25,10 @@ router.get("/", async (req, res) => {
     }
 
     const users = await prisma.user.findMany({
-      where: parsedRole ? { role: parsedRole } : undefined,
+      where: {
+        deletedAt: null,
+        ...(parsedRole ? { role: parsedRole } : {}),
+      },
       select: {
         id: true,
         email: true,
@@ -59,6 +62,7 @@ router.get("/hosts", async (req, res) => {
     const hosts = await prisma.user.findMany({
       where: {
         role: "HOST",
+        deletedAt: null,
         ...(verified !== undefined && { hostVerified: verified === "true" }),
       },
       select: {
@@ -92,8 +96,8 @@ router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await prisma.user.findUnique({
-      where: { id },
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -131,9 +135,11 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Check if user already exists
+    // Check if user already exists (ignore soft-deleted rows so freed-up
+    // email/username can be re-used after anonymization).
     const existingUser = await prisma.user.findFirst({
       where: {
+        deletedAt: null,
         OR: [{ email }, { username }],
       },
     });
@@ -190,6 +196,15 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    // Refuse to mutate soft-deleted users.
+    const existing = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data: {
@@ -219,15 +234,64 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete user (admin only)
+//
+// DB-004: this endpoint does NOT hard-delete the User row.
+//
+// Hard-deletion is unsupported because most user-facing relations
+// (Venue/Space/Booking/Review/Payout) use the default onDelete: RESTRICT
+// and changing them to Cascade would wipe booking and payout history that
+// the platform must retain for legal/accounting (tax records typically
+// 5-7yr). Flipping the rules to Cascade was considered and rejected.
+//
+// Instead we "anonymize, don't delete":
+//   - Scrub PII (email -> deleted-<id>@deleted.spacefly.ai, names -> [deleted],
+//     phone/bio/image -> null, username -> deleted-<id>).
+//   - Stamp deletedAt = now.
+//   - Drop active sessions so the account can no longer authenticate.
+// All auth and listing paths in this service filter out rows where
+// deletedAt IS NOT NULL, so the row is invisible to the rest of the app
+// while bookings/payouts retain their foreign-key target.
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.user.delete({
-      where: { id },
+    const existing = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
     });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    return res.status(200).json({ message: "User deleted successfully" });
+    const anonymizedEmail = `deleted-${id}@deleted.spacefly.ai`;
+    const anonymizedUsername = `deleted-${id}`;
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id },
+        data: {
+          email: anonymizedEmail,
+          username: anonymizedUsername,
+          name: "[deleted]",
+          phone: null,
+          bio: null,
+          image: null,
+          // Scramble password hash so it can never match a login attempt.
+          // (Long random string is not a valid bcrypt hash; comparePassword
+          // will simply return false.)
+          password: `!deleted!${id}!${Date.now()}`,
+          emailVerified: false,
+          hostVerified: false,
+          deletedAt: new Date(),
+        },
+      }),
+      // Invalidate any active refresh-token sessions.
+      prisma.session.deleteMany({ where: { userId: id } }),
+    ]);
+
+    return res
+      .status(200)
+      .json({ message: "User anonymized successfully (soft-delete; history retained)" });
   } catch (error) {
     console.error("Delete user error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -243,8 +307,8 @@ router.put("/:id/verify-host", async (req, res) => {
       return res.status(400).json({ message: "verified must be a boolean" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id },
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
     });
 
     if (!user) {
@@ -285,6 +349,14 @@ router.put("/:id/role", async (req, res) => {
     const parsedRole = parseRole(role);
     if (!parsedRole) {
       return res.status(400).json({ message: "Invalid role" });
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     const user = await prisma.user.update({
