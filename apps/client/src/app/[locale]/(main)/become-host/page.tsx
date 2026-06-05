@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
 import useAuthStore from "@/stores/authStore";
-import { fetchWithAuth } from "@/lib/apiClient";
+import { fetchWithAuth, SessionExpiredError } from "@/lib/apiClient";
 import { useTranslations } from "next-intl";
 import {
   Building2,
@@ -71,6 +71,8 @@ const BecomeHostPage = () => {
           process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:5001";
       }, 2000);
     } catch (err) {
+      // Session expired: the auth store is already navigating to /login.
+      if (err instanceof SessionExpiredError) return;
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
