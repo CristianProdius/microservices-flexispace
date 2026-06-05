@@ -54,6 +54,54 @@ test("daily bookings can use multi-day configured pricing tiers", () => {
   assert.equal(pricing?.totalAmount, 13200);
 });
 
+test("inclusive day count treats same-day bookings as 1 day", () => {
+  const pricing = calculateBookingPricing({
+    bookingType: "daily",
+    endDate: "2026-05-25",
+    endTime: "",
+    space: { ...baseSpace, pricingTiers: [] },
+    startDate: "2026-05-25",
+    startTime: "",
+  });
+
+  assert.equal(pricing?.days, 1);
+  assert.equal(pricing?.subtotal, 10000);
+});
+
+test("inclusive day count is stable across DST transitions (US spring-forward)", () => {
+  // 2026-03-08 is the US DST spring-forward day; a naive local-time diff would
+  // return 0.96 days for this 1-night stay, then ceil to 1, dropping the
+  // intended "+1" offset. UTC anchoring keeps the result consistent.
+  const pricing = calculateBookingPricing({
+    bookingType: "daily",
+    endDate: "2026-03-09",
+    endTime: "",
+    space: { ...baseSpace, pricingTiers: [] },
+    startDate: "2026-03-08",
+    startTime: "",
+  });
+
+  assert.equal(pricing?.days, 2);
+});
+
+test("hourly bookings allow a 23:59 end-of-day end time", () => {
+  // Verifies that the late-evening slot enabled by the new BookingForm options
+  // (CLIENT-014) produces a sane pricing result rather than collapsing to the
+  // 60-minute minimum.
+  const pricing = calculateBookingPricing({
+    bookingType: "hourly",
+    endDate: "",
+    endTime: "23:59",
+    space: { ...baseSpace, pricingTiers: [] },
+    startDate: "2026-05-25",
+    startTime: "23:00",
+  });
+
+  assert.ok(pricing);
+  assert.ok(pricing.hours > 0.98 && pricing.hours < 1.0);
+  assert.ok(pricing.subtotal > 0);
+});
+
 test("cleaning fee matches the configured fixed space fee", () => {
   const pricing = calculateBookingPricing({
     bookingType: "hourly",

@@ -21,10 +21,13 @@ const CheckoutPage = () => {
   const tCommon = useTranslations("common");
 
   useEffect(() => {
-    if (hasHydrated && !draft) {
+    // CLIENT-016: don't bounce the user away once their booking has succeeded.
+    // The success screen clears the draft on purpose; redirecting on a null
+    // draft would race the success render and send them back to /spaces.
+    if (hasHydrated && !draft && !success) {
       router.push("/spaces");
     }
-  }, [hasHydrated, draft, router]);
+  }, [hasHydrated, draft, router, success]);
 
   useEffect(() => {
     if (hasHydrated && !isAuthenticated) {
@@ -60,8 +63,10 @@ const CheckoutPage = () => {
         throw new Error(data.message || "Failed to create booking");
       }
 
-      clearDraft();
+      // CLIENT-016: flip `success` before clearing the draft so the success
+      // gate above wins the empty-draft redirect race in StrictMode.
       setSuccess(true);
+      clearDraft();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -69,14 +74,9 @@ const CheckoutPage = () => {
     }
   };
 
-  if (!hasHydrated || !draft) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
-    );
-  }
-
+  // CLIENT-016: render the success screen first so a post-booking null draft
+  // doesn't fall through to the loading spinner or get bounced by the
+  // empty-draft redirect effect.
   if (success) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-12">
@@ -103,6 +103,14 @@ const CheckoutPage = () => {
             {t("browseMoreSpaces")}
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (!hasHydrated || !draft) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
       </div>
     );
   }
