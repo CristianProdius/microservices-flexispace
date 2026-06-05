@@ -13,6 +13,7 @@ import {
 
 const mockStore = vi.fn();
 const push = vi.fn();
+const router = { push };
 const mockParams = { id: "42" };
 const groupedCategoriesResponse = [
   {
@@ -101,7 +102,7 @@ vi.mock("@/stores/authStore", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => router,
   useParams: () => mockParams,
 }));
 
@@ -168,7 +169,11 @@ describe("host edit space page", () => {
 
   beforeEach(() => {
     mockStore.mockReset();
-    mockStore.mockReturnValue({ token: "test-token" });
+    mockStore.mockReturnValue({
+      token: "test-token",
+      getToken: vi.fn(async () => "test-token"),
+      isLoading: false,
+    });
     push.mockReset();
 
     container = document.createElement("div");

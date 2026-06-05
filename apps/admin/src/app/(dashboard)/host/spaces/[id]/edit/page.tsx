@@ -18,8 +18,9 @@ import type { Space } from "@repo/types";
 const HostEditSpacePage = () => {
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuthStore();
+  const { getToken, isLoading: authLoading } = useAuthStore();
   const id = params.id as string;
+  const [token, setToken] = useState<string | null>(null);
   const [initialValues, setInitialValues] = useState<SpaceFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -27,16 +28,19 @@ const HostEditSpacePage = () => {
   const fetchSpace = useCallback(async () => {
     setLoadError(null);
 
-    if (!token) {
-      setLoadError("Please sign in again.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const resolvedToken = await getToken();
+
+      if (!resolvedToken) {
+        router.push("/login");
+        return;
+      }
+
+      setToken(resolvedToken);
+
       const response = await fetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${resolvedToken}`,
         },
       });
 
@@ -52,18 +56,28 @@ const HostEditSpacePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [id, token]);
+  }, [getToken, id, router]);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
     fetchSpace();
-  }, [fetchSpace]);
+  }, [authLoading, fetchSpace]);
 
   const handleUpdate = async (payload: SpaceFormPayload) => {
+    const resolvedToken = token ?? (await getToken());
+
+    if (!resolvedToken) {
+      router.push("/login");
+      throw new Error("Please sign in again.");
+    }
+
     const response = await fetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${resolvedToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -76,7 +90,7 @@ const HostEditSpacePage = () => {
     router.push("/host/spaces");
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="space-y-8">
         <DashboardPageHeader

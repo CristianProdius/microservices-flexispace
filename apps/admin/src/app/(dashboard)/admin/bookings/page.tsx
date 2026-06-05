@@ -9,7 +9,10 @@ import { DataLoadError } from "@/components/dashboard";
 
 const BookingsPage = () => {
   const router = useRouter();
-  const { isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useAuthStore();
+  // Avoid subscribing to `getToken` from the store — Zustand returns a fresh
+  // function reference on every state change, which would re-create the
+  // useCallback and re-fire the fetch on unrelated store updates.
+  const { isAuthenticated, isAdmin, isLoading: authLoading } = useAuthStore();
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +21,7 @@ const BookingsPage = () => {
     setError(null);
     setIsLoading(true);
     try {
-      const token = await getToken();
+      const token = await useAuthStore.getState().getToken();
       if (!token) {
         router.push("/login");
         return;
@@ -45,7 +48,7 @@ const BookingsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, router]);
+  }, [router]);
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {
