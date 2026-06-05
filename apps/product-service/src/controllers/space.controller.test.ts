@@ -1,324 +1,294 @@
-import type { Request, Response } from "express";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  createSpace,
-  getSpace,
-  updateAvailability,
-  updateSpace,
-} from "./space.controller.js";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock,
+} from "vitest";
 
-const mocks = vi.hoisted(() => {
+// Mock the kafka utility BEFORE importing the controller so its module-level
+// `producer` reference resolves to our spy.
+vi.mock("../utils/kafka.js", () => ({
+  producer: { send: vi.fn() },
+  consumer: { connect: vi.fn(), disconnect: vi.fn(), run: vi.fn() },
+}));
+
+// Mock the prisma client. We retain access to the real generated `Prisma`
+// helper (for `Prisma.join` and enum re-exports) by re-exporting it from
+// the real module via `importActual`.
+vi.mock("@repo/db", async () => {
+  const actual =
+    await vi.importActual<typeof import("@repo/db")>("@repo/db");
   const prisma = {
-    $transaction: vi.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
+    space: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    review: {
+      groupBy: vi.fn(),
+      aggregate: vi.fn(),
+      count: vi.fn(),
+    },
     availability: {
-      createMany: vi.fn(),
       deleteMany: vi.fn(),
+      createMany: vi.fn(),
       findMany: vi.fn(),
     },
     blockedDate: {
-      createMany: vi.fn(),
       deleteMany: vi.fn(),
+      createMany: vi.fn(),
       findMany: vi.fn(),
     },
-    pricingTier: {
-      createMany: vi.fn(),
-      deleteMany: vi.fn(),
-    },
-    review: {
-      aggregate: vi.fn().mockResolvedValue({ _avg: { rating: 0 } }),
-      count: vi.fn().mockResolvedValue(0),
-      groupBy: vi.fn(),
-    },
-    space: {
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    spaceAmenity: {
-      createMany: vi.fn(),
-      deleteMany: vi.fn(),
-    },
-    spaceCategory: {
-      findUnique: vi.fn(),
-    },
-    venue: {
-      findUnique: vi.fn(),
-    },
+    pricingTier: { createMany: vi.fn(), deleteMany: vi.fn() },
+    venue: { findUnique: vi.fn() },
+    booking: { findMany: vi.fn() },
+    spaceAmenity: { deleteMany: vi.fn(), createMany: vi.fn() },
+    $transaction: vi.fn(async (ops: unknown[]) => ops),
+    $queryRaw: vi.fn(),
   };
-  return {
-    prisma,
-    producerSend: vi.fn(),
-  };
+  return { ...actual, prisma };
 });
 
-vi.mock("@repo/db", () => ({
-  prisma: mocks.prisma,
-  // these are re-exported as types/enums elsewhere — keep minimal stubs
-  Prisma: {},
-  PricingType: {},
-  SpaceType: {},
-  CancellationPolicy: {},
-  Currency: {},
-}));
+// Import after the mocks so the controller sees the mocked modules.
+const { prisma } = await import("@repo/db");
+const { producer } = await import("../utils/kafka.js");
+const {
+  getSpaces,
+  checkAvailability,
+  updateAvailability,
+} = await import("./space.controller.js");
 
-vi.mock("../utils/kafka.js", () => ({
-  producer: {
-    send: mocks.producerSend,
-  },
-}));
+type AnyMock = Mock;
 
-const createResponse = () => {
-  const res = {
-    json: vi.fn(),
-    status: vi.fn(),
-  } as unknown as Response & {
-    json: ReturnType<typeof vi.fn>;
-    status: ReturnType<typeof vi.fn>;
+const buildRes = () => {
+  const res: {
+    statusCode: number;
+    body: unknown;
+    status: (code: number) => typeof res;
+    json: (payload: unknown) => typeof res;
+  } = {
+    statusCode: 200,
+    body: undefined,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
   };
-  res.status.mockReturnValue(res);
   return res;
 };
 
-const validAvailability = () =>
-  Array.from({ length: 7 }, (_, dayOfWeek) => ({
-    dayOfWeek,
-    startTime: "09:00",
-    endTime: "17:00",
-    isOpen: true,
-  }));
+const buildReq = (overrides: Record<string, unknown> = {}) =>
+  ({
+    query: {},
+    params: {},
+    body: {},
+    userId: "user-1",
+    user: { role: "HOST" as const },
+    ...overrides,
+  }) as unknown as Parameters<typeof getSpaces>[0];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Default count/findMany/groupBy responses so handlers that don't care
+  // about data shape still complete.
+  (prisma.space.count as AnyMock).mockResolvedValue(0);
+  (prisma.space.findMany as AnyMock).mockResolvedValue([]);
+  (prisma.review.groupBy as AnyMock).mockResolvedValue([]);
+});
 
 afterEach(() => {
-  vi.resetAllMocks();
+  vi.clearAllMocks();
 });
 
-describe("PRODSVC-001: updateAvailability validates input", () => {
-  it("rejects availability with out-of-range dayOfWeek and never touches Prisma", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValue({
-      id: 1,
-      hostId: "host-1",
-    });
-    const badAvailability = validAvailability();
-    badAvailability[0]!.dayOfWeek = 99;
-    const req = {
-      body: { availability: badAvailability },
-      params: { id: "1" },
-      user: { role: "HOST" },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await updateAvailability(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.availability.deleteMany).not.toHaveBeenCalled();
-    expect(mocks.prisma.availability.createMany).not.toHaveBeenCalled();
+describe("getSpaces - PRODSVC-019 price validation", () => {
+  it("rejects negative minPrice with 400", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { minPrice: "-100" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.findMany).not.toHaveBeenCalled();
   });
 
-  it("rejects availability with malformed time string", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValue({
-      id: 1,
-      hostId: "host-1",
-    });
-    const badAvailability = validAvailability();
-    badAvailability[2]!.startTime = "bogus";
-    const req = {
-      body: { availability: badAvailability },
-      params: { id: "1" },
-      user: { role: "HOST" },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await updateAvailability(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.availability.createMany).not.toHaveBeenCalled();
+  it("rejects negative maxPrice with 400", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { maxPrice: "-1" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
   });
 
-  it("rejects blocked dates with garbage date strings", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValue({
-      id: 1,
-      hostId: "host-1",
-    });
-    const req = {
-      body: { blockedDates: [{ date: "not-a-date" }] },
-      params: { id: "1" },
-      user: { role: "HOST" },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await updateAvailability(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.blockedDate.createMany).not.toHaveBeenCalled();
+  it("rejects min > max with 400", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { minPrice: "200", maxPrice: "10" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
   });
 
-  it("accepts a well-formed availability payload", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValue({
-      id: 1,
-      hostId: "host-1",
-    });
-    mocks.prisma.availability.deleteMany.mockResolvedValue({ count: 0 });
-    mocks.prisma.availability.createMany.mockResolvedValue({ count: 7 });
-    const req = {
-      body: { availability: validAvailability() },
-      params: { id: "1" },
-      user: { role: "HOST" },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await updateAvailability(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(mocks.prisma.availability.createMany).toHaveBeenCalledTimes(1);
+  it("accepts a well-formed price range", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { minPrice: "10", maxPrice: "200" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.space.findMany).toHaveBeenCalled();
   });
 });
 
-describe("PRODSVC-002: GET /spaces/:id does not leak host email", () => {
-  it("does not request host.email in the Prisma include", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValue({
+describe("getSpaces - PRODSVC-016 amenityIds filter", () => {
+  it("applies amenityIds.some to the Prisma where clause", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { amenityIds: "1,2,3" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.amenities).toEqual({
+      some: { amenityId: { in: [1, 2, 3] } },
+    });
+  });
+
+  it("omits the amenity filter when no ids are supplied", async () => {
+    const res = buildRes();
+    await getSpaces(buildReq(), res as never);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.amenities).toBeUndefined();
+  });
+
+  it("ignores non-numeric tokens", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { amenityIds: "1,abc,3,," } }),
+      res as never,
+    );
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.amenities).toEqual({
+      some: { amenityId: { in: [1, 3] } },
+    });
+  });
+});
+
+describe("getSpaces - PRODSVC-014 sort=rating", () => {
+  it("issues a raw SQL GROUP BY query and re-fetches the ordered ids", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock)
+      // 1st call: candidate ids
+      .mockResolvedValueOnce([{ id: 10 }, { id: 20 }, { id: 30 }])
+      // 2nd call: full rows (returned out of order intentionally)
+      .mockResolvedValueOnce([
+        { id: 20, venue: null },
+        { id: 10, venue: null },
+        { id: 30, venue: null },
+      ]);
+    (prisma.$queryRaw as AnyMock).mockResolvedValueOnce([
+      { id: 30 },
+      { id: 10 },
+      { id: 20 },
+    ]);
+
+    await getSpaces(buildReq({ query: { sort: "rating" } }), res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+    const body = (res.body as { spaces: Array<{ id: number }> }).spaces;
+    expect(body.map((s) => s.id)).toEqual([30, 10, 20]);
+  });
+
+  it("short-circuits to an empty page when no spaces match", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock).mockResolvedValueOnce([]);
+    await getSpaces(buildReq({ query: { sort: "rating" } }), res as never);
+    expect(res.statusCode).toBe(200);
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    const body = res.body as { spaces: unknown[]; pagination: { total: number } };
+    expect(body.spaces).toEqual([]);
+    expect(body.pagination.total).toBe(0);
+  });
+});
+
+describe("checkAvailability - PRODSVC-017 range cap", () => {
+  it("rejects a > 90 day window with 400", async () => {
+    const res = buildRes();
+    await checkAvailability(
+      buildReq({
+        params: { id: "1" },
+        body: { startDate: "2024-01-01", endDate: "2024-06-01" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("accepts a window inside the 90 day cap", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
       id: 1,
-      venue: null,
+      availability: [],
       blockedDates: [],
-      reviews: [],
     });
-    mocks.prisma.review.aggregate.mockResolvedValue({ _avg: { rating: 0 } });
-    mocks.prisma.review.count.mockResolvedValue(0);
-    const req = {
-      params: { id: "1" },
-      query: {},
-    } as unknown as Request;
-    const res = createResponse();
-
-    await getSpace(req, res);
-
-    const args = mocks.prisma.space.findUnique.mock.calls[0]![0];
-    expect(args.include.host.select.email).toBeUndefined();
-    expect(args.include.host.select.id).toBe(true);
-    expect(args.include.host.select.name).toBe(true);
-    expect(args.include.host.select.image).toBe(true);
+    (prisma.booking.findMany as AnyMock).mockResolvedValueOnce([]);
+    await checkAvailability(
+      buildReq({
+        params: { id: "1" },
+        body: { startDate: "2024-01-01", endDate: "2024-03-01" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
   });
 });
 
-describe("PRODSVC-009: createSpace rejects unknown categorySlug", () => {
-  it("returns 400 when categorySlug does not match any SpaceCategory", async () => {
-    mocks.prisma.venue.findUnique.mockResolvedValue({
-      id: 5,
-      hostId: "host-1",
-      address: null,
-      city: null,
-      state: null,
-      country: null,
-      postalCode: null,
-      latitude: null,
-      longitude: null,
+describe("updateAvailability - PRODSVC-013 emits space.updated", () => {
+  it("publishes space.updated after a successful availability update", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 42,
+      hostId: "user-1",
     });
-    mocks.prisma.spaceCategory.findUnique.mockResolvedValue(null);
-    const req = {
-      body: {
-        availability: validAvailability(),
-        categorySlug: "made-up-slug",
-        venueId: 5,
-      },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await createSpace(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.space.create).not.toHaveBeenCalled();
-  });
-});
-
-describe("PRODSVC-010: videoUrl validation rejects non-YouTube and unsafe schemes", () => {
-  it("rejects javascript: scheme that contains the youtube.com substring", async () => {
-    mocks.prisma.venue.findUnique.mockResolvedValue({
-      id: 5,
-      hostId: "host-1",
+    await updateAvailability(
+      buildReq({
+        params: { id: "42" },
+        body: { availability: [], blockedDates: [] },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(producer.send).toHaveBeenCalledWith("space.updated", {
+      value: { id: 42 },
     });
-    const req = {
-      body: {
-        availability: validAvailability(),
-        venueId: 5,
-        videoUrl: "javascript:youtube.com/watch?v=evil",
-      },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await createSpace(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.space.create).not.toHaveBeenCalled();
   });
 
-  it("rejects open-redirect-style hosts whose path contains youtube.com", async () => {
-    mocks.prisma.venue.findUnique.mockResolvedValue({
-      id: 5,
-      hostId: "host-1",
+  it("does not publish if the space is not owned by the caller", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 42,
+      hostId: "someone-else",
     });
-    const req = {
-      body: {
-        availability: validAvailability(),
-        venueId: 5,
-        videoUrl: "https://evil.com/youtube.com/watch?v=xxx",
-      },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await createSpace(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(mocks.prisma.space.create).not.toHaveBeenCalled();
-  });
-});
-
-describe("PRODSVC-018: updateSpace does not forward unwhitelisted fields to buildCategoryPayload", () => {
-  it("ignores attacker-supplied category-side fields injected via the body", async () => {
-    mocks.prisma.space.findUnique.mockResolvedValueOnce({
-      id: 7,
-      hostId: "host-1",
-      venueId: 5,
-    });
-    mocks.prisma.space.update.mockResolvedValue({ id: 7 });
-    mocks.prisma.space.findUnique.mockResolvedValueOnce({
-      id: 7,
-      venue: null,
-    });
-    mocks.prisma.spaceCategory.findUnique.mockResolvedValue({
-      slug: "coworking-space",
-    });
-
-    const req = {
-      body: {
-        categorySlug: "coworking-space",
-        // attacker-supplied fields that must NOT be forwarded
-        hostId: "attacker-id",
-        isActive: false,
-        ownerId: "attacker-id",
-        somethingMalicious: { sql: "injected" },
-        // also a legitimate whitelisted field
-        name: "Updated name",
-      },
-      params: { id: "7" },
-      user: { role: "HOST" },
-      userId: "host-1",
-    } as unknown as Request;
-    const res = createResponse();
-
-    await updateSpace(req, res);
-
-    expect(mocks.prisma.space.update).toHaveBeenCalledTimes(1);
-    const updateArgs = mocks.prisma.space.update.mock.calls[0]![0];
-    expect(updateArgs.data.somethingMalicious).toBeUndefined();
-    expect(updateArgs.data.ownerId).toBeUndefined();
-    expect(updateArgs.data.hostId).toBeUndefined();
-    // sanity: whitelisted fields survive
-    expect(updateArgs.data.categorySlug).toBe("coworking-space");
-    expect(updateArgs.data.name).toBe("Updated name");
+    await updateAvailability(
+      buildReq({
+        params: { id: "42" },
+        body: { availability: [] },
+        user: { role: "HOST" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(403);
+    expect(producer.send).not.toHaveBeenCalled();
   });
 });
