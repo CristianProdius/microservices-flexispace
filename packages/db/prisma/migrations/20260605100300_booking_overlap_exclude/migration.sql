@@ -18,7 +18,7 @@ ALTER TABLE "public"."Booking"
   ADD CONSTRAINT "Booking_no_overlap_excl"
   EXCLUDE USING gist (
     "spaceId" WITH =,
-    tstzrange("startDate", "endDate", '[]') WITH &&
+    tsrange("startDate", "endDate", '[]') WITH &&
   )
   WHERE (
     "isHourly" = false
