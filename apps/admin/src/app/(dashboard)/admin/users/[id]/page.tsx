@@ -200,7 +200,16 @@ const SingleUserPage = () => {
                 <SheetTrigger asChild>
                   <Button>Edit User</Button>
                 </SheetTrigger>
-                <EditUser />
+                <EditUser
+                  user={{
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    name: user.name,
+                    role: user.role,
+                  }}
+                  onUpdated={fetchUser}
+                />
               </Sheet>
             </div>
             <div className="space-y-4 mt-4">

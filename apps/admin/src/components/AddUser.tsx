@@ -19,6 +19,13 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "./ui/button";
 import useAuthStore from "@/stores/authStore";
 import { useMutation } from "@tanstack/react-query";
@@ -140,6 +147,40 @@ const AddUser = () => {
                       <Input {...field} type="password" />
                     </FormControl>
                     <FormDescription>Enter user password.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USER">User</SelectItem>
+                          <SelectItem value="HOST">Host</SelectItem>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    {field.value === "ADMIN" ? (
+                      <FormDescription className="text-destructive">
+                        Warning: Admins have full system access.
+                      </FormDescription>
+                    ) : (
+                      <FormDescription>
+                        Determines what this user can do in the platform.
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

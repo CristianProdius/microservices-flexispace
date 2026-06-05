@@ -60,7 +60,11 @@ const SpacesPage = () => {
       {error ? (
         <DataLoadError message={error} onRetry={fetchSpaces} />
       ) : (
-        <DataTable columns={columns} data={spaces} />
+        <DataTable
+          columns={columns}
+          data={spaces}
+          onSpacesChanged={fetchSpaces}
+        />
       )}
     </div>
   );
