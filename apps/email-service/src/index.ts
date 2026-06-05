@@ -1,6 +1,33 @@
 import { createKafkaClient, isKafkaEnabled } from "@repo/kafka";
+import {
+  BookingApprovedEventSchema,
+  BookingCancelledEventSchema,
+  BookingCompletedEventSchema,
+  BookingCreatedEventSchema,
+  BookingRejectedEventSchema,
+  UserBecameHostEventSchema,
+  UserCreatedEventSchema,
+  type BookingApprovedEvent,
+  type BookingCancelledEvent,
+  type BookingCompletedEvent,
+  type BookingCreatedEvent,
+  type BookingRejectedEvent,
+  type UserBecameHostEvent,
+  type UserCreatedEvent,
+} from "@repo/types";
 import { createServer } from "node:http";
+import { createHash } from "node:crypto";
 import sendMail from "./utils/mailer.js";
+import { validateFromEmail } from "./utils/mailer.js";
+
+// Minimal structural type for the bits of a Zod schema we use. Avoids
+// pulling `zod` into the email-service's direct dependencies just for a
+// type import — the schemas themselves come from `@repo/types`.
+type ParseableSchema<T> = {
+  safeParse: (value: unknown) =>
+    | { success: true; data: T }
+    | { success: false; error: { issues: unknown } };
+};
 
 const PORT = Number(process.env.PORT || 8004);
 const SERVICE_NAME = "email-service";
@@ -12,134 +39,175 @@ let ready = false;
 let consumerConnected = false;
 let readinessDetails = ["startup has not completed"];
 
-const getEmailConfigErrors = () =>
-  [
-    process.env.RESEND_API_KEY ? null : "RESEND_API_KEY is not configured",
-    process.env.RESEND_FROM_EMAIL ? null : "RESEND_FROM_EMAIL is not configured",
-  ].filter((message): message is string => Boolean(message));
+const getEmailConfigErrors = () => {
+  const errors: string[] = [];
 
-type EmailEventMessage = {
-  value?: {
-    email?: string;
-    username?: string;
-    bookingId?: string;
-    guestEmail?: string;
-    hostEmail?: string;
-    guestName?: string | null;
-    spaceName?: string;
-    status?: string;
-    reason?: string;
-    cancelledBy?: string;
-    totalAmount?: number;
-  };
+  if (!process.env.RESEND_API_KEY) {
+    errors.push("RESEND_API_KEY is not configured");
+  }
+
+  try {
+    validateFromEmail(process.env.RESEND_FROM_EMAIL);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : "RESEND_FROM_EMAIL is invalid");
+  }
+
+  return errors;
 };
 
 const formatCurrency = (amountInDollars: number | undefined) =>
   typeof amountInDollars === "number" ? `$${amountInDollars.toFixed(2)}` : undefined;
 
-const subscriptions = [
-  {
-    topicName: "user.created",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { email, username } = message.value || {};
+// Resend collapses duplicate sends per (idempotencyKey, recipient, subject)
+// within its dedup window. We derive the key from the Kafka coordinates so
+// re-delivery after a crash or rebalance does not send the same email twice.
+const buildIdempotencyKey = (
+  topic: string,
+  partition: number,
+  offset: string,
+  recipient: string
+) =>
+  createHash("sha256")
+    .update(`${topic}|${partition}|${offset}|${recipient}`)
+    .digest("hex")
+    .slice(0, 32);
 
-      if (email) {
-        await sendMail({
-          email,
-          subject: "Welcome to Spacefly.ai",
-          text: `Welcome ${username}. Your Spacefly.ai account has been created!`,
-        });
-      }
-    },
+type Subscription<T> = {
+  topicName: string;
+  schema: ParseableSchema<T>;
+  handler: (
+    event: T,
+    ctx: { topic: string; partition: number; offset: string }
+  ) => Promise<void>;
+};
+
+const userCreatedSubscription: Subscription<UserCreatedEvent> = {
+  topicName: "user.created",
+  schema: UserCreatedEventSchema,
+  handler: async ({ value: { email, username } }, ctx) => {
+    await sendMail({
+      email,
+      subject: "Welcome to Spacefly.ai",
+      text: `Welcome ${username}. Your Spacefly.ai account has been created!`,
+      idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, email),
+    });
   },
-  {
-    topicName: "booking.created",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, hostEmail, spaceName, status } = message.value || {};
+};
 
-      if (guestEmail) {
-        await sendMail({
-          email: guestEmail,
-          subject: "Your Spacefly.ai booking request was created",
-          text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} has been created${status ? ` and is currently ${status.toLowerCase()}` : ""}.`,
-        });
-      }
-
-      if (hostEmail) {
-        await sendMail({
-          email: hostEmail,
-          subject: "New Spacefly.ai booking request",
-          text: `You have a new booking request${spaceName ? ` for ${spaceName}` : ""}.`,
-        });
-      }
-    },
+const userBecameHostSubscription: Subscription<UserBecameHostEvent> = {
+  topicName: "user.became-host",
+  schema: UserBecameHostEventSchema,
+  handler: async ({ value: { email, name } }, ctx) => {
+    await sendMail({
+      email,
+      subject: "You're now a Spacefly.ai host",
+      text: `Welcome to the host community${name ? `, ${name}` : ""}. You can now list spaces and accept bookings on Spacefly.ai.`,
+      idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, email),
+    });
   },
-  {
-    topicName: "booking.approved",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, guestName, spaceName } = message.value || {};
+};
 
-      if (guestEmail) {
-        await sendMail({
-          email: guestEmail,
-          subject: "Your Spacefly.ai booking was approved",
-          text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been approved.`,
-        });
-      }
-    },
+const bookingCreatedSubscription: Subscription<BookingCreatedEvent> = {
+  topicName: "booking.created",
+  schema: BookingCreatedEventSchema,
+  handler: async ({ value: { guestEmail, hostEmail, spaceName, status } }, ctx) => {
+    if (guestEmail) {
+      await sendMail({
+        email: guestEmail,
+        subject: "Your Spacefly.ai booking request was created",
+        text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} has been created${status ? ` and is currently ${status.toLowerCase()}` : ""}.`,
+        idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, guestEmail),
+      });
+    }
+
+    if (hostEmail) {
+      await sendMail({
+        email: hostEmail,
+        subject: "New Spacefly.ai booking request",
+        text: `You have a new booking request${spaceName ? ` for ${spaceName}` : ""}.`,
+        idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, hostEmail),
+      });
+    }
   },
-  {
-    topicName: "booking.rejected",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, spaceName, reason } = message.value || {};
+};
 
-      if (guestEmail) {
-        await sendMail({
-          email: guestEmail,
-          subject: "Your Spacefly.ai booking was declined",
-          text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} was declined.${reason ? ` Reason: ${reason}` : ""}`,
-        });
-      }
-    },
+const bookingApprovedSubscription: Subscription<BookingApprovedEvent> = {
+  topicName: "booking.approved",
+  schema: BookingApprovedEventSchema,
+  handler: async ({ value: { guestEmail, guestName, spaceName } }, ctx) => {
+    await sendMail({
+      email: guestEmail,
+      subject: "Your Spacefly.ai booking was approved",
+      text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been approved.`,
+      idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, guestEmail),
+    });
   },
-  {
-    topicName: "booking.cancelled",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, hostEmail, spaceName, cancelledBy } = message.value || {};
-      const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledBy ? ` by ${cancelledBy.toLowerCase()}` : ""}.`;
+};
 
-      if (guestEmail) {
-        await sendMail({
-          email: guestEmail,
-          subject: "Your Spacefly.ai booking was cancelled",
-          text,
-        });
-      }
-
-      if (hostEmail) {
-        await sendMail({
-          email: hostEmail,
-          subject: "A Spacefly.ai booking was cancelled",
-          text,
-        });
-      }
-    },
+const bookingRejectedSubscription: Subscription<BookingRejectedEvent> = {
+  topicName: "booking.rejected",
+  schema: BookingRejectedEventSchema,
+  handler: async ({ value: { guestEmail, spaceName, reason } }, ctx) => {
+    await sendMail({
+      email: guestEmail,
+      subject: "Your Spacefly.ai booking was declined",
+      text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} was declined.${reason ? ` Reason: ${reason}` : ""}`,
+      idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, guestEmail),
+    });
   },
-  {
-    topicName: "booking.completed",
-    topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, spaceName, totalAmount } = message.value || {};
-      const formattedTotal = formatCurrency(totalAmount);
+};
 
-      if (guestEmail) {
-        await sendMail({
-          email: guestEmail,
-          subject: "Your Spacefly.ai booking is complete",
-          text: `Your booking${spaceName ? ` for ${spaceName}` : ""} is complete.${formattedTotal ? ` Total: ${formattedTotal}.` : ""}`,
-        });
-      }
-    },
+const bookingCancelledSubscription: Subscription<BookingCancelledEvent> = {
+  topicName: "booking.cancelled",
+  schema: BookingCancelledEventSchema,
+  handler: async ({ value: { guestEmail, hostEmail, spaceName, cancelledBy } }, ctx) => {
+    const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledBy ? ` by ${cancelledBy.toLowerCase()}` : ""}.`;
+
+    if (guestEmail) {
+      await sendMail({
+        email: guestEmail,
+        subject: "Your Spacefly.ai booking was cancelled",
+        text,
+        idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, guestEmail),
+      });
+    }
+
+    if (hostEmail) {
+      await sendMail({
+        email: hostEmail,
+        subject: "A Spacefly.ai booking was cancelled",
+        text,
+        idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, hostEmail),
+      });
+    }
   },
+};
+
+const bookingCompletedSubscription: Subscription<BookingCompletedEvent> = {
+  topicName: "booking.completed",
+  schema: BookingCompletedEventSchema,
+  handler: async ({ value: { guestEmail, spaceName, totalAmount } }, ctx) => {
+    const formattedTotal = formatCurrency(totalAmount);
+
+    await sendMail({
+      email: guestEmail,
+      subject: "Your Spacefly.ai booking is complete",
+      text: `Your booking${spaceName ? ` for ${spaceName}` : ""} is complete.${formattedTotal ? ` Total: ${formattedTotal}.` : ""}`,
+      idempotencyKey: buildIdempotencyKey(ctx.topic, ctx.partition, ctx.offset, guestEmail),
+    });
+  },
+};
+
+// `unknown` to keep the heterogeneous handler signatures in a single
+// dispatch table without losing per-subscription type safety above.
+const subscriptions: Subscription<unknown>[] = [
+  userCreatedSubscription as unknown as Subscription<unknown>,
+  userBecameHostSubscription as unknown as Subscription<unknown>,
+  bookingCreatedSubscription as unknown as Subscription<unknown>,
+  bookingApprovedSubscription as unknown as Subscription<unknown>,
+  bookingRejectedSubscription as unknown as Subscription<unknown>,
+  bookingCancelledSubscription as unknown as Subscription<unknown>,
+  bookingCompletedSubscription as unknown as Subscription<unknown>,
 ];
 
 const server = createServer((req, res) => {
@@ -190,7 +258,7 @@ const start = async () => {
     });
 
     await consumer.run({
-      eachMessage: async ({ topic, message }) => {
+      eachMessage: async ({ topic, partition, message }) => {
         const subscription = subscriptions.find((candidate) => candidate.topicName === topic);
         const value = message.value?.toString();
 
@@ -198,11 +266,38 @@ const start = async () => {
           return;
         }
 
+        let parsed: unknown;
         try {
-          const parsed = JSON.parse(value);
-          await subscription.topicHandler(parsed && typeof parsed === "object" ? parsed : {});
+          parsed = JSON.parse(value);
         } catch (error) {
-          console.error(`Error processing ${topic} email event:`, error);
+          console.error(
+            `[email-service] Dropping malformed JSON on ${topic}@${partition}:${message.offset}:`,
+            error
+          );
+          return;
+        }
+
+        const result = subscription.schema.safeParse(parsed);
+        if (!result.success) {
+          console.error(
+            `[email-service] Dropping ${topic}@${partition}:${message.offset} that failed schema validation:`,
+            result.error.issues
+          );
+          return;
+        }
+
+        try {
+          await subscription.handler(result.data, {
+            topic,
+            partition,
+            offset: message.offset,
+          });
+        } catch (error) {
+          console.error(
+            `[email-service] Handler for ${topic}@${partition}:${message.offset} failed:`,
+            error
+          );
+          throw error;
         }
       },
     });
