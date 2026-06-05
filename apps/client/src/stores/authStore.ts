@@ -14,6 +14,8 @@ import {
   isTokenExpired,
 } from "@/lib/auth";
 import { getValidToken } from "@/lib/apiClient";
+import { routing } from "@/i18n/routing";
+import { readLocaleFromCookie } from "@/lib/localeCookie";
 
 interface AuthState {
   user: User | null;
@@ -123,14 +125,16 @@ const useAuthStore = create<AuthState>((set, get) => ({
     clearAuth();
     set({ user: null, token: null, isAuthenticated: false });
     if (typeof window !== "undefined") {
-      // Resolve locale from URL path (set by next-intl: /en/..., /ro/..., /ru/...)
-      const locale = window.location.pathname.split("/")[1] || "en";
+      // localePrefix is "never", so URL never carries the locale. Read the
+      // NEXT_LOCALE cookie that next-intl sets via its locale-detection
+      // middleware, falling back to the configured default.
+      const locale = readLocaleFromCookie();
       const messages: Record<string, string> = {
         en: "Your session has expired. Please sign in again.",
         ro: "Sesiunea ta a expirat. Te rugăm să te autentifici din nou.",
         ru: "Ваша сессия истекла. Пожалуйста, войдите снова.",
       };
-      const message = messages[locale] || messages.en;
+      const message = messages[locale] || messages[routing.defaultLocale] || messages.en;
       import("react-toastify").then(({ toast }) => {
         toast.info(message);
       });
