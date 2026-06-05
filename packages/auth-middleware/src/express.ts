@@ -1,10 +1,20 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { AuthUser } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
+function resolveToken(req: Request): string | null {
+  const cookieHeader = req.headers.cookie;
+  return extractAccessToken(req.headers.authorization, cookieHeader);
+}
+
 export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
+  const token = resolveToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
@@ -30,7 +40,7 @@ export function shouldBeUser(req: Request, res: Response, next: NextFunction) {
 }
 
 export function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
+  const token = resolveToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
@@ -60,7 +70,7 @@ export function shouldBeAdmin(req: Request, res: Response, next: NextFunction) {
 }
 
 export function shouldBeHost(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
+  const token = resolveToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
@@ -90,7 +100,7 @@ export function shouldBeHost(req: Request, res: Response, next: NextFunction) {
 }
 
 export function shouldBeHostOrAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = extractTokenFromHeader(req.headers.authorization);
+  const token = resolveToken(req);
 
   if (!token) {
     return res.status(401).json({ message: "No token provided" });

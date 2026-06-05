@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { AuthUser } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 
@@ -10,8 +10,18 @@ declare module "fastify" {
   }
 }
 
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
+function resolveToken(request: FastifyRequest): string | null {
+  const cookieHeader = request.headers.cookie;
+  return extractAccessToken(request.headers.authorization, cookieHeader);
+}
+
 export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const token = resolveToken(request);
 
   if (!token) {
     return reply.status(401).send({ message: "No token provided" });
@@ -35,7 +45,7 @@ export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply)
 }
 
 export async function shouldBeAdmin(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const token = resolveToken(request);
 
   if (!token) {
     return reply.status(401).send({ message: "No token provided" });
@@ -63,7 +73,7 @@ export async function shouldBeAdmin(request: FastifyRequest, reply: FastifyReply
 }
 
 export async function shouldBeHost(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const token = resolveToken(request);
 
   if (!token) {
     return reply.status(401).send({ message: "No token provided" });
@@ -91,7 +101,7 @@ export async function shouldBeHost(request: FastifyRequest, reply: FastifyReply)
 }
 
 export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: FastifyReply) {
-  const token = extractTokenFromHeader(request.headers.authorization);
+  const token = resolveToken(request);
 
   if (!token) {
     return reply.status(401).send({ message: "No token provided" });

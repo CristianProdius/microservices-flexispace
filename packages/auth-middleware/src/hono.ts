@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
-import { verifyAccessToken, extractTokenFromHeader } from "./jwt.js";
+import type { Context } from "hono";
+import { verifyAccessToken, extractAccessToken } from "./jwt.js";
 import type { AuthUser } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 
@@ -8,9 +9,18 @@ type AuthVariables = {
   userId: string;
 };
 
+/**
+ * Resolve the bearer token from the standard `Authorization` header or,
+ * failing that, the HttpOnly session cookie. Header wins when both are
+ * present so existing API clients keep their current behaviour.
+ */
+function resolveToken(c: Context): string | null {
+  return extractAccessToken(c.req.header("Authorization"), c.req.header("Cookie"));
+}
+
 export const shouldBeUser = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const token = extractTokenFromHeader(c.req.header("Authorization"));
+    const token = resolveToken(c);
 
     if (!token) {
       return c.json({ message: "No token provided" }, 401);
@@ -38,7 +48,7 @@ export const shouldBeUser = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeAdmin = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const token = extractTokenFromHeader(c.req.header("Authorization"));
+    const token = resolveToken(c);
 
     if (!token) {
       return c.json({ message: "No token provided" }, 401);
@@ -70,7 +80,7 @@ export const shouldBeAdmin = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeHost = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const token = extractTokenFromHeader(c.req.header("Authorization"));
+    const token = resolveToken(c);
 
     if (!token) {
       return c.json({ message: "No token provided" }, 401);
@@ -102,7 +112,7 @@ export const shouldBeHost = createMiddleware<{ Variables: AuthVariables }>(
 
 export const shouldBeHostOrAdmin = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const token = extractTokenFromHeader(c.req.header("Authorization"));
+    const token = resolveToken(c);
 
     if (!token) {
       return c.json({ message: "No token provided" }, 401);
