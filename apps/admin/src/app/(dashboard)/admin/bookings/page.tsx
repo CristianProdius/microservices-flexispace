@@ -70,7 +70,11 @@ const BookingsPage = () => {
       {error ? (
         <DataLoadError message={error} onRetry={fetchBookings} />
       ) : (
-        <DataTable columns={columns} data={bookings} />
+        <DataTable
+          columns={columns}
+          data={bookings}
+          onBookingsChanged={fetchBookings}
+        />
       )}
     </div>
   );
