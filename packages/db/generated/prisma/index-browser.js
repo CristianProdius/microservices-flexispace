@@ -133,6 +133,7 @@ exports.Prisma.UserScalarFieldEnum = {
   bio: 'bio',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
   hostingSince: 'hostingSince'
 };

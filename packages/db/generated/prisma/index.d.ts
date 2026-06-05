@@ -2546,6 +2546,7 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    deletedAt: Date | null
     hostVerified: boolean | null
     hostingSince: Date | null
   }
@@ -2563,6 +2564,7 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    deletedAt: Date | null
     hostVerified: boolean | null
     hostingSince: Date | null
   }
@@ -2580,6 +2582,7 @@ export namespace Prisma {
     bio: number
     createdAt: number
     updatedAt: number
+    deletedAt: number
     hostVerified: number
     hostingSince: number
     _all: number
@@ -2599,6 +2602,7 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
+    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
   }
@@ -2616,6 +2620,7 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
+    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
   }
@@ -2633,6 +2638,7 @@ export namespace Prisma {
     bio?: true
     createdAt?: true
     updatedAt?: true
+    deletedAt?: true
     hostVerified?: true
     hostingSince?: true
     _all?: true
@@ -2723,6 +2729,7 @@ export namespace Prisma {
     bio: string | null
     createdAt: Date
     updatedAt: Date
+    deletedAt: Date | null
     hostVerified: boolean
     hostingSince: Date | null
     _count: UserCountAggregateOutputType | null
@@ -2757,6 +2764,7 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
     sessions?: boolean | User$sessionsArgs<ExtArgs>
@@ -2782,6 +2790,7 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2799,6 +2808,7 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2816,11 +2826,12 @@ export namespace Prisma {
     bio?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    deletedAt?: boolean
     hostVerified?: boolean
     hostingSince?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "createdAt" | "updatedAt" | "hostVerified" | "hostingSince", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostingSince", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     venues?: boolean | User$venuesArgs<ExtArgs>
@@ -2858,6 +2869,7 @@ export namespace Prisma {
       bio: string | null
       createdAt: Date
       updatedAt: Date
+      deletedAt: Date | null
       hostVerified: boolean
       hostingSince: Date | null
     }, ExtArgs["result"]["user"]>
@@ -3302,6 +3314,7 @@ export namespace Prisma {
     readonly bio: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
+    readonly deletedAt: FieldRef<"User", 'DateTime'>
     readonly hostVerified: FieldRef<"User", 'Boolean'>
     readonly hostingSince: FieldRef<"User", 'DateTime'>
   }
@@ -20514,6 +20527,7 @@ export namespace Prisma {
     bio: 'bio',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
+    deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
     hostingSince: 'hostingSince'
   };
@@ -20999,6 +21013,7 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     sessions?: SessionListRelationFilter
@@ -21023,6 +21038,7 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     sessions?: SessionOrderByRelationAggregateInput
@@ -21050,6 +21066,7 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     sessions?: SessionListRelationFilter
@@ -21074,6 +21091,7 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -21097,6 +21115,7 @@ export namespace Prisma {
     bio?: StringNullableWithAggregatesFilter<"User"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+    deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
     hostingSince?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   }
@@ -22344,6 +22363,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -22368,6 +22388,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -22392,6 +22413,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -22416,6 +22438,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -22440,6 +22463,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
   }
@@ -22457,6 +22481,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -22474,6 +22499,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -23937,6 +23963,7 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
   }
@@ -23954,6 +23981,7 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
   }
@@ -23971,6 +23999,7 @@ export namespace Prisma {
     bio?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostingSince?: SortOrder
   }
@@ -27345,6 +27374,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     venues?: VenueCreateNestedManyWithoutHostInput
@@ -27368,6 +27398,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     venues?: VenueUncheckedCreateNestedManyWithoutHostInput
@@ -27407,6 +27438,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     venues?: VenueUpdateManyWithoutHostNestedInput
@@ -27430,6 +27462,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     venues?: VenueUncheckedUpdateManyWithoutHostNestedInput
@@ -27453,6 +27486,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -27476,6 +27510,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -27608,6 +27643,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -27631,6 +27667,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -27670,6 +27707,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -27693,6 +27731,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -27999,6 +28038,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -28022,6 +28062,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -29291,6 +29332,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -29314,6 +29356,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -29342,6 +29385,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -29365,6 +29409,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -29520,6 +29565,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -29543,6 +29589,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -29577,6 +29624,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -29600,6 +29648,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -29751,6 +29800,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -29774,6 +29824,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -29964,6 +30015,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -29987,6 +30039,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -30173,6 +30226,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -30196,6 +30250,7 @@ export namespace Prisma {
     bio?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    deletedAt?: Date | string | null
     hostVerified?: boolean
     hostingSince?: Date | string | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -30235,6 +30290,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -30258,6 +30314,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput

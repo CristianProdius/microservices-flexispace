@@ -1,7 +1,51 @@
+import { randomBytes } from "node:crypto";
 import { PrismaClient } from "../generated/prisma";
 import { hashPassword } from "@repo/auth-middleware";
 
 const prisma = new PrismaClient();
+
+// DB-011: Refuse to seed production unless explicitly opted-in. The seed
+// plants well-known accounts (admin/demo host/demo user) and reference data;
+// running it against a production DB will either wipe rotated admin creds (if
+// upsert.update were non-empty) or plant predictable credentials (the bug we
+// are fixing). The escape hatch ALLOW_SEED_IN_PRODUCTION=true is meant for a
+// first-time bootstrap of a fresh prod DB, paired with ADMIN_SEED_PASSWORD.
+const isProduction = process.env.NODE_ENV === "production";
+const allowSeedInProduction = process.env.ALLOW_SEED_IN_PRODUCTION === "true";
+
+if (isProduction && !allowSeedInProduction) {
+  console.error(
+    "[seed] Refusing to run in production (NODE_ENV=production).\n" +
+      "       Set ALLOW_SEED_IN_PRODUCTION=true *and* ADMIN_SEED_PASSWORD=...\n" +
+      "       to bootstrap a fresh production database, then unset both."
+  );
+  process.exit(1);
+}
+
+/**
+ * Resolve the admin seed password.
+ *  - Production (with the explicit opt-in): ADMIN_SEED_PASSWORD is REQUIRED.
+ *  - Development: if ADMIN_SEED_PASSWORD is unset, generate a strong random
+ *    password and print it once so the developer can grab it. (Re-running the
+ *    seed re-prints a fresh password but the upsert's empty `update: {}` keeps
+ *    the original; the dev should save the first one or set the env var.)
+ */
+function resolveAdminPassword(): { plain: string; generated: boolean } {
+  const provided = process.env.ADMIN_SEED_PASSWORD;
+  if (provided && provided.length > 0) {
+    return { plain: provided, generated: false };
+  }
+  if (isProduction) {
+    console.error(
+      "[seed] ADMIN_SEED_PASSWORD is required when ALLOW_SEED_IN_PRODUCTION=true.\n" +
+        "       Refusing to plant a predictable admin password."
+    );
+    process.exit(1);
+  }
+  // 24 random bytes => 32 url-safe base64 chars => ~192 bits of entropy.
+  const generated = randomBytes(24).toString("base64url");
+  return { plain: generated, generated: true };
+}
 
 async function main() {
   console.log("Seeding database...");
@@ -251,13 +295,18 @@ async function main() {
   }
   console.log("✓ Amenities created");
 
-  // Create Admin User
-  const adminPassword = await hashPassword("admin123");
+  // Create Admin User. The plaintext password is sourced from
+  // ADMIN_SEED_PASSWORD; in development we generate a random one and print it
+  // once. upsert.update is intentionally empty so re-seeding NEVER clobbers a
+  // rotated production password.
+  const adminEmail = process.env.ADMIN_SEED_EMAIL || "admin@spacefly.ai";
+  const { plain: adminPlain, generated: adminGenerated } = resolveAdminPassword();
+  const adminPassword = await hashPassword(adminPlain);
   await prisma.user.upsert({
-    where: { email: "admin@spacefly.ai" },
+    where: { email: adminEmail },
     update: {},
     create: {
-      email: "admin@spacefly.ai",
+      email: adminEmail,
       username: "admin",
       name: "Admin User",
       password: adminPassword,
@@ -265,42 +314,66 @@ async function main() {
       emailVerified: true,
     },
   });
-  console.log("✓ Admin user created (admin@spacefly.ai / admin123)");
+  if (adminGenerated) {
+    console.log(
+      "\n========================================================================\n" +
+        " GENERATED ADMIN PASSWORD (save it now — it will NOT be shown again):\n" +
+        `   email:    ${adminEmail}\n` +
+        `   password: ${adminPlain}\n` +
+        " Set ADMIN_SEED_PASSWORD in your .env to make this stable across re-seeds.\n" +
+        "========================================================================\n"
+    );
+  } else {
+    console.log(`✓ Admin user created (${adminEmail} / password from ADMIN_SEED_PASSWORD)`);
+  }
 
-  // Create Demo Host User
-  const hostPassword = await hashPassword("host123");
-  const host = await prisma.user.upsert({
-    where: { email: "host@spacefly.ai" },
-    update: {},
-    create: {
-      email: "host@spacefly.ai",
-      username: "demohost",
-      name: "Demo Host",
-      password: hostPassword,
-      role: "HOST",
-      emailVerified: true,
-      hostVerified: true,
-      hostingSince: new Date(),
-      bio: "Professional space provider with multiple venues",
-    },
-  });
-  console.log("✓ Demo host created (host@spacefly.ai / host123)");
+  // Demo accounts are dev-only fixtures used by the demo Spaces below.
+  // They are skipped in production (even with ALLOW_SEED_IN_PRODUCTION=true)
+  // because they ship with hardcoded passwords and serve no production use.
+  let host: Awaited<ReturnType<typeof prisma.user.upsert>> | null = null;
+  if (!isProduction) {
+    const hostPassword = await hashPassword("host123");
+    host = await prisma.user.upsert({
+      where: { email: "host@spacefly.ai" },
+      update: {},
+      create: {
+        email: "host@spacefly.ai",
+        username: "demohost",
+        name: "Demo Host",
+        password: hostPassword,
+        role: "HOST",
+        emailVerified: true,
+        hostVerified: true,
+        hostingSince: new Date(),
+        bio: "Professional space provider with multiple venues",
+      },
+    });
+    console.log("✓ Demo host created (host@spacefly.ai / host123)");
 
-  // Create Demo User
-  const userPassword = await hashPassword("user123");
-  await prisma.user.upsert({
-    where: { email: "user@spacefly.ai" },
-    update: {},
-    create: {
-      email: "user@spacefly.ai",
-      username: "demouser",
-      name: "Demo User",
-      password: userPassword,
-      role: "USER",
-      emailVerified: true,
-    },
-  });
-  console.log("✓ Demo user created (user@spacefly.ai / user123)");
+    const userPassword = await hashPassword("user123");
+    await prisma.user.upsert({
+      where: { email: "user@spacefly.ai" },
+      update: {},
+      create: {
+        email: "user@spacefly.ai",
+        username: "demouser",
+        name: "Demo User",
+        password: userPassword,
+        role: "USER",
+        emailVerified: true,
+      },
+    });
+    console.log("✓ Demo user created (user@spacefly.ai / user123)");
+  } else {
+    console.log("✓ Skipping demo host/user fixtures (production seed)");
+  }
+
+  // Demo Spaces are dev-only fixtures that hang off the demo host. Skip them
+  // entirely when there is no demo host (i.e. in production).
+  if (!host) {
+    console.log("\n✅ Database seeding completed!");
+    return;
+  }
 
   // Create Demo Spaces
   const demoSpaces = [

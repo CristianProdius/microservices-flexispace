@@ -78,6 +78,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Soft-delete / GDPR erasure (see DB-004).
+  // We never hard-delete users because cascade rules on Booking/Payout would wipe
+  // financial history that the platform must retain for tax/accounting (typically
+  // 5-7yr). The admin "delete user" endpoint scrubs PII and sets deletedAt; auth
+  // and listing paths filter out rows where deletedAt IS NOT NULL.
+  deletedAt DateTime?
+
   // Host-specific fields
   hostVerified Boolean   @default(false)
   hostingSince DateTime?
@@ -94,6 +101,7 @@ model User {
   @@index([email])
   @@index([username])
   @@index([role])
+  @@index([deletedAt])
 }
 
 model Session {

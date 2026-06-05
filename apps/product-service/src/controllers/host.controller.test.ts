@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => {
     user: {
       findMany: vi.fn(),
       count: vi.fn(),
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     venue: {
       findMany: vi.fn(),
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => {
     prisma,
     userFindMany: prisma.user.findMany,
     userCount: prisma.user.count,
-    userFindUnique: prisma.user.findUnique,
+    userFindFirst: prisma.user.findFirst,
     venueFindMany: prisma.venue.findMany,
   };
 });
@@ -76,6 +76,7 @@ describe("host controller", () => {
     expect(mocks.userFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
+          deletedAt: null,
           venues: { some: { isActive: true } },
         }),
         orderBy: [{ hostVerified: "desc" }, { hostingSince: "asc" }],
@@ -105,6 +106,7 @@ describe("host controller", () => {
 
     const call = mocks.userFindMany.mock.calls[0]![0];
     expect(call.where).toMatchObject({
+      deletedAt: null,
       venues: { some: { isActive: true, city: "Chisinau" } },
       hostVerified: true,
       OR: [
@@ -142,7 +144,7 @@ describe("host controller", () => {
   });
 
   it("returns 404 when host not found or has no active venues", async () => {
-    mocks.userFindUnique.mockResolvedValue(null);
+    mocks.userFindFirst.mockResolvedValue(null);
     const req = { params: { id: "missing" } } as unknown as Request;
     const res = createResponse();
 
@@ -152,7 +154,7 @@ describe("host controller", () => {
   });
 
   it("returns host with venues and active space lists", async () => {
-    mocks.userFindUnique.mockResolvedValue({
+    mocks.userFindFirst.mockResolvedValue({
       id: "u1",
       name: "Alice",
       username: "alice",
@@ -178,9 +180,9 @@ describe("host controller", () => {
 
     await getHost(req, res);
 
-    expect(mocks.userFindUnique).toHaveBeenCalledWith(
+    expect(mocks.userFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "u1" },
+        where: { id: "u1", deletedAt: null },
       })
     );
     expect(res.status).toHaveBeenCalledWith(200);

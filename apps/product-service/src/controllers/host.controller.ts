@@ -99,6 +99,7 @@ export const getHosts = async (req: Request, res: Response) => {
   const sort = parseSort(req.query.sort);
 
   const where: Prisma.UserWhereInput = {
+    deletedAt: null,
     venues: {
       some: {
         isActive: true,
@@ -170,8 +171,8 @@ export const getHost = async (req: Request, res: Response) => {
   const hostId = req.params.id;
   if (!hostId) return res.status(400).json({ message: "Invalid host id" });
 
-  const host = await prisma.user.findUnique({
-    where: { id: hostId },
+  const host = await prisma.user.findFirst({
+    where: { id: hostId, deletedAt: null },
     select: {
       id: true,
       name: true,
