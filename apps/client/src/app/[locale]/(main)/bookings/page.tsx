@@ -129,14 +129,20 @@ const BookingsPage = () => {
     }
   };
 
+  // Compare on calendar day strings (YYYY-MM-DD) to avoid timezone drift.
+  // `booking.startDate` from the API is a UTC-midnight ISO string (e.g.
+  // "2026-06-05T00:00:00.000Z"); its first 10 chars are the intended calendar
+  // day. `today` must be derived from the user's *local* calendar day, not
+  // UTC, otherwise users west of UTC see same-day bookings in "Past".
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
   const filteredBookings = bookings.filter((booking) => {
-    const bookingDate = new Date(booking.startDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const bookingDayStr = booking.startDate.slice(0, 10);
 
     if (filter === "upcoming") {
       return (
-        bookingDate >= today &&
+        bookingDayStr >= todayStr &&
         !["CANCELLED", "REJECTED", "EXPIRED", "COMPLETED"].includes(
           booking.status
         )
@@ -144,7 +150,7 @@ const BookingsPage = () => {
     }
     if (filter === "past") {
       return (
-        bookingDate < today ||
+        bookingDayStr < todayStr ||
         ["CANCELLED", "REJECTED", "EXPIRED", "COMPLETED"].includes(
           booking.status
         )
