@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import spaceRouter from "./routes/space.route.js";
@@ -9,6 +9,8 @@ import venueRouter from "./routes/venue.route.js";
 import hostRouter from "./routes/host.route.js";
 import currencyRoutes from "./routes/currency.route.js";
 import { consumer, producer } from "./utils/kafka.js";
+import { parseCorsOrigins } from "./lib/cors.js";
+import { buildErrorHandler } from "./lib/error-handler.js";
 
 const PORT = Number(process.env.PORT || 8000);
 const DEFAULT_CORS_ORIGINS = [
@@ -18,10 +20,8 @@ const DEFAULT_CORS_ORIGINS = [
   "http://localhost:3003",
 ];
 
-const configuredCorsOrigins = process.env.CORS_ORIGINS?.split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-const corsOrigins = configuredCorsOrigins?.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
+const configuredCorsOrigins = parseCorsOrigins(process.env.CORS_ORIGINS);
+const corsOrigins = configuredCorsOrigins.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
 
 const app = express();
 app.use(
@@ -55,12 +55,7 @@ app.use("/hosts", hostRouter);
 app.use("/currencies", currencyRoutes);
 
 // Error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-  return res
-    .status(err.status || 500)
-    .json({ message: err.message || "Internal Server Error!" });
-});
+app.use(buildErrorHandler());
 
 const start = async () => {
   try {
