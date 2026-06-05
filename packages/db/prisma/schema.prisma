@@ -86,6 +86,7 @@ model User {
   image         String?
   phone         String?
   bio           String?
+  mustChangePassword Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

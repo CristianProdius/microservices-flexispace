@@ -335,6 +335,10 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken, refreshLifetimeMs(), accessLifetimeMs());
 
+    // AUTHSVC-014: admin-provisioned accounts (or any account flagged for
+    // rotation) must be redirected to the change-password flow.
+    const requiresPasswordChange = user.mustChangePassword === true;
+
     return res.status(200).json({
       user: {
         id: user.id,
@@ -347,6 +351,7 @@ router.post("/login", loginLimiter, async (req, res) => {
         emailVerified: user.emailVerified,
       },
       ...tokens,
+      requiresPasswordChange,
     });
   } catch (error) {
     console.error("Login error:", error);

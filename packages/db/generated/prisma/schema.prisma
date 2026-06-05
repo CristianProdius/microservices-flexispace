@@ -76,18 +76,19 @@ enum BookingActor {
 // ==================== AUTH ====================
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  username      String   @unique
-  name          String?
-  password      String
-  role          Role     @default(USER)
-  emailVerified Boolean  @default(false)
-  image         String?
-  phone         String?
-  bio           String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  username           String   @unique
+  name               String?
+  password           String
+  role               Role     @default(USER)
+  emailVerified      Boolean  @default(false)
+  image              String?
+  phone              String?
+  bio                String?
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Soft-delete / GDPR erasure (see DB-004).
   // We never hard-delete users because cascade rules on Booking/Payout would wipe
