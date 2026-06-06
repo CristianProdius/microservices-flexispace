@@ -100,8 +100,17 @@ export function DataTable<TData, TValue>({
       {Object.keys(rowSelection).length > 0 && (
         <div className="flex justify-end">
           <button
-            className="flex items-center gap-2 bg-red-500 text-white px-2 py-1 text-sm rounded-md m-4 cursor-pointer"
-            onClick={() => mutation.mutate()}
+            className="flex items-center gap-2 bg-red-500 text-white px-2 py-1 text-sm rounded-md m-4 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (mutation.isPending) return;
+              const count = table.getSelectedRowModel().rows.length;
+              if (count === 0) return;
+              const ok = window.confirm(
+                `Delete ${count} user${count === 1 ? "" : "s"}? This action cannot be undone.`
+              );
+              if (!ok) return;
+              mutation.mutate();
+            }}
             disabled={mutation.isPending}
           >
             <Trash2 className="w-4 h-4" />

@@ -34,8 +34,10 @@ const UsersPage = () => {
         return;
       }
 
+      // AUD-025: defensive cap until the list view supports server-side
+      // pagination. Newest-first ordering is server-side; we just bound it.
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users`,
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users?limit=200`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

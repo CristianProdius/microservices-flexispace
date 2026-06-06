@@ -32,6 +32,7 @@ import {
 } from "@/components/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 
 interface Space {
   id: number;
@@ -43,6 +44,7 @@ interface Space {
   pricePerHour: number | null;
   pricePerDay: number | null;
   pricingType: "HOURLY" | "DAILY" | "BOTH";
+  currency?: string | null;
   isActive: boolean;
   averageRating: number | null;
   totalReviews: number;
@@ -169,15 +171,16 @@ const HostSpacesPage = () => {
   };
 
   const getPriceDisplay = (space: Space) => {
+    const ccy = space.currency ?? undefined;
     if (space.pricingType === "HOURLY" && space.pricePerHour) {
-      return `$${space.pricePerHour}/hr`;
+      return `${formatMoney(space.pricePerHour, ccy)}/hr`;
     }
     if (space.pricingType === "DAILY" && space.pricePerDay) {
-      return `$${space.pricePerDay}/day`;
+      return `${formatMoney(space.pricePerDay, ccy)}/day`;
     }
     if (space.pricingType === "BOTH") {
-      if (space.pricePerHour) return `$${space.pricePerHour}/hr`;
-      if (space.pricePerDay) return `$${space.pricePerDay}/day`;
+      if (space.pricePerHour) return `${formatMoney(space.pricePerHour, ccy)}/hr`;
+      if (space.pricePerDay) return `${formatMoney(space.pricePerDay, ccy)}/day`;
     }
     return "—";
   };

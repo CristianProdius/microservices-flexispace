@@ -103,7 +103,10 @@ export const columns: ColumnDef<AdminBooking>[] = [
       const booking = row.original;
       return (
         <div className="min-w-36">
-          <div className="font-medium">
+          <div
+            className="font-medium truncate max-w-[200px]"
+            title={relatedPartyLabel(booking.guest, booking.guestId)}
+          >
             {relatedPartyLabel(booking.guest, booking.guestId)}
           </div>
           <div className="text-xs text-muted-foreground">
@@ -131,7 +134,10 @@ export const columns: ColumnDef<AdminBooking>[] = [
       const booking = row.original;
       return (
         <div className="min-w-36">
-          <div className="font-medium">
+          <div
+            className="font-medium truncate max-w-[200px]"
+            title={relatedPartyLabel(booking.host, booking.hostId)}
+          >
             {relatedPartyLabel(booking.host, booking.hostId)}
           </div>
           <div className="text-xs text-muted-foreground">

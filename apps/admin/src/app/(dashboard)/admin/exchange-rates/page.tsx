@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useAuthStore from "@/stores/authStore";
 import { DashboardPageHeader } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ interface ExchangeRate {
 }
 
 const ExchangeRatesPage = () => {
-  const { token } = useAuthStore();
+  const { getToken, isLoading: authLoading } = useAuthStore();
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,12 +28,9 @@ const ExchangeRatesPage = () => {
   // round-trips correctly. We only parse at save time.
   const [editedRates, setEditedRates] = useState<Record<number, string>>({});
 
-  useEffect(() => {
-    fetchRates();
-  }, []);
-
-  const fetchRates = async () => {
+  const fetchRates = useCallback(async () => {
     try {
+      const token = await getToken();
       const res = await fetch(`${PRODUCT_SERVICE_URL}/currencies/rates`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -49,7 +46,14 @@ const ExchangeRatesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken]);
+
+  useEffect(() => {
+    // Wait for the auth store to finish hydrating so getToken() can return
+    // a fresh token rather than racing the initial bootstrap.
+    if (authLoading) return;
+    fetchRates();
+  }, [authLoading, fetchRates]);
 
   const handleRateChange = (id: number, value: string) => {
     setEditedRates((prev) => {
@@ -103,11 +107,12 @@ const ExchangeRatesPage = () => {
         rate: parsedEdits[rate.id] ?? rate.rate,
       }));
 
+      const token = await getToken();
       const res = await fetch(`${PRODUCT_SERVICE_URL}/currencies/rates`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(updatedRates),
       });

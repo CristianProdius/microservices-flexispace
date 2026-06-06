@@ -27,8 +27,10 @@ const BookingsPage = () => {
         return;
       }
 
+      // AUD-025: defensive cap until the list view supports server-side
+      // pagination. Newest-first ordering is server-side; we just bound it.
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings`,
+        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings?limit=200`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

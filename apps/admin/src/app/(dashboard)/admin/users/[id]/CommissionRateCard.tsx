@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import type { User } from "@repo/types";
 
 interface CommissionRateCardProps {
@@ -18,7 +18,6 @@ const fractionToPercent = (rate: number | null | undefined): string =>
   typeof rate === "number" ? String(rate * 100) : "";
 
 const CommissionRateCard = ({ user, onUpdated }: CommissionRateCardProps) => {
-  const { getToken } = useAuthStore();
   const [percentInput, setPercentInput] = useState<string>(
     fractionToPercent(user.commissionRate)
   );
@@ -48,19 +47,12 @@ const CommissionRateCard = ({ user, onUpdated }: CommissionRateCardProps) => {
 
     setIsSaving(true);
     try {
-      const token = await getToken();
-      if (!token) {
-        setError("Session expired. Please sign in again.");
-        return;
-      }
-
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${user.id}/commission-rate`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ commissionRate: nextRate }),
         }
@@ -75,6 +67,10 @@ const CommissionRateCard = ({ user, onUpdated }: CommissionRateCardProps) => {
       setSavedAt(Date.now());
       onUpdated();
     } catch (err) {
+      if (err instanceof UnauthenticatedError) {
+        setError("Session expired. Please sign in again.");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setIsSaving(false);
@@ -87,18 +83,12 @@ const CommissionRateCard = ({ user, onUpdated }: CommissionRateCardProps) => {
     setError(null);
     setIsSaving(true);
     try {
-      const token = await getToken();
-      if (!token) {
-        setError("Session expired. Please sign in again.");
-        return;
-      }
-      const res = await fetch(
+      const res = await apiFetch(
         `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/users/${user.id}/commission-rate`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ commissionRate: null }),
         }
@@ -111,6 +101,10 @@ const CommissionRateCard = ({ user, onUpdated }: CommissionRateCardProps) => {
       setSavedAt(Date.now());
       onUpdated();
     } catch (err) {
+      if (err instanceof UnauthenticatedError) {
+        setError("Session expired. Please sign in again.");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setIsSaving(false);

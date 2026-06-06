@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
 import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
+import { formatMoney } from "@/lib/format";
 import {
   AlertCircle,
   Building2,
@@ -220,8 +221,13 @@ const HostDashboardPage = () => {
       icon: CalendarDays,
     },
     {
+      // Aggregated across all of the host's bookings; multi-currency totals
+      // aren't normalized server-side yet so we display in USD as a sane
+      // default. See AUD-016 CONCERNS for the proper fix.
       label: "Total Earnings",
-      value: `$${stats?.totalEarnings?.toFixed(0) || 0}`,
+      value: formatMoney(stats?.totalEarnings ?? 0, "USD", {
+        maximumFractionDigits: 0,
+      }),
       icon: DollarSign,
     },
   ];
@@ -240,7 +246,7 @@ const HostDashboardPage = () => {
     stats?.pendingEarnings && stats.pendingEarnings > 0
       ? {
           href: "/host/earnings",
-          title: `$${stats.pendingEarnings.toFixed(0)} in pending earnings`,
+          title: `${formatMoney(stats.pendingEarnings, "USD", { maximumFractionDigits: 0 })} in pending earnings`,
           description: "View your earnings breakdown",
           icon: TrendingUp,
         }

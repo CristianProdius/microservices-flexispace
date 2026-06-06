@@ -7,12 +7,16 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 const push = vi.fn();
 const replace = vi.fn();
 const login = vi.fn();
+let searchParamsValue = "";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push,
     replace,
   }),
+  // Read the captured query string at hook-call time so individual tests can
+  // override it before they import the page module.
+  useSearchParams: () => new URLSearchParams(searchParamsValue),
 }));
 
 vi.mock("@/stores/authStore", () => ({
@@ -49,6 +53,7 @@ describe("admin login page", () => {
     push.mockReset();
     replace.mockReset();
     login.mockReset();
+    searchParamsValue = "";
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -178,6 +183,84 @@ describe("admin login page", () => {
 
     expect(login).toHaveBeenCalledWith("admin@spacefly.ai", "wrong-pass");
     expect(container.textContent).toContain("Invalid credentials");
+  });
+
+  it("honours a safe ?next= path from the middleware redirect", async () => {
+    searchParamsValue = "next=%2Fadmin%2Fbookings";
+    login.mockResolvedValueOnce({
+      id: "admin-1",
+      email: "admin@spacefly.ai",
+      username: "admin",
+      name: "Admin",
+      role: "ADMIN",
+      image: null,
+    });
+
+    const pageModule = await import("./page");
+
+    await act(async () => {
+      root.render(React.createElement(pageModule.default));
+    });
+
+    const email = container.querySelector("#email") as HTMLInputElement | null;
+    const password = container.querySelector(
+      "#password"
+    ) as HTMLInputElement | null;
+    const form = container.querySelector("form");
+
+    if (!email || !password || !form) {
+      return;
+    }
+
+    await act(async () => {
+      setInputValue(email, "admin@spacefly.ai");
+      setInputValue(password, "secret123");
+    });
+
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(replace).toHaveBeenCalledWith("/admin/bookings");
+  });
+
+  it("falls back to the role default when ?next= is unsafe", async () => {
+    searchParamsValue = "next=https%3A%2F%2Fevil.example.com%2Fphish";
+    login.mockResolvedValueOnce({
+      id: "host-1",
+      email: "host@spacefly.ai",
+      username: "host",
+      name: "Host",
+      role: "HOST",
+      image: null,
+    });
+
+    const pageModule = await import("./page");
+
+    await act(async () => {
+      root.render(React.createElement(pageModule.default));
+    });
+
+    const email = container.querySelector("#email") as HTMLInputElement | null;
+    const password = container.querySelector(
+      "#password"
+    ) as HTMLInputElement | null;
+    const form = container.querySelector("form");
+
+    if (!email || !password || !form) {
+      return;
+    }
+
+    await act(async () => {
+      setInputValue(email, "host@spacefly.ai");
+      setInputValue(password, "secret123");
+    });
+
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(replace).toHaveBeenCalledWith("/host");
   });
 
   it("renders a focused sign-in form surface", async () => {

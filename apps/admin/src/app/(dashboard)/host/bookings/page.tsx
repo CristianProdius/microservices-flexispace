@@ -25,6 +25,7 @@ import {
 } from "@/components/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/format";
 
 interface Booking {
   id: string;
@@ -37,6 +38,7 @@ interface Booking {
   guests: number;
   isHourly: boolean;
   totalAmount: number;
+  currency?: string | null;
   createdAt: string;
   space: {
     id: number;
@@ -211,7 +213,12 @@ const HostBookingsPage = () => {
 
   const handleReject = async (bookingId: string) => {
     if (actionLoading.has(bookingId)) return;
+    // TODO(AUD-012 follow-up): replace this prompt() with a proper modal +
+    // textarea so we can capture multi-line reasons and surface validation.
     const reason = prompt("Reason for rejection (optional):");
+    // User cancelled the prompt — bail without firing the request so we don't
+    // send a `null` reason that the host didn't intend to submit.
+    if (reason === null) return;
 
     beginAction(bookingId);
     try {
@@ -552,7 +559,7 @@ const HostBookingsPage = () => {
                       </div>
 
                       <span className="font-medium text-foreground">
-                        ${booking.totalAmount.toFixed(2)}
+                        {formatMoney(booking.totalAmount, booking.currency)}
                       </span>
                     </div>
                   </div>

@@ -20,6 +20,7 @@ import {
   DashboardStatCard,
 } from "@/components/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatMoney, parseBookingDay } from "@/lib/format";
 
 interface Booking {
   id: string;
@@ -29,6 +30,7 @@ interface Booking {
   cleaningFee: number;
   startDate: string;
   endDate: string;
+  currency?: string | null;
   space: {
     name: string;
   };
@@ -129,7 +131,12 @@ const HostEarningsPage = () => {
 
         const now = new Date();
         const thisMonthBookings = completedBookings.filter((b) => {
-          const endDate = new Date(b.endDate);
+          // Anchor the booking endDate in local time (parseBookingDay) so a
+          // UTC-midnight ISO from the API doesn't roll into the wrong month
+          // for users west of UTC — same fix the client app uses for its
+          // calendar-day comparisons.
+          const endDate = parseBookingDay(b.endDate);
+          if (!endDate) return false;
           return (
             endDate.getMonth() === now.getMonth() &&
             endDate.getFullYear() === now.getFullYear()
@@ -215,20 +222,24 @@ const HostEarningsPage = () => {
   const pendingPayoutBookings = bookings.filter((b) =>
     ["CONFIRMED"].includes(b.status)
   );
+  // Earnings stat cards aggregate across many bookings that may be in
+  // different currencies. We don't have server-side normalization here yet
+  // (see CONCERNS on AUD-016), so the rollup is displayed in USD as a
+  // best-effort default — same convention used in BookingChartType.
   const statCards = [
     {
       label: "Total Earnings",
-      value: `$${stats?.totalEarnings?.toFixed(2) || "0.00"}`,
+      value: formatMoney(stats?.totalEarnings ?? 0, "USD"),
       icon: DollarSign,
     },
     {
       label: "Pending",
-      value: `$${stats?.pendingEarnings?.toFixed(2) || "0.00"}`,
+      value: formatMoney(stats?.pendingEarnings ?? 0, "USD"),
       icon: Clock,
     },
     {
       label: "This Month",
-      value: `$${stats?.thisMonth?.toFixed(2) || "0.00"}`,
+      value: formatMoney(stats?.thisMonth ?? 0, "USD"),
       icon: Calendar,
     },
     {
@@ -306,7 +317,10 @@ const HostEarningsPage = () => {
                     </p>
                   </div>
                   <p className="font-semibold text-card-foreground">
-                    ${(booking.totalAmount - booking.serviceFee).toFixed(2)}
+                    {formatMoney(
+                      booking.totalAmount - booking.serviceFee,
+                      booking.currency
+                    )}
                   </p>
                 </div>
               ))}
@@ -363,13 +377,16 @@ const HostEarningsPage = () => {
                       {new Date(booking.endDate).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-card-foreground">
-                      ${booking.totalAmount.toFixed(2)}
+                      {formatMoney(booking.totalAmount, booking.currency)}
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-destructive">
-                      -${booking.serviceFee.toFixed(2)}
+                      -{formatMoney(booking.serviceFee, booking.currency)}
                     </td>
                     <td className="px-4 py-3 text-right text-sm font-medium text-primary">
-                      ${(booking.totalAmount - booking.serviceFee).toFixed(2)}
+                      {formatMoney(
+                        booking.totalAmount - booking.serviceFee,
+                        booking.currency
+                      )}
                     </td>
                   </tr>
                 ))}

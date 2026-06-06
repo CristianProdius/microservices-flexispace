@@ -30,8 +30,10 @@ const SpacesPage = () => {
         return;
       }
 
+      // AUD-025: defensive cap until the list view supports server-side
+      // pagination. Newest-first ordering is server-side; we just bound it.
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces`,
+        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces?limit=200`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

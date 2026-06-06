@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeRedirectPath } from "@/lib/safeRedirect";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +25,12 @@ export default function AdminLoginPage() {
 
     try {
       const user = await login(email, password);
-      router.replace(user.role === "ADMIN" ? "/admin" : "/host");
+      // Honour `?next=` from the middleware redirect when it's a safe,
+      // same-origin path; otherwise fall back to the role-based default.
+      const safeNext = safeRedirectPath(searchParams.get("next"));
+      router.replace(
+        safeNext ?? (user.role === "ADMIN" ? "/admin" : "/host")
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
