@@ -4,6 +4,7 @@ import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 import { isAccessTokenRevoked } from "./revocation.js";
+import { prisma } from "@repo/db";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -106,4 +107,41 @@ export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: Fastif
   }
 
   attachUser(request, payload);
+}
+
+export async function resolveActingHost(request: FastifyRequest, reply: FastifyReply) {
+  const headerValue = request.headers["x-acting-host-id"];
+  const headerStr = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  if (!headerStr) return;
+
+  const user = (request as any).user;
+  if (user?.role !== "ADMIN") return;
+
+  const target = await prisma.user.findUnique({
+    where: { id: headerStr },
+    select: { id: true, role: true, deletedAt: true },
+  });
+
+  if (!target || target.deletedAt) {
+    return reply.code(400).send({ message: "Invalid acting host" });
+  }
+  if (target.role !== "HOST" && target.role !== "ADMIN") {
+    return reply.code(400).send({ message: "Invalid acting host" });
+  }
+
+  (request as any).realUserId = (request as any).userId;
+  (request as any).actingHostId = target.id;
+  (request as any).userId = target.id;
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    console.info(
+      JSON.stringify({
+        msg: "admin acting as host",
+        realUserId: (request as any).realUserId,
+        actingHostId: target.id,
+        method: request.method,
+        path: request.url,
+      })
+    );
+  }
 }

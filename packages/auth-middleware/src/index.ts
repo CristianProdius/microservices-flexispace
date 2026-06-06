@@ -55,6 +55,7 @@ export {
   shouldBeAdmin as shouldBeAdminFastify,
   shouldBeHost as shouldBeHostFastify,
   shouldBeHostOrAdmin as shouldBeHostOrAdminFastify,
+  resolveActingHost as resolveActingHostFastify,
 } from "./fastify.js";
 
 // Hono middleware
