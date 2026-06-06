@@ -172,6 +172,10 @@ services:
       PORT: 8004
       RESEND_API_KEY: ${RESEND_API_KEY:?RESEND_API_KEY is required}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:?RESEND_FROM_EMAIL is required}
+      # AUD-003: link bases are now required at boot. The service refuses
+      # to become ready without them — operators set these per-environment.
+      EMAIL_VERIFICATION_LINK_BASE: ${EMAIL_VERIFICATION_LINK_BASE:?EMAIL_VERIFICATION_LINK_BASE is required}
+      PASSWORD_RESET_LINK_BASE: ${PASSWORD_RESET_LINK_BASE:?PASSWORD_RESET_LINK_BASE is required}
     expose:
       - "8004"
     healthcheck:
