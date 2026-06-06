@@ -1,6 +1,21 @@
 import type { Kafka, Consumer, Producer } from "kafkajs";
 import { isKafkaEnabled } from "./client";
 
+/**
+ * Thrown when the consumer cannot establish its initial broker connection.
+ * Callers (typically service `index.ts` boot code) should let this propagate
+ * so the process exits non-zero and the orchestrator restarts it. Silently
+ * running with a disconnected consumer would mean events are never processed
+ * even though `/health` may still report green (AUD-032). Symmetrical with
+ * `KafkaProducerConnectError` in `./producer`.
+ */
+export class KafkaConsumerConnectError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "KafkaConsumerConnectError";
+  }
+}
+
 type DeadLetterQueueConfig = {
   // If provided, payloads that throw inside `topicHandler` are forwarded to
   // `<topic><suffix>` via this producer before the original error is
@@ -29,8 +44,14 @@ export const createConsumer = (
       connected = true;
       console.log(`[Kafka Consumer ${groupId}] Connected`);
     } catch (error) {
-      console.warn(`[Kafka Consumer ${groupId}] Failed to connect:`, error instanceof Error ? error.message : error);
       connected = false;
+      consumer = null;
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[Kafka Consumer ${groupId}] Failed to connect:`, message);
+      throw new KafkaConsumerConnectError(
+        `Kafka consumer ${groupId} failed to connect: ${message}`,
+        error
+      );
     }
   };
 
@@ -41,7 +62,21 @@ export const createConsumer = (
     }[]
   ) => {
     if (!connected || !consumer) {
-      console.log(`[Kafka Consumer ${groupId}] Not connected - skipping subscription to:`, topics.map(t => t.topicName).join(", "));
+      // Safety net for when Kafka is disabled via `KAFKA_ENABLED=false` and
+      // `connect()` was a no-op. If we hit this branch while Kafka *is*
+      // enabled, that means the caller swallowed a connect error — log loud
+      // so it doesn't get silently ignored in production (AUD-032).
+      if (isKafkaEnabled()) {
+        console.warn(
+          `[Kafka Consumer ${groupId}] subscribe() called while disconnected (Kafka enabled). Skipping subscription to:`,
+          topics.map((t) => t.topicName).join(", ")
+        );
+      } else {
+        console.log(
+          `[Kafka Consumer ${groupId}] Not connected - skipping subscription to:`,
+          topics.map((t) => t.topicName).join(", ")
+        );
+      }
       return;
     }
 

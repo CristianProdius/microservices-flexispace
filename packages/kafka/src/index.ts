@@ -4,4 +4,4 @@ export {
   KafkaProducerConnectError,
   KafkaProducerSendError,
 } from "./producer";
-export { createConsumer } from "./consumer";
+export { createConsumer, KafkaConsumerConnectError } from "./consumer";

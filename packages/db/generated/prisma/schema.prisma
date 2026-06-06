@@ -360,6 +360,10 @@ model SpaceAmenity {
   amenity Amenity @relation(fields: [amenityId], references: [id])
 
   @@unique([spaceId, amenityId])
+  // The composite unique above covers "which amenities does this space have",
+  // but the reverse query ("which spaces have amenity X") falls off the
+  // composite. AUD-031.
+  @@index([amenityId])
 }
 
 model PricingTier {
@@ -494,6 +498,11 @@ model Payout {
   currency    Currency @default(USD)
 
   status     PayoutStatus @default(PENDING)
+  // AUD-030: a GIN index on `bookingIds` is managed by the raw-SQL migration
+  // `20260606200000_add_missing_indexes` (Prisma cannot model `USING GIN` on a
+  // `String[]` cleanly). `prisma db pull` should preserve it; `prisma migrate
+  // dev` will see a column-level index with no schema declaration and that is
+  // acceptable for raw-SQL indexes.
   bookingIds String[]
 
   processedAt DateTime?

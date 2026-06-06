@@ -75,6 +75,14 @@ export const isTokenNearExpiry = (
 // refresh-token rotation per refresh cycle.
 let inFlightRefresh: Promise<string> | null = null;
 
+// Timestamp (ms epoch) of the last refresh rejection. While we're inside the
+// cool-off window we refuse to issue another refresh with what is almost
+// certainly the same stale refresh token — a fresh attempt would just burn
+// another rotation against an auth server that is either down or has already
+// rejected us. Cleared on next successful refresh (AUD-034).
+const REFRESH_FAILURE_COOLDOWN_MS = 5_000;
+let lastRefreshErrorAt: number | null = null;
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -169,6 +177,7 @@ const useAuthStore = create<AuthState>((set) => ({
       console.error("Logout error:", error);
     } finally {
       inFlightRefresh = null;
+      lastRefreshErrorAt = null;
       auth.clearAuth();
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(ACTING_HOST_STORAGE_KEY);
@@ -209,17 +218,58 @@ const useAuthStore = create<AuthState>((set) => ({
       return null;
     }
 
+    // Cool-off: if a recent refresh just failed, don't burn another rotation
+    // against the same stale refresh token. Return null so callers route to
+    // /login rather than thrash the auth server (AUD-034).
+    if (
+      lastRefreshErrorAt !== null &&
+      Date.now() - lastRefreshErrorAt < REFRESH_FAILURE_COOLDOWN_MS
+    ) {
+      return null;
+    }
+
     // Share a single in-flight refresh across concurrent callers so we don't
     // race the refresh-token rotation.
+    //
+    // AUD-034: clearing `inFlightRefresh` synchronously inside the IIFE's
+    // `finally` would null it out *before* awaiters of the returned promise
+    // get to resume — so a `getToken()` call arriving in the same tick (after
+    // the clear, before its own `getAccessToken()` re-read) would observe
+    // `null` and kick off a second refresh with the now-rotated token. Defer
+    // the clear via `queueMicrotask` / `setTimeout(0)` so any awaiter that
+    // started during the same tick still sees the resolved promise.
     if (!inFlightRefresh) {
+      const scheduleClear = () => {
+        if (typeof queueMicrotask === "function") {
+          queueMicrotask(() => {
+            inFlightRefresh = null;
+          });
+        } else {
+          setTimeout(() => {
+            inFlightRefresh = null;
+          }, 0);
+        }
+      };
+
       inFlightRefresh = (async () => {
         try {
           const newToken = await auth.refreshAccessToken(refreshToken);
           auth.saveTokens(newToken, refreshToken);
           set({ token: newToken });
+          lastRefreshErrorAt = null;
           return newToken;
-        } finally {
+        } catch (error) {
+          lastRefreshErrorAt = Date.now();
+          // Eager clear on rejection so the cool-off path above (not a
+          // re-await of the rejected promise) governs the next call.
           inFlightRefresh = null;
+          throw error;
+        } finally {
+          // On success, defer the clear by one microtask so co-tick awaiters
+          // can still resolve against the same promise.
+          if (lastRefreshErrorAt === null) {
+            scheduleClear();
+          }
         }
       })();
     }

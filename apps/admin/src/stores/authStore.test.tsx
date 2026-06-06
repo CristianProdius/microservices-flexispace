@@ -165,7 +165,11 @@ describe("authStore", () => {
       );
     });
 
-    it("retries after a previous refresh failure (clears in-flight slot)", async () => {
+    it("cools off briefly after a refresh failure before retrying (AUD-034)", async () => {
+      // The single-flight refresh now stamps a failure timestamp so the very
+      // next call within REFRESH_FAILURE_COOLDOWN_MS (5s) returns null instead
+      // of burning a fresh request with the now-rotated refresh token. After
+      // the cool-off elapses, the next call refreshes normally.
       const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
       const refreshed = makeJwt(Math.floor(Date.now() / 1000) + 60 * 60);
       vi.mocked(auth.getAccessToken).mockReturnValue(stale);
@@ -176,9 +180,22 @@ describe("authStore", () => {
 
       const { default: store } = await import("./authStore");
       await expect(store.getState().getToken()).rejects.toThrow("transient");
-      const second = await store.getState().getToken();
-      expect(second).toBe(refreshed);
-      expect(auth.refreshAccessToken).toHaveBeenCalledTimes(2);
+
+      // Within the cool-off window, return null without calling refresh again.
+      const cooledOff = await store.getState().getToken();
+      expect(cooledOff).toBeNull();
+      expect(auth.refreshAccessToken).toHaveBeenCalledTimes(1);
+
+      // Past the cool-off, the next call retries and succeeds.
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        vi.advanceTimersByTime(6_000);
+        const recovered = await store.getState().getToken();
+        expect(recovered).toBe(refreshed);
+        expect(auth.refreshAccessToken).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });
