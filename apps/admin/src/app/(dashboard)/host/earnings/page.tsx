@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
+  Percent,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,10 @@ const HostEarningsPage = () => {
   const [stats, setStats] = useState<EarningsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // The effective platform commission applied to this host's payouts. Read-only
+  // for the host — only an admin can change it from the admin user detail page.
+  const [commissionRate, setCommissionRate] = useState<number | null>(null);
+  const [hasCommissionOverride, setHasCommissionOverride] = useState(false);
 
   const fetchEarnings = useCallback(async () => {
     setError(null);
@@ -58,6 +63,24 @@ const HostEarningsPage = () => {
       if (!resolvedToken) {
         router.push("/login");
         return;
+      }
+
+      // Fetch the host's own commission rate from /auth/me alongside earnings.
+      // /auth/me requires only a logged-in user (not admin), and the response
+      // includes both the per-host override and the effective rate (override
+      // falling back to the platform default).
+      const meRes = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/auth/me`,
+        { headers: { Authorization: `Bearer ${resolvedToken}` } }
+      );
+      if (meRes.ok) {
+        const meBody = await meRes.json();
+        setCommissionRate(
+          typeof meBody.effectiveCommissionRate === "number"
+            ? meBody.effectiveCommissionRate
+            : null
+        );
+        setHasCommissionOverride(typeof meBody.commissionRate === "number");
       }
 
       const res = await fetch(
@@ -214,6 +237,35 @@ const HostEarningsPage = () => {
           <DashboardStatCard key={stat.label} {...stat} />
         ))}
       </div>
+
+      {commissionRate !== null && (
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-muted/60 p-2 text-muted-foreground">
+              <Percent className="size-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <h3 className="text-sm font-medium text-card-foreground">
+                  Platform commission
+                </h3>
+                <span className="text-base font-semibold text-primary">
+                  {(commissionRate * 100).toFixed(2)}%
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {hasCommissionOverride
+                    ? "(negotiated rate)"
+                    : "(platform default)"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Applied to the space subtotal on each booking and deducted from
+                your payout. To change this, please contact the Spacefly team.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {pendingPayoutBookings.length > 0 && (
         <DashboardSection

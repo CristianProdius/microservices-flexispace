@@ -14,6 +14,10 @@ export interface User {
   emailVerified: boolean;
   hostVerified: boolean;
   hostingSince: string | null;
+  // Per-host platform commission as a fraction (0.1 = 10%). Null means use the
+  // platform-wide DEFAULT_COMMISSION_RATE env var. Only meaningful for HOST or
+  // ADMIN accounts; USER accounts will always have this as null/undefined.
+  commissionRate?: number | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -24,6 +24,7 @@ import EditUser from "@/components/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { User } from "@repo/types";
+import CommissionRateCard from "./CommissionRateCard";
 
 const SingleUserPage = () => {
   const router = useRouter();
@@ -254,6 +255,10 @@ const SingleUserPage = () => {
             <h1 className="text-xl font-semibold">User Activity</h1>
             <AppLineChart />
           </div>
+          {/* COMMISSION RATE (HOST/ADMIN only) */}
+          {(user.role === "HOST" || user.role === "ADMIN") && (
+            <CommissionRateCard user={user} onUpdated={fetchUser} />
+          )}
         </div>
       </div>
     </div>

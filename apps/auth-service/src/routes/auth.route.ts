@@ -706,6 +706,7 @@ router.get("/me", shouldBeUser, async (req, res) => {
         hostingSince: true,
         hostApplicationPending: true,
         emailVerified: true,
+        commissionRate: true,
         createdAt: true,
       },
     });
@@ -714,7 +715,15 @@ router.get("/me", shouldBeUser, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json(user);
+    // The effective commission rate the booking flow will use for this user:
+    // their per-host override if set, otherwise the platform default. This is
+    // read-only — only an admin can mutate the override.
+    const envDefault = Number.parseFloat(process.env.DEFAULT_COMMISSION_RATE ?? "");
+    const platformDefault = Number.isFinite(envDefault) && envDefault >= 0 ? envDefault : 0;
+    const effectiveCommissionRate =
+      typeof user.commissionRate === "number" ? user.commissionRate : platformDefault;
+
+    return res.status(200).json({ ...user, effectiveCommissionRate });
   } catch (error) {
     console.error("Get me error:", error);
     return res.status(500).json({ message: "Internal server error" });

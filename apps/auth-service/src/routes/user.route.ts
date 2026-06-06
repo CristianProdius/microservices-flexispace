@@ -122,6 +122,8 @@ router.get("/:id", async (req, res) => {
         role: true,
         image: true,
         emailVerified: true,
+        hostVerified: true,
+        commissionRate: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -484,6 +486,64 @@ router.put("/:id/role", async (req, res) => {
     return res.status(200).json(user);
   } catch (error) {
     return sendPrismaError(res, error, "Change role error");
+  }
+});
+
+// Set per-host platform commission rate (admin only).
+//
+// Body: `{ "commissionRate": 0.15 }` to set 15%, or `{ "commissionRate": null }`
+// to clear the override and fall back to DEFAULT_COMMISSION_RATE. Only HOST or
+// ADMIN users carry a meaningful commission — other roles are rejected so the
+// column stays semantically clean.
+router.put("/:id/commission-rate", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { commissionRate } = req.body ?? {};
+
+    let nextRate: number | null;
+    if (commissionRate === null || commissionRate === "") {
+      nextRate = null;
+    } else if (
+      typeof commissionRate === "number" &&
+      Number.isFinite(commissionRate) &&
+      commissionRate >= 0 &&
+      commissionRate <= 1
+    ) {
+      nextRate = commissionRate;
+    } else {
+      return res.status(400).json({
+        message: "commissionRate must be a number between 0 and 1, or null to clear the override",
+      });
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, role: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (existing.role !== "HOST" && existing.role !== "ADMIN") {
+      return res.status(400).json({
+        message: "Commission rate only applies to HOST or ADMIN users",
+      });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { commissionRate: nextRate },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        commissionRate: true,
+      },
+    });
+
+    return res.status(200).json(user);
+  } catch (error) {
+    return sendPrismaError(res, error, "Set commission rate error");
   }
 });
 
