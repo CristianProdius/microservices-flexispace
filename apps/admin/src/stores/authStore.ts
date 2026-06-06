@@ -6,6 +6,7 @@ import type { User } from "@/lib/auth";
 // of remaining lifetime. Keeps `getToken` from racing the real expiry while
 // avoiding a refresh on every call.
 const REFRESH_SAFETY_WINDOW_SECONDS = 30;
+const ACTING_HOST_STORAGE_KEY = "spacefly_acting_host";
 
 interface JwtPayload {
   exp?: number;
@@ -82,6 +83,8 @@ interface AuthState {
   isAdmin: boolean;
   isHost: boolean;
   isHostOrAdmin: boolean;
+  actingHostId: string | null;
+  setActingHost: (id: string | null) => void;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
@@ -96,6 +99,10 @@ const useAuthStore = create<AuthState>((set) => ({
   isAdmin: false,
   isHost: false,
   isHostOrAdmin: false,
+  actingHostId:
+    typeof window !== "undefined"
+      ? window.localStorage.getItem(ACTING_HOST_STORAGE_KEY)
+      : null,
 
   initialize: () => {
     // Only run on client side
@@ -113,6 +120,7 @@ const useAuthStore = create<AuthState>((set) => ({
       isAdmin: user?.role === "ADMIN",
       isHost: user?.role === "HOST",
       isHostOrAdmin: user?.role === "HOST" || user?.role === "ADMIN",
+      actingHostId: window.localStorage.getItem(ACTING_HOST_STORAGE_KEY),
       isLoading: false,
     });
   },
@@ -137,6 +145,14 @@ const useAuthStore = create<AuthState>((set) => ({
     return response.user;
   },
 
+  setActingHost: (id: string | null) => {
+    if (typeof window !== "undefined") {
+      if (id) window.localStorage.setItem(ACTING_HOST_STORAGE_KEY, id);
+      else window.localStorage.removeItem(ACTING_HOST_STORAGE_KEY);
+    }
+    set({ actingHostId: id });
+  },
+
   logout: async () => {
     try {
       const refreshToken = auth.getRefreshToken();
@@ -148,6 +164,9 @@ const useAuthStore = create<AuthState>((set) => ({
     } finally {
       inFlightRefresh = null;
       auth.clearAuth();
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(ACTING_HOST_STORAGE_KEY);
+      }
       set({
         user: null,
         token: null,
@@ -155,6 +174,7 @@ const useAuthStore = create<AuthState>((set) => ({
         isAdmin: false,
         isHost: false,
         isHostOrAdmin: false,
+        actingHostId: null,
       });
     }
   },
