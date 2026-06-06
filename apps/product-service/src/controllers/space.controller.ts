@@ -86,6 +86,82 @@ type AvailabilityInput = {
   isOpen: boolean;
 };
 
+// AUD-008: pricing tiers come in over a JSON body with no schema validation
+// at the route level, so callers can sneak zero or negative `minutes` /
+// `price`, NaN, oversized arrays, or empty labels into the DB. Cap the count
+// so a buggy/abusive client can't fan out a thousand tiers per space.
+const PRICING_TIER_MAX_COUNT = 20;
+const PRICING_TIER_LABEL_MAX_LENGTH = 80;
+
+export type PricingTierInput = {
+  minutes: number;
+  label: string;
+  price: number;
+};
+
+export const validatePricingTiers = (
+  tiers: unknown,
+):
+  | { ok: true; value: PricingTierInput[] }
+  | { ok: false; message: string } => {
+  if (!Array.isArray(tiers)) {
+    return { ok: false, message: "pricingTiers must be an array" };
+  }
+  if (tiers.length > PRICING_TIER_MAX_COUNT) {
+    return {
+      ok: false,
+      message: `pricingTiers must contain at most ${PRICING_TIER_MAX_COUNT} entries`,
+    };
+  }
+  const value: PricingTierInput[] = [];
+  for (const raw of tiers) {
+    if (!raw || typeof raw !== "object") {
+      return { ok: false, message: "pricingTiers entries must be objects" };
+    }
+    const minutes = (raw as { minutes?: unknown }).minutes;
+    const price = (raw as { price?: unknown }).price;
+    const label = (raw as { label?: unknown }).label;
+    if (!Number.isInteger(minutes) || (minutes as number) <= 0) {
+      return {
+        ok: false,
+        message: "pricingTiers.minutes must be a positive integer",
+      };
+    }
+    if (
+      typeof price !== "number" ||
+      !Number.isFinite(price) ||
+      price < 0
+    ) {
+      return {
+        ok: false,
+        message: "pricingTiers.price must be a finite number >= 0",
+      };
+    }
+    if (typeof label !== "string") {
+      return { ok: false, message: "pricingTiers.label must be a string" };
+    }
+    const trimmedLabel = label.trim();
+    if (trimmedLabel.length === 0) {
+      return {
+        ok: false,
+        message: "pricingTiers.label must not be empty",
+      };
+    }
+    if (label.length > PRICING_TIER_LABEL_MAX_LENGTH) {
+      return {
+        ok: false,
+        message: `pricingTiers.label must be at most ${PRICING_TIER_LABEL_MAX_LENGTH} characters`,
+      };
+    }
+    value.push({
+      minutes: minutes as number,
+      label: trimmedLabel,
+      price,
+    });
+  }
+  return { ok: true, value };
+};
+
 const normalizeAvailability = (
   value: unknown,
 ): { availability: AvailabilityInput[] } | { message: string } => {
@@ -204,6 +280,20 @@ export const getSpaces = async (req: Request, res: Response) => {
         break;
     }
   }
+  // AUD-026: clients that use the verbose ?sortBy=averageRating&sortOrder=...
+  // form previously fell through to the SORT_FIELDS whitelist (which only
+  // contains real Prisma columns) and silently degraded to createdAt. Detect
+  // the synonym here so it routes into the same raw SQL branch as
+  // sort=rating. Don't add it to SORT_FIELDS — Prisma's orderBy can't handle
+  // a computed avg(reviews.rating). sortOrder is still honored below.
+  if (
+    resolvedSortBy === "averageRating" ||
+    resolvedSortBy === "rating"
+  ) {
+    sortByRating = true;
+    resolvedSortBy = "createdAt"; // fallback for SORT_FIELDS check; the
+    // sortByRating branch takes precedence and ignores this.
+  }
   if (!SORT_FIELDS.has(resolvedSortBy)) {
     resolvedSortBy = "createdAt";
   }
@@ -314,6 +404,10 @@ export const getSpaces = async (req: Request, res: Response) => {
 
   const where: Prisma.SpaceWhereInput = {
     isActive: true,
+    // AUD-007: hide spaces whose host has been soft-deleted from public lists
+    // so the (former) host's PII (name/image/bio) doesn't leak via the host
+    // include below. Layered on top of any venue/bbox filter further down.
+    host: { deletedAt: null },
     ...(hasValidBbox
       ? {
           venue: {
@@ -404,6 +498,8 @@ export const getSpaces = async (req: Request, res: Response) => {
     // resolves the ordered page of ids, then re-fetch with the full
     // include shape so the response stays consistent with other sorts.
     // NULLS LAST keeps unrated spaces at the bottom of a desc sort.
+    // AUD-026: honor sortOrder=asc as well; use NULLS LAST/FIRST consistently
+    // so unrated spaces always sink to the bottom regardless of direction.
     const candidateIdRows = await prisma.space.findMany({
       where,
       select: { id: true },
@@ -413,15 +509,26 @@ export const getSpaces = async (req: Request, res: Response) => {
 
     let orderedIds: number[] = [];
     if (candidateIds.length > 0) {
-      const rows = await prisma.$queryRaw<
-        Array<{ id: number }>
-      >`SELECT s."id" AS id
-        FROM "Space" s
-        LEFT JOIN "Review" r ON r."spaceId" = s."id"
-        WHERE s."id" IN (${Prisma.join(candidateIds)})
-        GROUP BY s."id"
-        ORDER BY AVG(r."rating") DESC NULLS LAST, s."id" DESC
-        LIMIT ${limitNum} OFFSET ${skip}`;
+      const ascending = resolvedSortOrder === "asc";
+      const rows = ascending
+        ? await prisma.$queryRaw<
+            Array<{ id: number }>
+          >`SELECT s."id" AS id
+            FROM "Space" s
+            LEFT JOIN "Review" r ON r."spaceId" = s."id"
+            WHERE s."id" IN (${Prisma.join(candidateIds)})
+            GROUP BY s."id"
+            ORDER BY AVG(r."rating") ASC NULLS LAST, s."id" ASC
+            LIMIT ${limitNum} OFFSET ${skip}`
+        : await prisma.$queryRaw<
+            Array<{ id: number }>
+          >`SELECT s."id" AS id
+            FROM "Space" s
+            LEFT JOIN "Review" r ON r."spaceId" = s."id"
+            WHERE s."id" IN (${Prisma.join(candidateIds)})
+            GROUP BY s."id"
+            ORDER BY AVG(r."rating") DESC NULLS LAST, s."id" DESC
+            LIMIT ${limitNum} OFFSET ${skip}`;
       orderedIds = rows.map((r) => r.id);
     }
 
@@ -499,8 +606,14 @@ export const getSpace = async (req: Request, res: Response) => {
   if (Number.isNaN(spaceId))
     return res.status(400).json({ message: "Invalid ID" });
 
-  const space = await prisma.space.findUnique({
-    where: { id: spaceId },
+  // AUD-007: this route is public. If the host has been soft-deleted
+  // (deletedAt not null) we must return 404 so the included `host` block
+  // doesn't leak the (former) host's name/bio/image via a direct link.
+  // findFirst + relation filter never returns the row in that case; we
+  // 404 with the same generic message used for missing spaces so deletion
+  // isn't a side channel.
+  const space = await prisma.space.findFirst({
+    where: { id: spaceId, host: { deletedAt: null } },
     include: {
       category: true,
       venue: venueInclude,
@@ -589,6 +702,18 @@ export const createSpace = async (req: Request, res: Response) => {
       .json({ message: "videoUrl must be a valid YouTube URL" });
   }
 
+  // AUD-008: validate pricing tiers before opening a transaction. Reject
+  // zero/negative minutes & negative prices so hosts can't accidentally
+  // (or maliciously) publish a "1 minute for free" tier.
+  let normalizedPricingTiers: PricingTierInput[] | null = null;
+  if (pricingTiers !== undefined) {
+    const tierResult = validatePricingTiers(pricingTiers);
+    if (!tierResult.ok) {
+      return res.status(400).json({ message: tierResult.message });
+    }
+    normalizedPricingTiers = tierResult.value;
+  }
+
   if (!venueId) {
     return res.status(400).json({ message: "venueId is required" });
   }
@@ -654,16 +779,14 @@ export const createSpace = async (req: Request, res: Response) => {
       },
     });
 
-    if (Array.isArray(pricingTiers) && pricingTiers.length > 0) {
+    if (normalizedPricingTiers && normalizedPricingTiers.length > 0) {
       await tx.pricingTier.createMany({
-        data: pricingTiers.map(
-          (tier: { minutes: number; label: string; price: number }) => ({
-            spaceId: created.id,
-            minutes: tier.minutes,
-            label: tier.label,
-            price: tier.price,
-          }),
-        ),
+        data: normalizedPricingTiers.map((tier) => ({
+          spaceId: created.id,
+          minutes: tier.minutes,
+          label: tier.label,
+          price: tier.price,
+        })),
       });
     }
 
@@ -720,6 +843,18 @@ export const updateSpace = async (req: Request, res: Response) => {
 
   if (availabilityResult && "message" in availabilityResult) {
     return res.status(400).json({ message: availabilityResult.message });
+  }
+
+  // AUD-008: validate pricing tiers up front so we don't open a transaction
+  // and delete the existing tiers before discovering the new payload is
+  // garbage.
+  let normalizedPricingTiers: PricingTierInput[] | null = null;
+  if (pricingTiers !== undefined) {
+    const tierResult = validatePricingTiers(pricingTiers);
+    if (!tierResult.ok) {
+      return res.status(400).json({ message: tierResult.message });
+    }
+    normalizedPricingTiers = tierResult.value;
   }
 
   // Whitelist allowed update fields to prevent mass assignment
@@ -826,11 +961,11 @@ export const updateSpace = async (req: Request, res: Response) => {
       }
     }
 
-    if (pricingTiers !== undefined) {
+    if (normalizedPricingTiers !== null) {
       await tx.pricingTier.deleteMany({ where: { spaceId } });
-      if (Array.isArray(pricingTiers) && pricingTiers.length > 0) {
+      if (normalizedPricingTiers.length > 0) {
         await tx.pricingTier.createMany({
-          data: pricingTiers.map((t: any) => ({
+          data: normalizedPricingTiers.map((t) => ({
             spaceId,
             minutes: t.minutes,
             label: t.label,
@@ -1092,10 +1227,23 @@ export const updateAvailability = async (req: Request, res: Response) => {
 
   // PRODSVC-013: notify downstream consumers (search reindexer, client
   // cache invalidation) that the space has changed. Without this they
-  // serve stale availability after a host updates their schedule. Match
-  // the fire-and-forget pattern used by createSpace/updateSpace/deleteSpace
-  // in this file — kafka durability is handled inside the producer.
-  producer.send("space.updated", { value: { id: spaceId } });
+  // serve stale availability after a host updates their schedule.
+  // AUD-035: await + try/catch the publish to match the sibling handlers
+  // in this file (createSpace/updateSpace/deleteSpace). A throwing producer
+  // would otherwise produce an unhandled promise rejection and could crash
+  // the worker; we log and continue because the DB write has already
+  // committed and the response should not fail.
+  // TODO(KAFKA-001 follow-up): transactional outbox.
+  try {
+    await producer.send("space.updated", { value: { id: spaceId } });
+  } catch (err) {
+    console.error(
+      "Failed to publish space.updated event for space",
+      spaceId,
+      "- availability updated but search/cache will be stale until reconciled:",
+      err instanceof Error ? err.message : err
+    );
+  }
 
   res.status(200).json({ message: "Availability updated" });
 };

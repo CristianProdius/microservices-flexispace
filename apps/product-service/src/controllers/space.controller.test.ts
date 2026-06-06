@@ -61,6 +61,7 @@ const {
   getSpaces,
   checkAvailability,
   updateAvailability,
+  validatePricingTiers,
 } = await import("./space.controller.js");
 
 type AnyMock = Mock;
@@ -298,5 +299,165 @@ describe("updateAvailability - PRODSVC-013 emits space.updated", () => {
     );
     expect(res.statusCode).toBe(403);
     expect(producer.send).not.toHaveBeenCalled();
+  });
+
+  // AUD-035: producer.send is now awaited inside a try/catch so a broker
+  // outage cannot reject the response promise / crash the worker.
+  it("logs and continues when producer.send rejects (AUD-035)", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 42,
+      hostId: "user-1",
+    });
+    (producer.send as AnyMock).mockRejectedValueOnce(
+      new Error("kafka down"),
+    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    const fullWeek = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+      dayOfWeek,
+      startTime: "09:00",
+      endTime: "18:00",
+      isOpen: true,
+    }));
+    await updateAvailability(
+      buildReq({
+        params: { id: "42" },
+        body: { availability: fullWeek, blockedDates: [] },
+      }),
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(producer.send).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+});
+
+describe("getSpaces - AUD-026 sortBy=averageRating", () => {
+  it("routes ?sortBy=averageRating into the raw SQL rating branch", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock)
+      .mockResolvedValueOnce([{ id: 11 }, { id: 22 }])
+      .mockResolvedValueOnce([
+        { id: 11, venue: null },
+        { id: 22, venue: null },
+      ]);
+    (prisma.$queryRaw as AnyMock).mockResolvedValueOnce([
+      { id: 22 },
+      { id: 11 },
+    ]);
+
+    await getSpaces(
+      buildReq({
+        query: { sortBy: "averageRating", sortOrder: "desc" },
+      }),
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+    const body = (res.body as { spaces: Array<{ id: number }> }).spaces;
+    expect(body.map((s) => s.id)).toEqual([22, 11]);
+  });
+
+  it("honors sortOrder=asc in the rating branch", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock)
+      .mockResolvedValueOnce([{ id: 11 }, { id: 22 }])
+      .mockResolvedValueOnce([
+        { id: 11, venue: null },
+        { id: 22, venue: null },
+      ]);
+    (prisma.$queryRaw as AnyMock).mockResolvedValueOnce([
+      { id: 11 },
+      { id: 22 },
+    ]);
+
+    await getSpaces(
+      buildReq({
+        query: { sortBy: "averageRating", sortOrder: "asc" },
+      }),
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("validatePricingTiers - AUD-008", () => {
+  it("accepts well-formed tiers", () => {
+    const result = validatePricingTiers([
+      { minutes: 30, label: "Half hour", price: 10 },
+      { minutes: 60, label: "Hour", price: 18 },
+    ]);
+    expect(result).toEqual({
+      ok: true,
+      value: [
+        { minutes: 30, label: "Half hour", price: 10 },
+        { minutes: 60, label: "Hour", price: 18 },
+      ],
+    });
+  });
+
+  it("rejects non-array input", () => {
+    expect(validatePricingTiers("nope")).toEqual({
+      ok: false,
+      message: expect.stringContaining("array") as unknown as string,
+    });
+  });
+
+  it("rejects zero or negative minutes", () => {
+    const zero = validatePricingTiers([
+      { minutes: 0, label: "free", price: 1 },
+    ]);
+    expect(zero.ok).toBe(false);
+    const neg = validatePricingTiers([
+      { minutes: -5, label: "free", price: 1 },
+    ]);
+    expect(neg.ok).toBe(false);
+  });
+
+  it("rejects non-integer minutes", () => {
+    expect(
+      validatePricingTiers([{ minutes: 1.5, label: "ok", price: 1 }]).ok,
+    ).toBe(false);
+  });
+
+  it("rejects negative or non-finite price", () => {
+    expect(
+      validatePricingTiers([{ minutes: 30, label: "ok", price: -1 }]).ok,
+    ).toBe(false);
+    expect(
+      validatePricingTiers([{ minutes: 30, label: "ok", price: NaN }]).ok,
+    ).toBe(false);
+    expect(
+      validatePricingTiers([{ minutes: 30, label: "ok", price: Infinity }])
+        .ok,
+    ).toBe(false);
+  });
+
+  it("rejects empty / oversized labels", () => {
+    expect(
+      validatePricingTiers([{ minutes: 30, label: "   ", price: 1 }]).ok,
+    ).toBe(false);
+    expect(
+      validatePricingTiers([
+        { minutes: 30, label: "a".repeat(81), price: 1 },
+      ]).ok,
+    ).toBe(false);
+  });
+
+  it("caps tier count at 20", () => {
+    const tiers = Array.from({ length: 21 }, (_, i) => ({
+      minutes: (i + 1) * 15,
+      label: `t${i}`,
+      price: 1,
+    }));
+    expect(validatePricingTiers(tiers).ok).toBe(false);
   });
 });

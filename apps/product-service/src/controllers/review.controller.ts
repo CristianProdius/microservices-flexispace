@@ -5,6 +5,33 @@ import { parsePositiveInteger, parsePositiveIntegerWithDefault, parseRating } fr
 const COMMENT_MAX_LENGTH = 5000;
 const HOST_RESPONSE_MAX_LENGTH = 2000;
 
+// AUD-019: createReview already validates comment type/length, but
+// updateReview previously spread the raw body straight into Prisma — so a
+// guest could PATCH `{ comment: null }` (clears the column), `{ comment: 42 }`
+// (Prisma throws a 500 on type mismatch) or `{ comment: "x".repeat(1e6) }`
+// (no upper bound). Share one validator so future review-write paths get the
+// same shape.
+type CommentValidation =
+  | { ok: true; value: string }
+  | { ok: false; message: string };
+
+const validateComment = (raw: unknown): CommentValidation => {
+  if (typeof raw !== "string") {
+    return { ok: false, message: "comment is required" };
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return { ok: false, message: "comment must not be empty" };
+  }
+  if (trimmed.length > COMMENT_MAX_LENGTH) {
+    return {
+      ok: false,
+      message: `comment must be at most ${COMMENT_MAX_LENGTH} characters`,
+    };
+  }
+  return { ok: true, value: trimmed };
+};
+
 export const createReview = async (req: Request, res: Response) => {
   const id = req.params.id as string; // space ID
   const spaceId = parsePositiveInteger(id);
@@ -24,18 +51,11 @@ export const createReview = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Rating must be between 1 and 5" });
   }
 
-  if (typeof comment !== "string") {
-    return res.status(400).json({ message: "comment is required" });
+  const commentResult = validateComment(comment);
+  if (!commentResult.ok) {
+    return res.status(400).json({ message: commentResult.message });
   }
-  const trimmedComment = comment.trim();
-  if (trimmedComment.length === 0) {
-    return res.status(400).json({ message: "comment must not be empty" });
-  }
-  if (trimmedComment.length > COMMENT_MAX_LENGTH) {
-    return res
-      .status(400)
-      .json({ message: `comment must be at most ${COMMENT_MAX_LENGTH} characters` });
-  }
+  const trimmedComment = commentResult.value;
 
   // Check if space exists
   const space = await prisma.space.findUnique({
@@ -172,6 +192,18 @@ export const updateReview = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Rating must be between 1 and 5" });
   }
 
+  // AUD-019: validate `comment` only when it's explicitly provided so callers
+  // can still PATCH just `rating` without losing or corrupting the existing
+  // comment. When supplied, run the same checks as createReview.
+  let normalizedComment: string | undefined;
+  if (comment !== undefined) {
+    const commentResult = validateComment(comment);
+    if (!commentResult.ok) {
+      return res.status(400).json({ message: commentResult.message });
+    }
+    normalizedComment = commentResult.value;
+  }
+
   const review = await prisma.review.findUnique({
     where: { id: reviewIdNum },
   });
@@ -188,7 +220,7 @@ export const updateReview = async (req: Request, res: Response) => {
     where: { id: reviewIdNum },
     data: {
       ...(rating !== undefined && { rating }),
-      ...(comment !== undefined && { comment }),
+      ...(normalizedComment !== undefined && { comment: normalizedComment }),
     },
     include: {
       user: {
@@ -264,7 +296,13 @@ export const respondToReview = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Review not found" });
   }
 
-  if (review.space.hostId !== hostId && req.user?.role !== "ADMIN") {
+  // AUD-009: when admin is acting as a specific host (actingHostId is set
+  // by resolveActingHost middleware), the blanket ADMIN override is
+  // suspended — they must own the resource AS that host. Same shape as
+  // order-service/booking.ts and the venue/space controllers in this app.
+  const adminOverride =
+    req.user?.role === "ADMIN" && req.actingHostId === undefined;
+  if (review.space.hostId !== hostId && !adminOverride) {
     return res.status(403).json({ message: "Not authorized to respond to this review" });
   }
 

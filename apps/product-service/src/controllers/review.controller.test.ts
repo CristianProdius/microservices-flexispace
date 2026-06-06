@@ -93,6 +93,156 @@ describe("review controller validation", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Rating must be between 1 and 5" });
     expect(mocks.reviewUpdate).not.toHaveBeenCalled();
   });
+
+  // AUD-019: updateReview now validates `comment` when supplied so callers
+  // cannot wipe / type-poison / blow up the column.
+  it("rejects null comment on update before touching Prisma (AUD-019)", async () => {
+    const req = {
+      body: { comment: null },
+      params: { reviewId: "10" },
+      user: { role: "USER" },
+      userId: "user-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "comment is required" });
+    expect(mocks.reviewFindUnique).not.toHaveBeenCalled();
+    expect(mocks.reviewUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects comment > 5000 chars on update (AUD-019)", async () => {
+    const req = {
+      body: { comment: "x".repeat(5001) },
+      params: { reviewId: "10" },
+      user: { role: "USER" },
+      userId: "user-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(mocks.reviewUpdate).not.toHaveBeenCalled();
+  });
+
+  it("trims comment on update and forwards to Prisma (AUD-019)", async () => {
+    mocks.reviewFindUnique.mockResolvedValue({
+      id: 10,
+      rating: 4,
+      userId: "user-1",
+    });
+    mocks.reviewUpdate.mockResolvedValue({ id: 10 });
+    const req = {
+      body: { comment: "  updated text  " },
+      params: { reviewId: "10" },
+      user: { role: "USER" },
+      userId: "user-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mocks.reviewUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ comment: "updated text" }),
+      }),
+    );
+  });
+
+  it("still allows rating-only patches without touching comment (AUD-019)", async () => {
+    mocks.reviewFindUnique.mockResolvedValue({
+      id: 10,
+      rating: 4,
+      userId: "user-1",
+    });
+    mocks.reviewUpdate.mockResolvedValue({ id: 10 });
+    const req = {
+      body: { rating: 5 },
+      params: { reviewId: "10" },
+      user: { role: "USER" },
+      userId: "user-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const call = mocks.reviewUpdate.mock.calls[0]?.[0] as {
+      data: Record<string, unknown>;
+    };
+    expect(call.data).not.toHaveProperty("comment");
+    expect(call.data).toHaveProperty("rating", 5);
+  });
+});
+
+describe("respondToReview admin override (AUD-009)", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("allows ADMIN to respond when NOT impersonating a host", async () => {
+    mocks.reviewFindUnique.mockResolvedValueOnce({
+      id: 1,
+      space: { hostId: "host-1" },
+    });
+    mocks.reviewUpdate.mockResolvedValueOnce({ id: 1 });
+    const req = {
+      body: { response: "Sorry for the trouble." },
+      params: { reviewId: "1" },
+      userId: "admin-99",
+      user: { role: "ADMIN" },
+      // actingHostId intentionally undefined -> blanket override applies
+    } as unknown as Request;
+    const res = createResponse();
+
+    await respondToReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mocks.reviewUpdate).toHaveBeenCalled();
+  });
+
+  it("blocks ADMIN when impersonating a host they don't own (AUD-009)", async () => {
+    mocks.reviewFindUnique.mockResolvedValueOnce({
+      id: 1,
+      space: { hostId: "host-1" },
+    });
+    const req = {
+      body: { response: "Sorry for the trouble." },
+      params: { reviewId: "1" },
+      userId: "admin-99",
+      user: { role: "ADMIN" },
+      actingHostId: "host-2", // not the owner -> override suspended
+    } as unknown as Request;
+    const res = createResponse();
+
+    await respondToReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(mocks.reviewUpdate).not.toHaveBeenCalled();
+  });
+
+  it("still blocks non-host non-admin (AUD-009 regression)", async () => {
+    mocks.reviewFindUnique.mockResolvedValueOnce({
+      id: 1,
+      space: { hostId: "host-1" },
+    });
+    const req = {
+      body: { response: "Sorry for the trouble." },
+      params: { reviewId: "1" },
+      userId: "user-99",
+      user: { role: "USER" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await respondToReview(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(mocks.reviewUpdate).not.toHaveBeenCalled();
+  });
 });
 
 describe("createReview input validation (PRODSVC-005)", () => {

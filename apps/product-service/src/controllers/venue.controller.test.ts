@@ -1,6 +1,11 @@
 import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createVenue, updateVenue } from "./venue.controller.js";
+import {
+  createVenue,
+  getVenue,
+  getVenueCountsByHost,
+  updateVenue,
+} from "./venue.controller.js";
 
 const mocks = vi.hoisted(() => {
   const prisma = {
@@ -11,7 +16,9 @@ const mocks = vi.hoisted(() => {
     venue: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
+      groupBy: vi.fn(),
     },
   };
   return {
@@ -20,7 +27,9 @@ const mocks = vi.hoisted(() => {
     spaceUpdateMany: prisma.space.updateMany,
     venueCreate: prisma.venue.create,
     venueFindUnique: prisma.venue.findUnique,
+    venueFindFirst: prisma.venue.findFirst,
     venueUpdate: prisma.venue.update,
+    venueGroupBy: prisma.venue.groupBy,
   };
 });
 
@@ -172,5 +181,76 @@ describe("venue controller contract", () => {
       where: { id: 7 },
       data: expect.objectContaining({ workingHours }),
     });
+  });
+});
+
+describe("getVenue host PII filter (AUD-006)", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("queries findFirst with host.deletedAt:null relation filter", async () => {
+    mocks.venueFindFirst.mockResolvedValueOnce({
+      id: 5,
+      isActive: true,
+      name: "ok",
+      host: { id: "host-1", name: "Host" },
+      spaces: [],
+    });
+    const req = {
+      params: { id: "5" },
+      query: {},
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getVenue(req, res);
+
+    expect(mocks.venueFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 5, host: { deletedAt: null } },
+      }),
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("returns the same 404 message when the host has been soft-deleted", async () => {
+    // findFirst returns null because the relation filter excludes the row.
+    mocks.venueFindFirst.mockResolvedValueOnce(null);
+    const req = {
+      params: { id: "5" },
+      query: {},
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "Venue not found" });
+  });
+});
+
+describe("getVenueCountsByHost filters (AUD-020)", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("excludes inactive venues and soft-deleted hosts", async () => {
+    mocks.venueGroupBy.mockResolvedValueOnce([
+      { hostId: "host-1", _count: { _all: 3 } },
+    ]);
+    const req = {} as unknown as Request;
+    const res = createResponse();
+
+    await getVenueCountsByHost(req, res);
+
+    expect(mocks.venueGroupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { isActive: true, host: { deletedAt: null } },
+      }),
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith([
+      { hostId: "host-1", count: 3 },
+    ]);
   });
 });

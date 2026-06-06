@@ -38,8 +38,13 @@ export const getMyVenues = async (req: Request, res: Response) => {
 export const getVenue = async (req: Request, res: Response) => {
   const venueId = parseInt(req.params.id as string, 10);
   if (Number.isNaN(venueId)) return res.status(400).json({ message: "Invalid ID" });
-  const venue = await prisma.venue.findUnique({
-    where: { id: venueId },
+  // AUD-006: this route is public; if the host was soft-deleted (deletedAt
+  // not null) we must hide the venue rather than leak the (former) host's
+  // name/bio/image. Use findFirst with a relation filter so the row never
+  // returns if the host is tombstoned. Return the same 404 message in both
+  // cases so we don't expose host deletion as a side channel.
+  const venue = await prisma.venue.findFirst({
+    where: { id: venueId, host: { deletedAt: null } },
     include: {
       host: {
         select: {
@@ -270,8 +275,13 @@ export const deleteVenue = async (req: Request, res: Response) => {
 };
 
 export const getVenueCountsByHost = async (_req: Request, res: Response) => {
+  // AUD-020: exclude inactive (soft-deleted) venues and venues whose host is
+  // soft-deleted so admin dashboards don't see ghost counts. The previous
+  // unfiltered groupBy made it look like tombstoned hosts still owned active
+  // inventory.
   const grouped = await prisma.venue.groupBy({
     by: ["hostId"],
+    where: { isActive: true, host: { deletedAt: null } },
     _count: { _all: true },
   });
   const payload = grouped.map((row) => ({
