@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   AlertCircle,
   Building2,
@@ -44,25 +45,24 @@ interface HostBookingSummary {
 
 const HostDashboardPage = () => {
   const router = useRouter();
-  const { getToken, user } = useAuthStore();
+  const { actingHostId, user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
+      let spacesRes: Response;
+      try {
+        spacesRes = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/host/my`,
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
       }
-
-      const spacesRes = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/host/my`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
-        },
-      );
 
       if (spacesRes.status === 401) {
         router.push("/login");
@@ -73,12 +73,18 @@ const HostDashboardPage = () => {
         ? await spacesRes.json()
         : [];
 
-      const bookingsRes = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
-        },
-      );
+      let bookingsRes: Response;
+      try {
+        bookingsRes = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`,
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
+      }
 
       if (bookingsRes.status === 401) {
         router.push("/login");
@@ -125,7 +131,7 @@ const HostDashboardPage = () => {
       console.error("Error fetching dashboard stats:", error);
     }
     setLoading(false);
-  }, [getToken, router]);
+  }, [actingHostId, router]);
 
   useEffect(() => {
     fetchStats();

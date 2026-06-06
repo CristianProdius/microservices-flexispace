@@ -4,7 +4,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockStore = vi.fn();
-const getToken = vi.fn();
 const push = vi.fn();
 const router = { push };
 const createDeferred = <T,>() => {
@@ -19,6 +18,19 @@ const createDeferred = <T,>() => {
 vi.mock("@/stores/authStore", () => ({
   default: () => mockStore(),
 }));
+
+vi.mock("@/lib/apiFetch", () => {
+  class UnauthenticatedError extends Error {
+    constructor() {
+      super("Unauthenticated");
+      this.name = "UnauthenticatedError";
+    }
+  }
+  return {
+    UnauthenticatedError,
+    apiFetch: (input: string, init?: RequestInit) => fetch(input, init),
+  };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -58,11 +70,9 @@ describe("host dashboard page", () => {
 
   beforeEach(() => {
     mockStore.mockReset();
-    getToken.mockReset();
-    getToken.mockResolvedValue("test-token");
     push.mockReset();
     mockStore.mockReturnValue({
-      getToken,
+      actingHostId: null,
       user: { name: "Cristian Prodius" },
     });
 

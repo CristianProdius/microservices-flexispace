@@ -13,13 +13,30 @@ import {
 } from "vitest";
 
 const mockStore = vi.fn();
-const getToken = vi.fn();
 const push = vi.fn();
 const router = { push };
 
 vi.mock("@/stores/authStore", () => ({
   default: () => mockStore(),
 }));
+
+const apiFetchMock = vi.fn((input: string, init?: RequestInit) =>
+  fetch(input, init)
+);
+
+vi.mock("@/lib/apiFetch", () => {
+  class UnauthenticatedError extends Error {
+    constructor() {
+      super("Unauthenticated");
+      this.name = "UnauthenticatedError";
+    }
+  }
+  return {
+    UnauthenticatedError,
+    apiFetch: (...args: Parameters<typeof apiFetchMock>) =>
+      apiFetchMock(...args),
+  };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -77,12 +94,13 @@ describe("host spaces page", () => {
 
   beforeEach(() => {
     mockStore.mockReset();
-    getToken.mockReset();
-    getToken.mockResolvedValue("test-token");
     push.mockReset();
+    apiFetchMock.mockReset();
+    apiFetchMock.mockImplementation((input: string, init?: RequestInit) =>
+      fetch(input, init)
+    );
     mockStore.mockReturnValue({
-      getToken,
-      token: "stale-token",
+      actingHostId: null,
     });
 
     container = document.createElement("div");
@@ -225,13 +243,14 @@ describe("host spaces page", () => {
     ).toBe(false);
   });
 
-  it("refreshes the access token before loading host spaces", async () => {
-    getToken.mockResolvedValue("fresh-token");
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    });
-    vi.stubGlobal("fetch", fetchMock);
+  it("calls apiFetch for the host spaces endpoint", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [],
+      }),
+    );
 
     const pageModule = await import("./page");
 
@@ -244,12 +263,8 @@ describe("host spaces page", () => {
       await Promise.resolve();
     });
 
-    expect(getToken).toHaveBeenCalled();
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(apiFetchMock).toHaveBeenCalledWith(
       expect.stringContaining("/spaces/host/my"),
-      expect.objectContaining({
-        headers: { Authorization: "Bearer fresh-token" },
-      }),
     );
   });
 });

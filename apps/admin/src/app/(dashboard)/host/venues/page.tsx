@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   Hotel,
   MapPin,
@@ -38,7 +39,7 @@ interface Venue {
 
 const HostVenuesPage = () => {
   const router = useRouter();
-  const { getToken } = useAuthStore();
+  const { actingHostId } = useAuthStore();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,19 +49,18 @@ const HostVenuesPage = () => {
     setError(null);
     setLoading(true);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/venues/host/my`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/venues/host/my`
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
       if (res.ok) {
         const data = await res.json();
         setVenues(data);
@@ -76,7 +76,7 @@ const HostVenuesPage = () => {
       );
     }
     setLoading(false);
-  }, [getToken, router]);
+  }, [actingHostId, router]);
 
   useEffect(() => {
     fetchVenues();
@@ -86,20 +86,19 @@ const HostVenuesPage = () => {
     if (!confirm("Are you sure you want to delete this venue?")) return;
 
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/venues/${venueId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/venues/${venueId}`,
+          { method: "DELETE" }
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
 
       if (res.ok) {
         setVenues((prev) => prev.filter((venue) => venue.id !== venueId));

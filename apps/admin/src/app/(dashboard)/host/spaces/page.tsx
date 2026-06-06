@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   BadgeCheck,
   Building2,
@@ -51,7 +52,7 @@ interface Space {
 
 const HostSpacesPage = () => {
   const router = useRouter();
-  const { getToken } = useAuthStore();
+  const { actingHostId } = useAuthStore();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,19 +62,18 @@ const HostSpacesPage = () => {
     setError(null);
     setLoading(true);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/host/my`,
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
       }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/host/my`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
-        },
-      );
       if (res.ok) {
         const data = await res.json();
         setSpaces(data);
@@ -89,7 +89,7 @@ const HostSpacesPage = () => {
       );
     }
     setLoading(false);
-  }, [getToken, router]);
+  }, [actingHostId, router]);
 
   useEffect(() => {
     fetchSpaces();
@@ -97,24 +97,23 @@ const HostSpacesPage = () => {
 
   const toggleSpaceStatus = async (spaceId: number, currentStatus: boolean) => {
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/${spaceId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resolvedToken}`,
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/${spaceId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isActive: !currentStatus }),
           },
-          body: JSON.stringify({ isActive: !currentStatus }),
-        },
-      );
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
+      }
 
       if (res.ok) {
         setSpaces((prev) =>
@@ -140,20 +139,19 @@ const HostSpacesPage = () => {
     if (!confirm("Are you sure you want to delete this space?")) return;
 
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/${spaceId}`,
+          { method: "DELETE" },
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
       }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL}/spaces/${spaceId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${resolvedToken}` },
-        },
-      );
 
       if (res.ok) {
         setSpaces((prev) => prev.filter((space) => space.id !== spaceId));

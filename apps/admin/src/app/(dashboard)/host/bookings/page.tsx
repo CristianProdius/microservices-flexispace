@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   AlertCircle,
   Calendar,
@@ -80,7 +81,7 @@ const normalizeStatusFilter = (raw: string | null): string => {
 const HostBookingsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { getToken } = useAuthStore();
+  const { actingHostId } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,19 +123,18 @@ const HostBookingsPage = () => {
     setError(null);
     setLoading(true);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
       if (res.ok) {
         const data = await res.json();
         setBookings(data);
@@ -147,7 +147,7 @@ const HostBookingsPage = () => {
       setError("Booking service unavailable");
     }
     setLoading(false);
-  }, [getToken, router]);
+  }, [actingHostId, router]);
 
   useEffect(() => {
     fetchBookings();
@@ -175,20 +175,19 @@ const HostBookingsPage = () => {
     if (actionLoading.has(bookingId)) return;
     beginAction(bookingId);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/approve`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/approve`,
+          { method: "PUT" }
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
 
       if (res.ok) {
         setBookings((prev) =>
@@ -215,24 +214,23 @@ const HostBookingsPage = () => {
 
     beginAction(bookingId);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/reject`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resolvedToken}`,
-          },
-          body: JSON.stringify({ reason }),
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/reject`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason }),
+          }
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
 
       if (res.ok) {
         setBookings((prev) =>
@@ -257,20 +255,19 @@ const HostBookingsPage = () => {
     if (actionLoading.has(bookingId)) return;
     beginAction(bookingId);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/complete`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/${bookingId}/complete`,
+          { method: "PUT" }
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
 
       if (res.ok) {
         setBookings((prev) =>

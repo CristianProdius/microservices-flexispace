@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   Calendar,
   CheckCircle,
@@ -44,7 +45,7 @@ interface EarningsStats {
 
 const HostEarningsPage = () => {
   const router = useRouter();
-  const { getToken } = useAuthStore();
+  const { actingHostId } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<EarningsStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,21 +59,22 @@ const HostEarningsPage = () => {
     setError(null);
     setLoading(true);
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
       // Fetch the host's own commission rate from /auth/me alongside earnings.
       // /auth/me requires only a logged-in user (not admin), and the response
       // includes both the per-host override and the effective rate (override
       // falling back to the platform default).
-      const meRes = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/auth/me`,
-        { headers: { Authorization: `Bearer ${resolvedToken}` } }
-      );
+      let meRes: Response;
+      try {
+        meRes = await apiFetch(
+          `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/auth/me`
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
+      }
       if (meRes.ok) {
         const meBody = await meRes.json();
         setCommissionRate(
@@ -83,12 +85,18 @@ const HostEarningsPage = () => {
         setHasCommissionOverride(typeof meBody.commissionRate === "number");
       }
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`,
-        {
-          headers: { Authorization: `Bearer ${resolvedToken}` },
+      let res: Response;
+      try {
+        res = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host`
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
         }
-      );
+        throw err;
+      }
 
       if (res.status === 401) {
         router.push("/login");
@@ -144,7 +152,7 @@ const HostEarningsPage = () => {
       setError("Booking service unavailable");
     }
     setLoading(false);
-  }, [getToken, router]);
+  }, [actingHostId, router]);
 
   useEffect(() => {
     fetchEarnings();
