@@ -3,6 +3,7 @@ import {
   shouldBeAdmin,
   shouldBeUser,
   shouldBeHost,
+  resolveActingHost,
 } from "@repo/auth-middleware/fastify";
 import { prisma, BookingStatus, Prisma } from "@repo/db";
 import { startOfMonth, subMonths, differenceInDays } from "date-fns";
@@ -784,7 +785,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
   // Get bookings for host's spaces
   fastify.get(
     "/bookings/host",
-    { preHandler: shouldBeHost },
+    { preHandler: [shouldBeHost, resolveActingHost] },
     async (request, reply) => {
       const hostId = request.userId!;
       const { status, spaceId } = request.query as {
@@ -871,7 +872,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
   // Approve booking (Host)
   fastify.put(
     "/bookings/:id/approve",
-    { preHandler: shouldBeHost },
+    { preHandler: [shouldBeHost, resolveActingHost] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const hostId = request.userId!;
@@ -1059,7 +1060,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
   // Reject booking (Host)
   fastify.put(
     "/bookings/:id/reject",
-    { preHandler: shouldBeHost },
+    { preHandler: [shouldBeHost, resolveActingHost] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const hostId = request.userId!;
@@ -1258,7 +1259,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
   // Mark booking as completed (Host)
   fastify.put(
     "/bookings/:id/complete",
-    { preHandler: shouldBeHost },
+    { preHandler: [shouldBeHost, resolveActingHost] },
     async (request, reply) => {
       const { id } = request.params as { id: string };
       const hostId = request.userId!;
@@ -1532,7 +1533,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
   // Host earnings
   fastify.get(
     "/bookings/host/earnings",
-    { preHandler: shouldBeHost },
+    { preHandler: [shouldBeHost, resolveActingHost] },
     async (request, reply) => {
       const hostId = request.userId!;
 
