@@ -4,7 +4,9 @@ import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 import { isAccessTokenRevoked } from "./revocation.js";
-import { prisma } from "@repo/db";
+import { lookupActiveUser, invalidateUserCache } from "./userCache.js";
+
+export { invalidateUserCache };
 
 /**
  * Resolve the bearer token from the standard `Authorization` header or,
@@ -60,9 +62,30 @@ function attachUser(req: Request, payload: JwtPayload): void {
   req.userId = payload.userId;
 }
 
+/**
+ * AUD-005: re-check that the JWT's userId is still an active (non-deleted)
+ * user. JWTs are stateless so a soft-delete won't otherwise propagate until
+ * the access token expires. Cached via lookupActiveUser to keep this off the
+ * hot path.
+ */
+async function callerStillActive(
+  _req: Request,
+  res: Response,
+  payload: JwtPayload,
+): Promise<boolean> {
+  const active = await lookupActiveUser(payload.userId);
+  if (!active) {
+    res.status(401).json({ message: "Account no longer active" });
+    return false;
+  }
+  return true;
+}
+
 export async function shouldBeUser(req: Request, res: Response, next: NextFunction) {
   const payload = await authenticate(req, res);
   if (!payload) return;
+
+  if (!(await callerStillActive(req, res, payload))) return;
 
   attachUser(req, payload);
   return next();
@@ -76,6 +99,8 @@ export async function shouldBeAdmin(req: Request, res: Response, next: NextFunct
     return res.status(403).json({ message: "Admin access required" });
   }
 
+  if (!(await callerStillActive(req, res, payload))) return;
+
   attachUser(req, payload);
   return next();
 }
@@ -87,6 +112,8 @@ export async function shouldBeHost(req: Request, res: Response, next: NextFuncti
   if (!hasVerifiedHostAccess(payload)) {
     return res.status(403).json({ message: "Verified host access required" });
   }
+
+  if (!(await callerStillActive(req, res, payload))) return;
 
   attachUser(req, payload);
   return next();
@@ -100,6 +127,8 @@ export async function shouldBeHostOrAdmin(req: Request, res: Response, next: Nex
     return res.status(403).json({ message: "Verified host or Admin access required" });
   }
 
+  if (!(await callerStillActive(req, res, payload))) return;
+
   attachUser(req, payload);
   return next();
 }
@@ -111,12 +140,11 @@ export async function resolveActingHost(req: Request, res: Response, next: NextF
   // Only admins may impersonate; for everyone else the header is silently ignored.
   if (req.user?.role !== "ADMIN") return next();
 
-  const target = await prisma.user.findUnique({
-    where: { id: headerValue },
-    select: { id: true, role: true, deletedAt: true },
-  });
+  // AUD-021: cached lookup. Returns null for missing OR soft-deleted users —
+  // both collapse to the same 400 here, which matches prior behaviour.
+  const target = await lookupActiveUser(headerValue);
 
-  if (!target || target.deletedAt) {
+  if (!target) {
     return res.status(400).json({ message: "Invalid acting host" });
   }
   if (target.role !== "HOST" && target.role !== "ADMIN") {

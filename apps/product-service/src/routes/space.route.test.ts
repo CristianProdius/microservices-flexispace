@@ -6,7 +6,7 @@ import express, {
 } from "express";
 import { IncomingMessage, ServerResponse } from "node:http";
 import { Duplex } from "node:stream";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import spaceRouter from "./space.route.js";
 
 const mocks = vi.hoisted(() => ({
@@ -29,6 +29,11 @@ const mocks = vi.hoisted(() => ({
   spaceCategoryFindUnique: vi.fn(),
   update: vi.fn(),
   venueFindUnique: vi.fn(),
+  // AUD-005/021: `shouldBe*` middleware now calls `lookupActiveUser` which
+  // hits `prisma.user.findFirst({ id, deletedAt: null })`. Default returns
+  // a stub that lets the test's JWT-based auth context flow through; tests
+  // that need to assert "soft-deleted" behavior can override per-test.
+  userFindFirst: vi.fn(),
 }));
 
 // Mock prisma client shared between the module export and the `tx` argument
@@ -88,6 +93,9 @@ vi.mock("@repo/db", () => {
     },
     venue: {
       findUnique: mocks.venueFindUnique,
+    },
+    user: {
+      findFirst: mocks.userFindFirst,
     },
   });
   return {
@@ -287,6 +295,22 @@ const invokeApp = async (input: {
 describe("space routes", () => {
   beforeAll(() => {
     process.env.JWT_SECRET = "test-jwt-secret";
+  });
+
+  beforeEach(async () => {
+    // AUD-005/021: `shouldBe*` calls `lookupActiveUser` which queries
+    // `prisma.user.findFirst`. Default the mock to "active user with the
+    // role the JWT claims" so existing tests don't have to be aware of the
+    // active-user check; tests that need a soft-deleted path can override.
+    mocks.userFindFirst.mockImplementation(({ where }: any) =>
+      Promise.resolve({ id: where?.id ?? "user", role: "HOST" }),
+    );
+    // The cache is module-level; clear between tests so prior overrides
+    // don't bleed.
+    const { _clearUserCacheForTests } = await import(
+      "@repo/auth-middleware"
+    );
+    _clearUserCacheForTests();
   });
 
   afterEach(() => {

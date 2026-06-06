@@ -40,6 +40,16 @@ export {
   type RevocationChecker,
 } from "./revocation.js";
 
+// AUD-005/021: active-user lookup cache shared by `shouldBe*` and
+// `resolveActingHost`. Tests can clear the cache between cases via the
+// `_clearUserCacheForTests` helper.
+export {
+  lookupActiveUser,
+  invalidateUserCache,
+  _clearUserCacheForTests,
+  type ActiveUserRecord,
+} from "./userCache.js";
+
 // Express middleware
 export {
   shouldBeUser as shouldBeUserExpress,

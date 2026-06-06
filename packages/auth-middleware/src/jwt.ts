@@ -146,10 +146,17 @@ export function signPasswordResetToken(
   payload: Pick<PasswordResetTokenPayload, "userId" | "email">,
   options: { jti: string },
 ): string {
+  // AUD-004: pin algorithm + issuer on the sign side too so the verify
+  // helper (which now requires them) accepts these tokens.
   return jwt.sign(
     { ...payload, purpose: "password-reset" as const },
     getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
-    { expiresIn: JWT_PASSWORD_RESET_EXPIRES_IN, jwtid: options.jti },
+    {
+      algorithm: JWT_ALGORITHM,
+      issuer: JWT_ISSUER,
+      expiresIn: JWT_PASSWORD_RESET_EXPIRES_IN,
+      jwtid: options.jti,
+    },
   );
 }
 
@@ -157,9 +164,14 @@ export function verifyPasswordResetToken(
   token: string,
 ): PasswordResetTokenPayload | null {
   try {
+    // AUD-004: pin the algorithm and issuer so a token signed with a
+    // weaker/different alg (or by another issuer that happens to share the
+    // secret in a misconfig) cannot be accepted here. No audience claim is
+    // set on reset tokens (see signPasswordResetToken), so we don't pin one.
     const decoded = jwt.verify(
       token,
       getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
+      { algorithms: [JWT_ALGORITHM], issuer: JWT_ISSUER },
     ) as PasswordResetTokenPayload & { jti?: string };
     if (decoded.purpose !== "password-reset") return null;
     return decoded;
@@ -169,19 +181,26 @@ export function verifyPasswordResetToken(
 }
 
 /**
- * AUTHSVC-004: email-verification token. The `purpose` claim is checked on
- * verify so it cannot be substituted for an access token. Falls back to
- * JWT_SECRET when JWT_VERIFICATION_SECRET is not set, so existing
- * single-secret deployments keep working.
+ * AUTHSVC-004 / AUD-014: email-verification token. The `purpose` claim is
+ * checked on verify so it cannot be substituted for an access token.
+ *
+ * AUD-014: previously this silently fell back to JWT_SECRET when the
+ * verification-specific secret was unset, which meant a verification token
+ * forged with the access secret would validate here. We now require
+ * JWT_VERIFICATION_SECRET to be explicitly configured.
  */
 const getVerificationSecret = (): string => {
-  return process.env.JWT_VERIFICATION_SECRET || getRequiredEnv("JWT_SECRET");
+  return getRequiredEnv("JWT_VERIFICATION_SECRET");
 };
 
 export function signEmailVerificationToken(
   payload: Omit<PurposeTokenPayload, "iat" | "exp" | "purpose">,
 ): string {
+  // AUD-004: pin algorithm + issuer on the sign side so the verify helper
+  // (which now requires them) accepts these tokens.
   return jwt.sign({ ...payload, purpose: "email-verification" as const }, getVerificationSecret(), {
+    algorithm: JWT_ALGORITHM,
+    issuer: JWT_ISSUER,
     expiresIn: EMAIL_VERIFICATION_EXPIRES_IN,
     jwtid: randomUUID(),
   });
@@ -189,7 +208,13 @@ export function signEmailVerificationToken(
 
 export function verifyEmailVerificationToken(token: string): PurposeTokenPayload | null {
   try {
-    const decoded = jwt.verify(token, getVerificationSecret()) as PurposeTokenPayload;
+    // AUD-004: pin algorithm + issuer so a downgrade-attack token (e.g.
+    // alg=none) or a token from a different issuer reusing the secret is
+    // rejected. No audience set on these tokens.
+    const decoded = jwt.verify(token, getVerificationSecret(), {
+      algorithms: [JWT_ALGORITHM],
+      issuer: JWT_ISSUER,
+    }) as PurposeTokenPayload;
     if (decoded.purpose !== "email-verification") return null;
     return decoded;
   } catch {

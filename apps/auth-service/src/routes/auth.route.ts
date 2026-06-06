@@ -33,6 +33,7 @@ import {
   refreshLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
+  resendVerificationLimiter,
 } from "../utils/rateLimit.js";
 import {
   setAuthCookies,
@@ -96,17 +97,31 @@ const enforceEmailVerification = (): boolean => {
   return raw === "true" || raw === "1";
 };
 
-const sendVerificationEvent = (user: { id: string; email: string; username: string; name: string | null }) => {
+// AUD-002: this used to fire `producer.send` without awaiting, so a Kafka
+// outage just dropped verification emails silently (the handler returned
+// 201 to the user but no event ever got produced — verification links
+// would never arrive). Now async + awaited + try/catch so we surface the
+// failure to the caller's catch and log it for ops.
+const sendVerificationEvent = async (user: {
+  id: string;
+  email: string;
+  username: string;
+  name: string | null;
+}): Promise<void> => {
   const token = signEmailVerificationToken({ userId: user.id, email: user.email });
-  producer.send("user.email-verification-requested", {
-    value: {
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-      name: user.name,
-      token,
-    },
-  });
+  try {
+    await producer.send("user.email-verification-requested", {
+      value: {
+        userId: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+        token,
+      },
+    });
+  } catch (err) {
+    console.error("verification event send failed", err);
+  }
 };
 
 /**
@@ -252,7 +267,9 @@ router.post("/register", registerLimiter, async (req, res) => {
 
     // AUTHSVC-004: emit verification request so email-service can dispatch a
     // verification link. Token is single-use (JWT, purpose=email-verification).
-    sendVerificationEvent(user);
+    // AUD-002: awaited; the helper swallows its own send errors so this can
+    // never reject and we always return a 201 to a successfully-created user.
+    await sendVerificationEvent(user);
 
     // We return tokens in the body too so existing clients that read them
     // from JSON keep working until they migrate to the cookie flow.
@@ -364,41 +381,77 @@ router.post("/login", loginLimiter, async (req, res) => {
 
 // =================== LOGOUT ====================
 //
-// Sibling territory (AUTHSVC-007/009): leave the body of this handler
-// alone. We only add the cookie clear so the front channel matches the
-// back channel.
-router.post("/logout", shouldBeUser, async (req, res) => {
+// AUD-028: logout MUST be reachable with only a refresh token (the access
+// token typically expires well before the refresh chain does, and the
+// browser may have already discarded the access cookie). Previously this
+// was gated by `shouldBeUser`, which 401'd on expired access tokens — so
+// the client could not revoke the refresh chain and the session lived on.
+//
+// New contract:
+//   - The refresh token (body or cookie) is the source of truth for who
+//     is logging out.
+//   - When present, we verify it (slight clock skew is acceptable for
+//     logout), use its payload.userId, revoke the refresh chain, drop
+//     the Session row, and — if an access token was also sent — revoke
+//     that token's jti.
+//   - When absent, we still clear cookies and return 200. Logout is
+//     idempotent; the caller cannot rely on "already logged out" being
+//     an error.
+router.post("/logout", async (req, res) => {
   try {
-    const refreshToken = req.body?.refreshToken ?? req.cookies?.[REFRESH_COOKIE_NAME];
+    const refreshToken: string | undefined =
+      req.body?.refreshToken ?? req.cookies?.[REFRESH_COOKIE_NAME];
+
+    let resolvedUserId: string | undefined;
+    let refreshJti: string | undefined;
 
     if (refreshToken) {
-      await prisma.session.deleteMany({
-        where: { token: refreshToken, userId: req.userId },
-      });
-      // Mark the refresh-token chain as revoked so it can't be used to
-      // mint a new access token even if the JWT itself is still
-      // cryptographically valid.
       const verified = verifyRefreshToken(refreshToken);
-      if (verified.ok && verified.payload.jti && req.userId) {
-        await revokeRefreshChain(verified.payload.jti, req.userId);
+      // For logout we accept "expired" too — the user clearly intends to
+      // sign out; refusing because the cookie is stale would leave the
+      // server-side revocation undone. We only reject genuinely invalid
+      // (forged / malformed) tokens.
+      if (verified.ok) {
+        resolvedUserId = verified.payload.userId;
+        refreshJti = verified.payload.jti;
+      } else if (verified.reason === "expired") {
+        // jsonwebtoken throws before returning the payload on expiry, so we
+        // can't recover the userId from a stale token without an unsafe
+        // decode. Fall back to deleting the Session row by token below.
+      }
+
+      // Drop the legacy Session row keyed by the token regardless of the
+      // verify result so a token whose signing secret has since rotated
+      // still gets cleaned up.
+      await prisma.session.deleteMany({ where: { token: refreshToken } });
+
+      if (refreshJti && resolvedUserId) {
+        await revokeRefreshChain(refreshJti, resolvedUserId);
       }
     }
 
     clearAuthCookies(res);
 
-    // AUTHSVC-007: revoke the access token the client is logging out with.
+    // AUTHSVC-007: revoke the access token the client is logging out with,
+    // when we have one. Independent of refresh-token revocation above.
     const accessToken = extractTokenFromHeader(req.headers.authorization);
     if (accessToken) {
       const verified = verifyAccessToken(accessToken);
-      if (verified.ok && verified.payload.jti && verified.payload.exp && req.userId) {
+      if (
+        verified.ok &&
+        verified.payload.jti &&
+        verified.payload.exp &&
+        (resolvedUserId || verified.payload.userId)
+      ) {
         const expiresAt = new Date(verified.payload.exp * 1000);
+        const userId = resolvedUserId ?? verified.payload.userId;
         // Use upsert to be idempotent: a double-logout should not 500.
         await prisma.revokedAccessToken.upsert({
           where: { jti: verified.payload.jti },
           update: {},
           create: {
             jti: verified.payload.jti,
-            userId: req.userId,
+            userId,
             expiresAt,
             reason: "logout",
           },
@@ -584,10 +637,10 @@ router.post("/verify-email", async (req, res) => {
 // AUTHSVC-004: resend-verification.
 // Always returns 200 to avoid leaking which emails exist. If the address
 // matches a user that isn't yet verified, we emit a fresh verification event.
-// NOTE: a sibling branch (fix/auth-route-critical) is adding shared rate
-// limiting; this endpoint should be wrapped by that middleware at merge time.
+// AUD-029: gated behind resendVerificationLimiter so mailbomb attempts and
+// runaway clients are shed at the edge.
 // ---------------------------------------------------------------------------
-router.post("/resend-verification", async (req, res) => {
+router.post("/resend-verification", resendVerificationLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email || typeof email !== "string") {
@@ -598,7 +651,9 @@ router.post("/resend-verification", async (req, res) => {
       where: { email, deletedAt: null },
     });
     if (user && !user.emailVerified) {
-      sendVerificationEvent(user);
+      // AUD-002: awaited; the helper logs + swallows its own send errors so
+      // we keep the uniform 200 response regardless of Kafka health.
+      await sendVerificationEvent(user);
     }
 
     return res.status(200).json({

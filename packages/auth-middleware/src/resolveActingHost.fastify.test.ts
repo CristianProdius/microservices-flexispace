@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 vi.mock("@repo/db", () => ({
-  prisma: { user: { findUnique: vi.fn() } },
+  prisma: { user: { findFirst: vi.fn() } },
 }));
 
 import { prisma } from "@repo/db";
 import { resolveActingHost } from "./fastify.js";
+import { _clearUserCacheForTests } from "./userCache.js";
 
 function mockReq(opts: { role?: "USER"|"HOST"|"ADMIN"; userId?: string; header?: string; method?: string; path?: string }): FastifyRequest {
   const headers: Record<string, string> = {};
@@ -29,7 +30,10 @@ function mockReply(): FastifyReply {
 }
 
 describe("resolveActingHost (fastify)", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _clearUserCacheForTests();
+  });
 
   it("no-ops when header absent", async () => {
     const req = mockReq({ role: "ADMIN" });
@@ -40,7 +44,7 @@ describe("resolveActingHost (fastify)", () => {
   });
 
   it("rewrites userId for admin with valid HOST target", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "h2", role: "HOST", deletedAt: null });
+    (prisma.user.findFirst as any).mockResolvedValue({ id: "h2", role: "HOST" });
     const req = mockReq({ role: "ADMIN", header: "h2" });
     const reply = mockReply();
     await resolveActingHost(req, reply);
@@ -50,7 +54,7 @@ describe("resolveActingHost (fastify)", () => {
   });
 
   it("400s on unknown id", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue(null);
+    (prisma.user.findFirst as any).mockResolvedValue(null);
     const req = mockReq({ role: "ADMIN", header: "x" });
     const reply = mockReply();
     await resolveActingHost(req, reply);
@@ -58,7 +62,7 @@ describe("resolveActingHost (fastify)", () => {
   });
 
   it("400s on USER role target", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "u", role: "USER", deletedAt: null });
+    (prisma.user.findFirst as any).mockResolvedValue({ id: "u", role: "USER" });
     const req = mockReq({ role: "ADMIN", header: "u" });
     const reply = mockReply();
     await resolveActingHost(req, reply);
@@ -66,7 +70,9 @@ describe("resolveActingHost (fastify)", () => {
   });
 
   it("400s on soft-deleted target", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "d", role: "HOST", deletedAt: new Date() });
+    // findFirst applies the deletedAt: null filter, so a soft-deleted user
+    // surfaces as `null` from the cache.
+    (prisma.user.findFirst as any).mockResolvedValue(null);
     const req = mockReq({ role: "ADMIN", header: "d" });
     const reply = mockReply();
     await resolveActingHost(req, reply);
@@ -78,6 +84,6 @@ describe("resolveActingHost (fastify)", () => {
     const reply = mockReply();
     await resolveActingHost(req, reply);
     expect((req as any).userId).toBe("host-1");
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.user.findFirst).not.toHaveBeenCalled();
   });
 });

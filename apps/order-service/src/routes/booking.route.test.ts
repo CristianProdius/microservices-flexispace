@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import { signAccessToken } from "@repo/auth-middleware/jwt";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   bookingRoute,
   computeRefundRate,
@@ -14,6 +14,12 @@ const mocks = vi.hoisted(() => {
   const bookingFindMany = vi.fn();
   const bookingFindUnique = vi.fn();
   const bookingUpdateMany = vi.fn();
+  // AUD-005/021: `shouldBe*` middleware now consults `prisma.user.findFirst`
+  // via `lookupActiveUser`. Default to "active user with the role the JWT
+  // claims" so existing tests don't have to be aware of the active-user check.
+  const userFindFirst = vi.fn(({ where }: { where: { id: string } }) =>
+    Promise.resolve({ id: where.id, role: "HOST" }),
+  );
   const prisma = {
     $transaction: vi.fn((input: unknown) => {
       if (typeof input === "function") return input(prisma);
@@ -32,6 +38,9 @@ const mocks = vi.hoisted(() => {
     space: {
       findUnique: vi.fn(),
     },
+    user: {
+      findFirst: userFindFirst,
+    },
   };
 
   return {
@@ -43,6 +52,7 @@ const mocks = vi.hoisted(() => {
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
+    userFindFirst,
   };
 });
 
@@ -142,6 +152,17 @@ const createdBooking = {
 describe("booking routes", () => {
   beforeAll(() => {
     process.env.JWT_SECRET = "test-jwt-secret";
+  });
+
+  beforeEach(async () => {
+    // AUD-005/021: re-prime the user.findFirst default after vi.resetAllMocks
+    // cleared it (afterEach below). Tests that want a "soft-deleted" path can
+    // override per-test by calling mocks.userFindFirst.mockResolvedValueOnce.
+    mocks.userFindFirst.mockImplementation(({ where }: any) =>
+      Promise.resolve({ id: where?.id ?? "user", role: "HOST" }),
+    );
+    const { _clearUserCacheForTests } = await import("@repo/auth-middleware");
+    _clearUserCacheForTests();
   });
 
   afterEach(() => {

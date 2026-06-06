@@ -4,7 +4,9 @@ import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 import { isAccessTokenRevoked } from "./revocation.js";
-import { prisma } from "@repo/db";
+import { lookupActiveUser, invalidateUserCache } from "./userCache.js";
+
+export { invalidateUserCache };
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -69,9 +71,27 @@ function attachUser(request: FastifyRequest, payload: JwtPayload): void {
   request.userId = payload.userId;
 }
 
+/**
+ * AUD-005: re-check that the JWT's userId is still an active (non-deleted)
+ * user. Cached via `lookupActiveUser` so this stays off the hot path.
+ */
+async function callerStillActive(
+  reply: FastifyReply,
+  payload: JwtPayload,
+): Promise<boolean> {
+  const active = await lookupActiveUser(payload.userId);
+  if (!active) {
+    await reply.status(401).send({ message: "Account no longer active" });
+    return false;
+  }
+  return true;
+}
+
 export async function shouldBeUser(request: FastifyRequest, reply: FastifyReply) {
   const payload = await authenticate(request, reply);
   if (!payload) return;
+
+  if (!(await callerStillActive(reply, payload))) return;
 
   attachUser(request, payload);
 }
@@ -84,6 +104,8 @@ export async function shouldBeAdmin(request: FastifyRequest, reply: FastifyReply
     return reply.status(403).send({ message: "Admin access required" });
   }
 
+  if (!(await callerStillActive(reply, payload))) return;
+
   attachUser(request, payload);
 }
 
@@ -94,6 +116,8 @@ export async function shouldBeHost(request: FastifyRequest, reply: FastifyReply)
   if (!hasVerifiedHostAccess(payload)) {
     return reply.status(403).send({ message: "Verified host access required" });
   }
+
+  if (!(await callerStillActive(reply, payload))) return;
 
   attachUser(request, payload);
 }
@@ -106,6 +130,8 @@ export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: Fastif
     return reply.status(403).send({ message: "Verified host or Admin access required" });
   }
 
+  if (!(await callerStillActive(reply, payload))) return;
+
   attachUser(request, payload);
 }
 
@@ -117,12 +143,10 @@ export async function resolveActingHost(request: FastifyRequest, reply: FastifyR
   const user = (request as any).user;
   if (user?.role !== "ADMIN") return;
 
-  const target = await prisma.user.findUnique({
-    where: { id: headerStr },
-    select: { id: true, role: true, deletedAt: true },
-  });
+  // AUD-021: cached lookup; null for missing OR soft-deleted users.
+  const target = await lookupActiveUser(headerStr);
 
-  if (!target || target.deletedAt) {
+  if (!target) {
     return reply.code(400).send({ message: "Invalid acting host" });
   }
   if (target.role !== "HOST" && target.role !== "ADMIN") {
@@ -134,13 +158,19 @@ export async function resolveActingHost(request: FastifyRequest, reply: FastifyR
   (request as any).userId = target.id;
 
   if (request.method !== "GET" && request.method !== "HEAD") {
+    // AUD-033: match express.ts's log shape — `path` must NOT include the
+    // querystring so log aggregation across the two frameworks groups
+    // identically. Prefer the matched route template when fastify exposes
+    // it (cardinality-friendly), otherwise strip the querystring from url.
+    const logPath =
+      (request as any).routeOptions?.url ?? request.url.split("?")[0];
     console.info(
       JSON.stringify({
         msg: "admin acting as host",
         realUserId: (request as any).realUserId,
         actingHostId: target.id,
         method: request.method,
-        path: request.url,
+        path: logPath,
       })
     );
   }

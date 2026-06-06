@@ -3,7 +3,22 @@ import { signAccessToken } from "@repo/auth-middleware/jwt";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { IncomingMessage, ServerResponse } from "node:http";
 import { Duplex, Readable } from "node:stream";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// AUD-005/021: `shouldBe*` now consults `lookupActiveUser` which queries
+// `prisma.user.findFirst`. The upload route uses the real auth-middleware
+// (not a local re-export), so we have to stub @repo/db here even though
+// nothing else in this file touches Prisma.
+vi.mock("@repo/db", () => ({
+  prisma: {
+    user: {
+      findFirst: vi.fn(({ where }: { where: { id: string } }) =>
+        Promise.resolve({ id: where.id, role: "HOST" }),
+      ),
+    },
+  },
+}));
+
 import uploadRouter from "./upload.route.js";
 import * as uploadUtils from "../utils/upload.js";
 
@@ -205,6 +220,13 @@ describe("upload routes", () => {
     process.env.S3_SECRET_ACCESS_KEY = "secret-key";
     process.env.S3_BUCKET = "spacefly-test";
     process.env.S3_PUBLIC_BASE_URL = "https://api.spacefly.ai/uploads";
+  });
+
+  beforeEach(async () => {
+    // Clear the module-level userCache between tests so the active-user
+    // lookup is exercised fresh each time (AUD-021).
+    const { _clearUserCacheForTests } = await import("@repo/auth-middleware");
+    _clearUserCacheForTests();
   });
 
   afterEach(() => {

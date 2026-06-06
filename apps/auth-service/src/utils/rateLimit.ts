@@ -111,3 +111,23 @@ export const resetPasswordLimiter = rateLimit({
   keyGenerator: ipKey,
   handler: standardResponse,
 });
+
+/**
+ * AUD-029: resend-verification rate limiter.
+ * 3 attempts per 15-min window per (ip, email). Resending verification
+ * emails to arbitrary addresses is a mailbomb vector, and a legitimate
+ * user only needs the link once per session.
+ */
+export const resendVerificationLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 3,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const body = (req.body ?? {}) as { email?: unknown };
+    const identifier =
+      typeof body.email === "string" ? normalizeEmail(body.email) : "";
+    return `${ipKey(req)}:${identifier}`;
+  },
+  handler: standardResponse,
+});

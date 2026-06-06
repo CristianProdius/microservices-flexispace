@@ -5,7 +5,7 @@ vi.mock("@repo/db", () => {
   return {
     prisma: {
       user: {
-        findUnique: vi.fn(),
+        findFirst: vi.fn(),
       },
     },
   };
@@ -13,6 +13,7 @@ vi.mock("@repo/db", () => {
 
 import { prisma } from "@repo/db";
 import { resolveActingHost } from "./express.js";
+import { _clearUserCacheForTests } from "./userCache.js";
 
 function mockReq(opts: {
   role?: "USER" | "HOST" | "ADMIN";
@@ -41,7 +42,10 @@ function mockRes(): Response {
 }
 
 describe("resolveActingHost (express)", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _clearUserCacheForTests();
+  });
 
   it("no-ops when header is absent", async () => {
     const req = mockReq({ role: "ADMIN" });
@@ -61,11 +65,11 @@ describe("resolveActingHost (express)", () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(req.actingHostId).toBeUndefined();
     expect(req.userId).toBe("host-1");
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.user.findFirst).not.toHaveBeenCalled();
   });
 
   it("rewrites userId for admin with a valid HOST target", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "host-2", role: "HOST", deletedAt: null });
+    (prisma.user.findFirst as any).mockResolvedValue({ id: "host-2", role: "HOST" });
     const req = mockReq({ role: "ADMIN", header: "host-2" });
     const res = mockRes();
     const next = vi.fn() as NextFunction;
@@ -77,7 +81,7 @@ describe("resolveActingHost (express)", () => {
   });
 
   it("400s when admin targets an unknown id", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue(null);
+    (prisma.user.findFirst as any).mockResolvedValue(null);
     const req = mockReq({ role: "ADMIN", header: "ghost" });
     const res = mockRes();
     const next = vi.fn() as NextFunction;
@@ -87,7 +91,7 @@ describe("resolveActingHost (express)", () => {
   });
 
   it("400s when admin targets a USER role", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "u", role: "USER", deletedAt: null });
+    (prisma.user.findFirst as any).mockResolvedValue({ id: "u", role: "USER" });
     const req = mockReq({ role: "ADMIN", header: "u" });
     const res = mockRes();
     const next = vi.fn() as NextFunction;
@@ -97,7 +101,9 @@ describe("resolveActingHost (express)", () => {
   });
 
   it("400s when target is soft-deleted", async () => {
-    (prisma.user.findUnique as any).mockResolvedValue({ id: "h", role: "HOST", deletedAt: new Date() });
+    // The deletedAt filter is applied inside the cache lookup itself, so a
+    // soft-deleted user surfaces as `null` from `lookupActiveUser`.
+    (prisma.user.findFirst as any).mockResolvedValue(null);
     const req = mockReq({ role: "ADMIN", header: "h" });
     const res = mockRes();
     const next = vi.fn() as NextFunction;
