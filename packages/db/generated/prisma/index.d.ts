@@ -2945,8 +2945,18 @@ export namespace Prisma {
 
   export type AggregateUser = {
     _count: UserCountAggregateOutputType | null
+    _avg: UserAvgAggregateOutputType | null
+    _sum: UserSumAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
+  }
+
+  export type UserAvgAggregateOutputType = {
+    commissionRate: number | null
+  }
+
+  export type UserSumAggregateOutputType = {
+    commissionRate: number | null
   }
 
   export type UserMinAggregateOutputType = {
@@ -2967,6 +2977,7 @@ export namespace Prisma {
     hostVerified: boolean | null
     hostingSince: Date | null
     hostApplicationPending: boolean | null
+    commissionRate: number | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -2987,6 +2998,7 @@ export namespace Prisma {
     hostVerified: boolean | null
     hostingSince: Date | null
     hostApplicationPending: boolean | null
+    commissionRate: number | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -3007,9 +3019,18 @@ export namespace Prisma {
     hostVerified: number
     hostingSince: number
     hostApplicationPending: number
+    commissionRate: number
     _all: number
   }
 
+
+  export type UserAvgAggregateInputType = {
+    commissionRate?: true
+  }
+
+  export type UserSumAggregateInputType = {
+    commissionRate?: true
+  }
 
   export type UserMinAggregateInputType = {
     id?: true
@@ -3029,6 +3050,7 @@ export namespace Prisma {
     hostVerified?: true
     hostingSince?: true
     hostApplicationPending?: true
+    commissionRate?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -3049,6 +3071,7 @@ export namespace Prisma {
     hostVerified?: true
     hostingSince?: true
     hostApplicationPending?: true
+    commissionRate?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -3069,6 +3092,7 @@ export namespace Prisma {
     hostVerified?: true
     hostingSince?: true
     hostApplicationPending?: true
+    commissionRate?: true
     _all?: true
   }
 
@@ -3110,6 +3134,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: UserAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: UserSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: UserMinAggregateInputType
@@ -3140,6 +3176,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: UserCountAggregateInputType | true
+    _avg?: UserAvgAggregateInputType
+    _sum?: UserSumAggregateInputType
     _min?: UserMinAggregateInputType
     _max?: UserMaxAggregateInputType
   }
@@ -3162,7 +3200,10 @@ export namespace Prisma {
     hostVerified: boolean
     hostingSince: Date | null
     hostApplicationPending: boolean
+    commissionRate: number | null
     _count: UserCountAggregateOutputType | null
+    _avg: UserAvgAggregateOutputType | null
+    _sum: UserSumAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
   }
@@ -3199,6 +3240,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
+    commissionRate?: boolean
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
     hostApplications?: boolean | User$hostApplicationsArgs<ExtArgs>
@@ -3230,6 +3272,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
+    commissionRate?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -3250,6 +3293,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
+    commissionRate?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -3270,9 +3314,10 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
+    commissionRate?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostingSince" | "hostApplicationPending", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
@@ -3321,6 +3366,7 @@ export namespace Prisma {
       hostVerified: boolean
       hostingSince: Date | null
       hostApplicationPending: boolean
+      commissionRate: number | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -3771,6 +3817,7 @@ export namespace Prisma {
     readonly hostVerified: FieldRef<"User", 'Boolean'>
     readonly hostingSince: FieldRef<"User", 'DateTime'>
     readonly hostApplicationPending: FieldRef<"User", 'Boolean'>
+    readonly commissionRate: FieldRef<"User", 'Float'>
   }
     
 
@@ -25214,7 +25261,8 @@ export namespace Prisma {
     deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
     hostingSince: 'hostingSince',
-    hostApplicationPending: 'hostApplicationPending'
+    hostApplicationPending: 'hostApplicationPending',
+    commissionRate: 'commissionRate'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -25598,6 +25646,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
    * Reference to a field of type 'HostApplicationStatus'
    */
   export type EnumHostApplicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'HostApplicationStatus'>
@@ -25636,20 +25698,6 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float[]'
-   */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 
@@ -25789,6 +25837,7 @@ export namespace Prisma {
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolFilter<"User"> | boolean
+    commissionRate?: FloatNullableFilter<"User"> | number | null
     sessions?: SessionListRelationFilter
     refreshTokens?: RefreshTokenListRelationFilter
     hostApplications?: HostApplicationListRelationFilter
@@ -25819,6 +25868,7 @@ export namespace Prisma {
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     hostApplicationPending?: SortOrder
+    commissionRate?: SortOrderInput | SortOrder
     sessions?: SessionOrderByRelationAggregateInput
     refreshTokens?: RefreshTokenOrderByRelationAggregateInput
     hostApplications?: HostApplicationOrderByRelationAggregateInput
@@ -25852,6 +25902,7 @@ export namespace Prisma {
     hostVerified?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolFilter<"User"> | boolean
+    commissionRate?: FloatNullableFilter<"User"> | number | null
     sessions?: SessionListRelationFilter
     refreshTokens?: RefreshTokenListRelationFilter
     hostApplications?: HostApplicationListRelationFilter
@@ -25882,9 +25933,12 @@ export namespace Prisma {
     hostVerified?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     hostApplicationPending?: SortOrder
+    commissionRate?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
+    _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
+    _sum?: UserSumOrderByAggregateInput
   }
 
   export type UserScalarWhereWithAggregatesInput = {
@@ -25908,6 +25962,7 @@ export namespace Prisma {
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
     hostingSince?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolWithAggregatesFilter<"User"> | boolean
+    commissionRate?: FloatNullableWithAggregatesFilter<"User"> | number | null
   }
 
   export type SessionWhereInput = {
@@ -27375,6 +27430,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -27405,6 +27461,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -27435,6 +27492,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -27465,6 +27523,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -27495,6 +27554,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
   }
 
   export type UserUpdateManyMutationInput = {
@@ -27515,6 +27575,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -27535,6 +27596,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
   }
 
   export type SessionCreateInput = {
@@ -29139,6 +29201,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type SessionListRelationFilter = {
     every?: SessionWhereInput
     some?: SessionWhereInput
@@ -29252,6 +29325,11 @@ export namespace Prisma {
     hostVerified?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
+    commissionRate?: SortOrder
+  }
+
+  export type UserAvgOrderByAggregateInput = {
+    commissionRate?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -29272,6 +29350,7 @@ export namespace Prisma {
     hostVerified?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
+    commissionRate?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -29292,6 +29371,11 @@ export namespace Prisma {
     hostVerified?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
+    commissionRate?: SortOrder
+  }
+
+  export type UserSumOrderByAggregateInput = {
+    commissionRate?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -29374,6 +29458,22 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type UserScalarRelationFilter = {
@@ -29617,17 +29717,6 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
-  export type FloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
-  }
-
   export type EnumCurrencyFilter<$PrismaModel = never> = {
     equals?: $Enums.Currency | EnumCurrencyFieldRefInput<$PrismaModel>
     in?: $Enums.Currency[] | ListEnumCurrencyFieldRefInput<$PrismaModel>
@@ -29752,22 +29841,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedJsonFilter<$PrismaModel>
     _max?: NestedJsonFilter<$PrismaModel>
-  }
-
-  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type EnumCurrencyWithAggregatesFilter<$PrismaModel = never> = {
@@ -30838,6 +30911,14 @@ export namespace Prisma {
     set?: Date | string | null
   }
 
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type SessionUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -31196,14 +31277,6 @@ export namespace Prisma {
     connectOrCreate?: SpaceCreateOrConnectWithoutVenueInput | SpaceCreateOrConnectWithoutVenueInput[]
     createMany?: SpaceCreateManyVenueInputEnvelope
     connect?: SpaceWhereUniqueInput | SpaceWhereUniqueInput[]
-  }
-
-  export type NullableFloatFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type EnumCurrencyFieldUpdateOperationsInput = {
@@ -32016,6 +32089,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -32118,6 +32202,22 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
   export type NestedEnumHostApplicationStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.HostApplicationStatus | EnumHostApplicationStatusFieldRefInput<$PrismaModel>
     in?: $Enums.HostApplicationStatus[] | ListEnumHostApplicationStatusFieldRefInput<$PrismaModel>
@@ -32156,17 +32256,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type NestedFloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type NestedEnumCurrencyFilter<$PrismaModel = never> = {
@@ -32224,22 +32313,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumCurrencyWithAggregatesFilter<$PrismaModel = never> = {
@@ -33218,6 +33291,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
@@ -33247,6 +33321,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
@@ -33292,6 +33367,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
@@ -33321,6 +33397,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
@@ -33350,6 +33427,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
@@ -33379,6 +33457,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
@@ -33424,6 +33503,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
@@ -33453,6 +33533,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
@@ -33482,6 +33563,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseCreateNestedManyWithoutUserInput
@@ -33511,6 +33593,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     passwordResetUses?: PasswordResetUseUncheckedCreateNestedManyWithoutUserInput
@@ -33556,6 +33639,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUpdateManyWithoutUserNestedInput
@@ -33585,6 +33669,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     passwordResetUses?: PasswordResetUseUncheckedUpdateManyWithoutUserNestedInput
@@ -33614,6 +33699,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -33643,6 +33729,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -33688,6 +33775,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -33717,6 +33805,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -33746,6 +33835,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -33775,6 +33865,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -33899,6 +33990,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -33928,6 +34020,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -33973,6 +34066,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -34002,6 +34096,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -34314,6 +34409,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -34343,6 +34439,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -35492,6 +35589,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -35521,6 +35619,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -35555,6 +35654,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -35584,6 +35684,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -35731,6 +35832,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -35760,6 +35862,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -35800,6 +35903,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -35829,6 +35933,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -35972,6 +36077,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -36001,6 +36107,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -36183,6 +36290,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -36212,6 +36320,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput
@@ -36390,6 +36499,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationCreateNestedManyWithoutUserInput
@@ -36419,6 +36529,7 @@ export namespace Prisma {
     hostVerified?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
+    commissionRate?: number | null
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     refreshTokens?: RefreshTokenUncheckedCreateNestedManyWithoutUserInput
     hostApplications?: HostApplicationUncheckedCreateNestedManyWithoutUserInput
@@ -36464,6 +36575,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUpdateManyWithoutUserNestedInput
@@ -36493,6 +36605,7 @@ export namespace Prisma {
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
+    commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     refreshTokens?: RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
     hostApplications?: HostApplicationUncheckedUpdateManyWithoutUserNestedInput

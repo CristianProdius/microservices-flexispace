@@ -71,15 +71,61 @@ const inclusiveDayCount = (startDate: string, endDate: string) => {
   return days > 0 ? days : 1;
 };
 
-const bestPricingTier = (
-  pricingTiers: PricingTier[] | undefined,
-  totalMinutes: number
-) => {
-  const eligibleTiers = [...(pricingTiers ?? [])]
-    .filter((tier) => tier.minutes <= totalMinutes)
-    .sort((a, b) => a.minutes - b.minutes);
+// Generate every pricing candidate for the booked duration and pick the cheapest.
+// This treats tier sizes as one of several possible billing units rather than
+// a strict "must fit inside the booking" filter — that way a 12h booking that
+// would cost 3 × 4h-tier price is automatically capped at the cheaper 1 × 24h
+// tier price when one exists. The "candidates" list also includes the raw
+// pricePerHour / pricePerDay rates so a space that only has a raw rate still
+// prices correctly.
+interface PriceCandidate {
+  subtotal: number;
+  appliedTier: AppliedPricingTier | null;
+}
 
-  return eligibleTiers.at(-1) ?? null;
+const cheapestPricing = (
+  pricingTiers: PricingTier[] | undefined,
+  totalMinutes: number,
+  bookingType: BookingType,
+  hours: number,
+  days: number,
+  pricePerHour: number | null | undefined,
+  pricePerDay: number | null | undefined
+): PriceCandidate => {
+  const candidates: PriceCandidate[] = [];
+
+  for (const tier of pricingTiers ?? []) {
+    const units = Math.ceil(totalMinutes / tier.minutes);
+    candidates.push({
+      subtotal: roundCurrency(units * tier.price),
+      appliedTier: {
+        label: tier.label,
+        minutes: tier.minutes,
+        price: tier.price,
+        units,
+      },
+    });
+  }
+
+  if (bookingType === "hourly" && pricePerHour) {
+    candidates.push({
+      subtotal: roundCurrency(hours * pricePerHour),
+      appliedTier: null,
+    });
+  } else if (bookingType === "daily" && pricePerDay) {
+    candidates.push({
+      subtotal: roundCurrency(days * pricePerDay),
+      appliedTier: null,
+    });
+  }
+
+  if (candidates.length === 0) {
+    return { subtotal: 0, appliedTier: null };
+  }
+
+  return candidates.reduce((best, current) =>
+    current.subtotal < best.subtotal ? current : best
+  );
 };
 
 export const calculateBookingPricing = ({
@@ -104,28 +150,23 @@ export const calculateBookingPricing = ({
     hours = totalMinutes / 60;
   }
 
-  let subtotal = 0;
-  let appliedTier: AppliedPricingTier | null = null;
-  const tier = bestPricingTier(space.pricingTiers, totalMinutes);
-
-  if (tier) {
-    const units = Math.ceil(totalMinutes / tier.minutes);
-    subtotal = roundCurrency(units * tier.price);
-    appliedTier = {
-      label: tier.label,
-      minutes: tier.minutes,
-      price: tier.price,
-      units,
-    };
-  } else if (bookingType === "hourly" && space.pricePerHour) {
-    subtotal = roundCurrency(hours * space.pricePerHour);
-  } else if (bookingType === "daily" && space.pricePerDay) {
-    subtotal = roundCurrency(days * space.pricePerDay);
-  }
+  const { subtotal, appliedTier } = cheapestPricing(
+    space.pricingTiers,
+    totalMinutes,
+    bookingType,
+    hours,
+    days,
+    space.pricePerHour,
+    space.pricePerDay
+  );
 
   const cleaningFee = roundCurrency(space.cleaningFee ?? 0);
-  const serviceFee = roundCurrency(subtotal * 0.1);
-  const totalAmount = roundCurrency(subtotal + cleaningFee + serviceFee);
+  // Service fee is the platform's commission, deducted from the host's payout
+  // rather than added to the client's total. Clients pay the listed price.
+  // The fee is computed server-side using the host's negotiated commission
+  // rate; the client UI no longer renders or charges it as a separate line.
+  const serviceFee = 0;
+  const totalAmount = roundCurrency(subtotal + cleaningFee);
 
   return {
     appliedTier,

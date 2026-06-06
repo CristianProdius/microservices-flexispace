@@ -288,10 +288,6 @@ const BookingForm = ({ space }: BookingFormProps) => {
             <span>{tCommon("cleaningFee")}</span>
             <span>{formatPriceFull(pricing.cleaningFee, (space as any).currency)}</span>
           </div>
-          <div className="flex justify-between text-muted">
-            <span>{tCommon("serviceFee")}</span>
-            <span>{formatPriceFull(pricing.serviceFee, (space as any).currency)}</span>
-          </div>
           <div className="flex justify-between font-semibold text-foreground pt-2 border-t border-border">
             <span>{tCommon("total")}</span>
             <span>{formatPriceFull(pricing.totalAmount, (space as any).currency)}</span>

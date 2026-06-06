@@ -101,6 +101,10 @@ model User {
   hostVerified           Boolean   @default(false)
   hostingSince           DateTime?
   hostApplicationPending Boolean   @default(false)
+  // Per-host platform commission as a fraction (0.1 = 10%). Null means use the
+  // platform-wide DEFAULT_COMMISSION_RATE env var. The commission is deducted
+  // from the host's payout; clients pay the listed price with no extra fee.
+  commissionRate         Float?
 
   // Relations
   sessions          Session[]

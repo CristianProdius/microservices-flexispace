@@ -28,12 +28,37 @@ test("hourly bookings use the best configured pricing tier", () => {
   });
 
   assert.equal(pricing?.subtotal, 4500);
-  assert.equal(pricing?.serviceFee, 450);
-  assert.equal(pricing?.totalAmount, 4950);
+  // Client-side serviceFee is always 0: the platform commission is computed
+  // server-side and deducted from the host payout, not shown to the client.
+  assert.equal(pricing?.serviceFee, 0);
+  assert.equal(pricing?.totalAmount, 4500);
   assert.deepEqual(pricing?.appliedTier, {
     label: "4 hours (half day)",
     minutes: 240,
     price: 4500,
+    units: 1,
+  });
+});
+
+test("hourly bookings cap at the cheaper longer tier (PRICE-001)", () => {
+  // 12h booking with tiers {4h: 4500, 24h: 10000}: the old "largest fitting"
+  // selector would charge 3 × 4500 = 13500; the new selector picks the
+  // cheaper 1 × 24h tier = 10000.
+  const pricing = calculateBookingPricing({
+    bookingType: "hourly",
+    endDate: "",
+    endTime: "20:00",
+    space: baseSpace,
+    startDate: "2026-05-25",
+    startTime: "08:00",
+  });
+
+  assert.equal(pricing?.subtotal, 10000);
+  assert.equal(pricing?.totalAmount, 10000);
+  assert.deepEqual(pricing?.appliedTier, {
+    label: "1 day",
+    minutes: 1440,
+    price: 10000,
     units: 1,
   });
 });
@@ -50,8 +75,8 @@ test("daily bookings can use multi-day configured pricing tiers", () => {
 
   assert.equal(pricing?.days, 2);
   assert.equal(pricing?.subtotal, 12000);
-  assert.equal(pricing?.serviceFee, 1200);
-  assert.equal(pricing?.totalAmount, 13200);
+  assert.equal(pricing?.serviceFee, 0);
+  assert.equal(pricing?.totalAmount, 12000);
 });
 
 test("inclusive day count treats same-day bookings as 1 day", () => {
@@ -119,6 +144,6 @@ test("cleaning fee matches the configured fixed space fee", () => {
 
   assert.equal(pricing?.subtotal, 3000);
   assert.equal(pricing?.cleaningFee, 275);
-  assert.equal(pricing?.serviceFee, 300);
-  assert.equal(pricing?.totalAmount, 3575);
+  assert.equal(pricing?.serviceFee, 0);
+  assert.equal(pricing?.totalAmount, 3275);
 });

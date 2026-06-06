@@ -432,7 +432,31 @@ const billableHourlyHours = (
   return totalHours;
 };
 
-// Calculate booking price based on space pricing and duration
+// Resolve the platform commission rate to use when computing the host payout
+// deduction. Per-host override on User.commissionRate; falls back to the
+// DEFAULT_COMMISSION_RATE env var; final fallback to 0 so a misconfigured env
+// can't silently double-charge or hide revenue.
+export const resolveCommissionRate = (hostCommissionRate: number | null | undefined): number => {
+  if (typeof hostCommissionRate === "number" && hostCommissionRate >= 0) {
+    return hostCommissionRate;
+  }
+  const fromEnv = Number.parseFloat(process.env.DEFAULT_COMMISSION_RATE ?? "");
+  return Number.isFinite(fromEnv) && fromEnv >= 0 ? fromEnv : 0;
+};
+
+// Calculate booking price based on space pricing and duration.
+//
+// Pricing model:
+//   - subtotal: cheapest of all candidate billing units for the requested
+//     duration. Each tier is one candidate (1 unit if the booking is shorter
+//     than the tier, ceil(duration/tier) otherwise) and the raw pricePerHour /
+//     pricePerDay rate is also a candidate. This automatically caps an hourly
+//     extrapolation at the daily-tier price when a daily tier is cheaper.
+//   - cleaningFee: pass-through.
+//   - serviceFee: the platform's commission, taken out of the host's payout.
+//     The client total does NOT include this — the client pays the listed
+//     price and the host receives (subtotal + cleaningFee - serviceFee).
+//   - total: subtotal + cleaningFee. This is what the client is charged.
 export const calculateBookingPrice = (
   space: {
     pricingType: string;
@@ -451,10 +475,9 @@ export const calculateBookingPrice = (
   startDate: Date,
   endDate: Date,
   startTime: string | null,
-  endTime: string | null
+  endTime: string | null,
+  hostCommissionRate: number | null | undefined = null
 ): { subtotal: number; cleaningFee: number; serviceFee: number; total: number } => {
-  let subtotal = 0;
-
   // Calculate total minutes for the booking
   const days = differenceInDays(endDate, startDate) + 1;
   let totalMinutes = days * 24 * 60; // default to full days
@@ -464,56 +487,51 @@ export const calculateBookingPrice = (
     totalMinutes = Math.round(hoursPerDay * 60) * days;
   }
 
-  // Pricing tiers use per-block pricing: if a booking spans 300 minutes
-  // and the best tier is 240 minutes at $35, charge ceil(300/240) = 2 blocks = $70.
-  // This is by design — tiers represent indivisible time blocks.
-  let usedTier = false;
-  if (space.pricingTiers && space.pricingTiers.length > 0) {
-    // Find the best-fit tier: largest tier that fits within totalMinutes
-    const eligibleTiers = space.pricingTiers.filter((t) => t.minutes <= totalMinutes);
-    if (eligibleTiers.length > 0) {
-      const bestTier = eligibleTiers[eligibleTiers.length - 1]!; // already sorted asc
-      const units = Math.ceil(totalMinutes / bestTier.minutes);
-      subtotal = roundCurrency(units * bestTier.price);
-      usedTier = true;
-    }
+  const candidates: number[] = [];
+
+  // Each tier is a billing unit: ceil(duration / tier) blocks at tier.price.
+  // For tiers larger than the booked duration that yields 1 unit, which means
+  // "the bigger tier price IS the floor" — exactly the cap behavior we want.
+  for (const tier of space.pricingTiers ?? []) {
+    const units = Math.ceil(totalMinutes / tier.minutes);
+    candidates.push(roundCurrency(units * tier.price));
   }
 
-  // Fall back to pricePerHour / pricePerDay if no tier matched
-  if (!usedTier) {
-    if (space.pricingType === "HOURLY" && space.pricePerHour && startTime && endTime) {
-      // BOOKSVC-009: per-day intersection with availability windows.
-      const hours = billableHourlyHours(
-        space.availability,
-        startDate,
-        endDate,
-        startTime,
-        endTime
-      );
-      subtotal = roundCurrency(space.pricePerHour * hours);
-    } else if (space.pricingType === "DAILY" && space.pricePerDay) {
-      subtotal = roundCurrency(space.pricePerDay * days);
-    } else if (space.pricingType === "BOTH") {
-      // For BOTH, calculate based on what's provided
-      if (startTime && endTime && space.pricePerHour) {
-        // BOOKSVC-009: per-day intersection here too.
-        const hours = billableHourlyHours(
-          space.availability,
-          startDate,
-          endDate,
-          startTime,
-          endTime
-        );
-        subtotal = roundCurrency(space.pricePerHour * hours);
-      } else if (space.pricePerDay) {
-        subtotal = roundCurrency(space.pricePerDay * days);
-      }
-    }
+  // Raw per-hour / per-day rates also compete. Adding BOTH for type=BOTH
+  // means an hourly extrapolation can also be capped by the daily rate, not
+  // just by a configured tier.
+  const wantsHourly = Boolean(startTime && endTime);
+  const allowsHourly =
+    wantsHourly &&
+    space.pricePerHour &&
+    (space.pricingType === "HOURLY" || space.pricingType === "BOTH");
+  const allowsDaily =
+    space.pricePerDay &&
+    (space.pricingType === "DAILY" || space.pricingType === "BOTH");
+
+  if (allowsHourly) {
+    // BOOKSVC-009: per-day intersection with availability windows.
+    const hours = billableHourlyHours(
+      space.availability,
+      startDate,
+      endDate,
+      startTime!,
+      endTime!
+    );
+    candidates.push(roundCurrency(space.pricePerHour! * hours));
   }
+  if (allowsDaily) {
+    candidates.push(roundCurrency(space.pricePerDay! * days));
+  }
+
+  const subtotal = candidates.length > 0 ? Math.min(...candidates) : 0;
 
   const cleaningFee = roundCurrency(space.cleaningFee);
-  const serviceFee = roundCurrency(subtotal * 0.1); // 10% service fee
-  const total = roundCurrency(subtotal + cleaningFee + serviceFee);
+  const commissionRate = resolveCommissionRate(hostCommissionRate);
+  // Commission applies to the price paid for the space itself, not to the
+  // pass-through cleaning fee (cleaning is the host's cost of doing business).
+  const serviceFee = roundCurrency(subtotal * commissionRate);
+  const total = roundCurrency(subtotal + cleaningFee);
 
   return { subtotal, cleaningFee, serviceFee, total };
 };
@@ -603,7 +621,8 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         requestedStartDate,
         requestedEndDate,
         startTime || null,
-        endTime || null
+        endTime || null,
+        space.host?.commissionRate ?? null
       );
 
       let exchangeRate: number;

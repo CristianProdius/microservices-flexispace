@@ -16,6 +16,10 @@ x-api-env: &api-env
   # Parent-domain scope for the session cookie when api/admin run on different
   # subdomains (set to .spacefly.ai in prod). Empty = host-only cookie.
   COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+  # Platform commission as a fraction (0.1 = 10%). Taken out of the host's
+  # payout — clients pay the listed price with no add-on fee. Per-host overrides
+  # via User.commissionRate; this env value is the fallback default.
+  DEFAULT_COMMISSION_RATE: ${DEFAULT_COMMISSION_RATE:-0.1}
   CORS_ORIGINS: ${CORS_ORIGINS:-https://spacefly.ai,https://admin.spacefly.ai}
   KAFKA_BROKERS: kafka:9092
   KAFKA_ENABLED: ${KAFKA_ENABLED:-true}

@@ -266,14 +266,18 @@ describe("calculateBookingPrice per-day availability intersection (BOOKSVC-009)"
       date("2026-05-18"),
       date("2026-05-19"),
       "09:00",
-      "18:00"
+      "18:00",
+      0.1 // host commission rate = 10%
     );
 
     // Monday charged 9 hours (9-18). Tuesday charged 3 hours (9-12 intersected with 9-18).
     // (9 + 3) * $10 = $120 subtotal.
     expect(result.subtotal).toBe(120);
+    // Service fee is the platform commission (10% of subtotal) — deducted from
+    // the host's payout, NOT added to the client's total.
     expect(result.serviceFee).toBe(12);
-    expect(result.total).toBe(132);
+    // Client pays the listed price: subtotal + cleaningFee (no fee added on top).
+    expect(result.total).toBe(120);
   });
 
   it("skips days with no availability", () => {
@@ -298,5 +302,122 @@ describe("calculateBookingPrice per-day availability intersection (BOOKSVC-009)"
 
     // Only Monday counts: 9 hours * $10 = $90.
     expect(result.subtotal).toBe(90);
+  });
+});
+
+describe("calculateBookingPrice tier overflow cap (PRICE-001)", () => {
+  // Open-all-day availability so per-day intersection doesn't shrink the
+  // hourly candidate.
+  const openAllDay = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    endTime: "23:59",
+    isOpen: true,
+    startTime: "00:00",
+  }));
+
+  it("uses the cheaper 24h tier when 12h × 4h-block would exceed it", () => {
+    // 12h booking with tiers {4h: 4500, 24h: 10000}: the old "largest fitting"
+    // selector would charge 3 × 4500 = 13500; the new selector picks the
+    // cheaper 1 × 24h tier = 10000.
+    const result = calculateBookingPrice(
+      {
+        availability: openAllDay,
+        cleaningFee: 0,
+        currency: "MDL",
+        pricePerDay: null,
+        pricePerHour: null,
+        pricingTiers: [
+          { minutes: 240, price: 4500 },
+          { minutes: 1440, price: 10000 },
+        ],
+        pricingType: "HOURLY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      "08:00",
+      "20:00",
+      0.1
+    );
+
+    expect(result.subtotal).toBe(10000);
+    expect(result.total).toBe(10000);
+    expect(result.serviceFee).toBe(1000);
+  });
+
+  it("falls back to the per-block tier price when the booking is shorter than every tier", () => {
+    // 3h booking with a single 4h tier at 4500 — only 1 block charged.
+    const result = calculateBookingPrice(
+      {
+        availability: openAllDay,
+        cleaningFee: 0,
+        currency: "MDL",
+        pricePerDay: null,
+        pricePerHour: null,
+        pricingTiers: [{ minutes: 240, price: 4500 }],
+        pricingType: "HOURLY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      "09:00",
+      "12:00",
+      0
+    );
+
+    expect(result.subtotal).toBe(4500);
+    expect(result.serviceFee).toBe(0);
+    expect(result.total).toBe(4500);
+  });
+});
+
+describe("calculateBookingPrice commission model (PRICE-002)", () => {
+  it("client total never includes the commission; commission is reported separately", () => {
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 50,
+        currency: "USD",
+        pricePerDay: 200,
+        pricePerHour: null,
+        pricingType: "DAILY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      null,
+      null,
+      0.15
+    );
+
+    expect(result.subtotal).toBe(200);
+    expect(result.cleaningFee).toBe(50);
+    expect(result.serviceFee).toBe(30); // 15% of subtotal only — not of cleaning.
+    expect(result.total).toBe(250); // subtotal + cleaning, no fee added on top.
+  });
+
+  it("falls back to the env default when no per-host rate is provided", () => {
+    const original = process.env.DEFAULT_COMMISSION_RATE;
+    process.env.DEFAULT_COMMISSION_RATE = "0.2";
+    try {
+      const result = calculateBookingPrice(
+        {
+          availability: [],
+          cleaningFee: 0,
+          currency: "USD",
+          pricePerDay: 100,
+          pricePerHour: null,
+          pricingType: "DAILY",
+        },
+        date("2026-05-18"),
+        date("2026-05-18"),
+        null,
+        null
+      );
+      expect(result.serviceFee).toBe(20);
+    } finally {
+      if (original === undefined) {
+        delete process.env.DEFAULT_COMMISSION_RATE;
+      } else {
+        process.env.DEFAULT_COMMISSION_RATE = original;
+      }
+    }
   });
 });

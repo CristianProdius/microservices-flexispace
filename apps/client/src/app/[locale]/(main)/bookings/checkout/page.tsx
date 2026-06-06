@@ -190,10 +190,6 @@ const CheckoutPage = () => {
               <span>{tCommon("cleaningFee")}</span>
               <span>{formatPriceFull(draft.cleaningFee, draft.currency)}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
-              <span>{tCommon("serviceFee")}</span>
-              <span>{formatPriceFull(draft.serviceFee, draft.currency)}</span>
-            </div>
             <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
               <span>{tCommon("total")}</span>
               <span>{formatPriceFull(draft.totalAmount, draft.currency)}</span>

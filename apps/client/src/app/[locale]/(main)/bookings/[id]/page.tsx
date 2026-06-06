@@ -352,10 +352,6 @@ const BookingDetailPage = () => {
                 <span>{tCommon("cleaningFee")}</span>
                 <span>{formatPriceFull(booking.cleaningFee)}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>{tCommon("serviceFee")}</span>
-                <span>{formatPriceFull(booking.serviceFee)}</span>
-              </div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                 <span>{tCommon("total")}</span>
                 <span>{formatPriceFull(booking.totalAmount)}</span>

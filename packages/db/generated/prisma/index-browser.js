@@ -137,7 +137,8 @@ exports.Prisma.UserScalarFieldEnum = {
   deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
   hostingSince: 'hostingSince',
-  hostApplicationPending: 'hostApplicationPending'
+  hostApplicationPending: 'hostApplicationPending',
+  commissionRate: 'commissionRate'
 };
 
 exports.Prisma.SessionScalarFieldEnum = {
