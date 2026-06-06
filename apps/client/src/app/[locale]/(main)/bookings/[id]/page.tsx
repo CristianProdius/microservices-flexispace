@@ -22,7 +22,7 @@ import {
   MessageSquare,
   Star,
 } from "lucide-react";
-import { formatPriceFull } from "@/lib/utils";
+import { formatBookingDate, formatPriceFull } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -38,6 +38,7 @@ interface Booking {
   cleaningFee: number;
   serviceFee: number;
   totalAmount: number;
+  currency: string;
   createdAt: string;
   approvedAt: string | null;
   cancelledAt: string | null;
@@ -266,7 +267,7 @@ const BookingDetailPage = () => {
               <div>
                 <p className="text-sm text-gray-500">{tBooking("checkIn")}</p>
                 <p className="font-medium">
-                  {new Date(booking.startDate).toLocaleDateString(undefined, {
+                  {formatBookingDate(booking.startDate, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -280,7 +281,7 @@ const BookingDetailPage = () => {
               <div>
                 <p className="text-sm text-gray-500">{tBooking("checkOut")}</p>
                 <p className="font-medium">
-                  {new Date(booking.endDate).toLocaleDateString(undefined, {
+                  {formatBookingDate(booking.endDate, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -346,15 +347,15 @@ const BookingDetailPage = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>{tCommon("subtotal")}</span>
-                <span>{formatPriceFull(booking.subtotal)}</span>
+                <span>{formatPriceFull(booking.subtotal, booking.currency)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>{tCommon("cleaningFee")}</span>
-                <span>{formatPriceFull(booking.cleaningFee)}</span>
+                <span>{formatPriceFull(booking.cleaningFee, booking.currency)}</span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                 <span>{tCommon("total")}</span>
-                <span>{formatPriceFull(booking.totalAmount)}</span>
+                <span>{formatPriceFull(booking.totalAmount, booking.currency)}</span>
               </div>
             </div>
           </div>

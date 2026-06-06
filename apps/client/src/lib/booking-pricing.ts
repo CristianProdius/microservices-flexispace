@@ -90,7 +90,8 @@ const cheapestPricing = (
   hours: number,
   days: number,
   pricePerHour: number | null | undefined,
-  pricePerDay: number | null | undefined
+  pricePerDay: number | null | undefined,
+  pricingType: string | undefined
 ): PriceCandidate => {
   const candidates: PriceCandidate[] = [];
 
@@ -107,14 +108,29 @@ const cheapestPricing = (
     });
   }
 
-  if (bookingType === "hourly" && pricePerHour) {
+  // Mirror the backend's rate enumeration (apps/order-service booking.ts
+  // `allowsHourly` / `allowsDaily`): for a BOTH space, an hourly booking
+  // can also be capped by the daily rate. The previous client logic only
+  // considered the rate matching the booking type, so a 6h hourly request
+  // on a $50/hr + $200/day space previewed $300 but was billed $200 by
+  // the backend (which lets the daily rate win as the cheaper candidate).
+  const allowsHourly =
+    bookingType === "hourly" &&
+    pricePerHour != null &&
+    (pricingType === "HOURLY" || pricingType === "BOTH");
+  const allowsDaily =
+    pricePerDay != null &&
+    (pricingType === "DAILY" || pricingType === "BOTH");
+
+  if (allowsHourly) {
     candidates.push({
-      subtotal: roundCurrency(hours * pricePerHour),
+      subtotal: roundCurrency(hours * pricePerHour!),
       appliedTier: null,
     });
-  } else if (bookingType === "daily" && pricePerDay) {
+  }
+  if (allowsDaily) {
     candidates.push({
-      subtotal: roundCurrency(days * pricePerDay),
+      subtotal: roundCurrency(days * pricePerDay!),
       appliedTier: null,
     });
   }
@@ -157,7 +173,8 @@ export const calculateBookingPricing = ({
     hours,
     days,
     space.pricePerHour,
-    space.pricePerDay
+    space.pricePerDay,
+    space.pricingType
   );
 
   const cleaningFee = roundCurrency(space.cleaningFee ?? 0);

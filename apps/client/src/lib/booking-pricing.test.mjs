@@ -40,6 +40,32 @@ test("hourly bookings use the best configured pricing tier", () => {
   });
 });
 
+test("hourly booking on a BOTH space is also capped by the daily rate (PRICE-005)", () => {
+  // Previously the client only added the rate matching the booking type,
+  // while the backend added both. For a 6h hourly booking on a $50/hr +
+  // $200/day BOTH space, the client previewed $300 but the backend billed
+  // $200. After PRICE-005 the client also considers the daily rate and
+  // surfaces the same $200 the user is actually charged.
+  const space = {
+    cleaningFee: 0,
+    currency: "USD",
+    pricePerDay: 200,
+    pricePerHour: 50,
+    pricingTiers: [],
+    pricingType: "BOTH",
+  };
+  const pricing = calculateBookingPricing({
+    bookingType: "hourly",
+    endDate: "",
+    endTime: "15:00",
+    space,
+    startDate: "2026-05-25",
+    startTime: "09:00",
+  });
+  assert.equal(pricing?.subtotal, 200);
+  assert.equal(pricing?.totalAmount, 200);
+});
+
 test("hourly bookings cap at the cheaper longer tier (PRICE-001)", () => {
   // 12h booking with tiers {4h: 4500, 24h: 10000}: the old "largest fitting"
   // selector would charge 3 × 4500 = 13500; the new selector picks the

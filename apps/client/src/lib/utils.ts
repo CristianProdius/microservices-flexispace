@@ -33,6 +33,46 @@ export const formatPriceFull = (price: number | null | undefined, currency?: str
   return formatCurrencyPriceFull(price, currency);
 };
 
+/**
+ * Parse a calendar-day string (YYYY-MM-DD or a UTC-midnight ISO timestamp from
+ * the API) into a Date constructed in *local* time, so toLocaleDateString
+ * renders the same calendar day the user intended.
+ *
+ * Booking dates come back from the API as e.g. "2026-06-05T00:00:00.000Z".
+ * `new Date("2026-06-05T00:00:00.000Z").toLocaleDateString()` for a user
+ * west of UTC returns the previous day (because UTC midnight is the day
+ * before in their timezone). CLIENT-002 fixed the upcoming/past filter on
+ * the bookings list this way; this helper extends the same fix to every
+ * display site that renders a booking date.
+ */
+export const formatBookingDate = (
+  isoOrDayString: string,
+  options: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  },
+  locale?: string
+): string => {
+  const dayStr = isoOrDayString.slice(0, 10);
+  const parts = dayStr.split("-").map(Number);
+  const [year, month, day] = parts;
+  if (
+    parts.length !== 3 ||
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  ) {
+    // Fall back to the raw value so we surface bad input rather than crash.
+    return isoOrDayString;
+  }
+  // Local-time constructor anchors the Date to the user's calendar day.
+  return new Date(year, month - 1, day).toLocaleDateString(locale, options);
+};
+
 export interface PriceLabels {
   perHr: string;
   perDay: string;

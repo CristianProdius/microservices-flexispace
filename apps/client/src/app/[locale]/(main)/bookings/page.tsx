@@ -19,6 +19,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
+import { formatBookingDate, formatPriceFull } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -31,6 +32,7 @@ interface Booking {
   guests: number;
   isHourly: boolean;
   totalAmount: number;
+  currency: string;
   createdAt: string;
   space: {
     id: number;
@@ -263,23 +265,17 @@ const BookingsPage = () => {
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         <span>
-                          {new Date(booking.startDate).toLocaleDateString(
-                            undefined,
-                            {
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
+                          {formatBookingDate(booking.startDate, {
+                            month: "short",
+                            day: "numeric",
+                          })}
                           {booking.endDate !== booking.startDate && (
                             <>
                               {" - "}
-                              {new Date(booking.endDate).toLocaleDateString(
-                                undefined,
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                }
-                              )}
+                              {formatBookingDate(booking.endDate, {
+                                month: "short",
+                                day: "numeric",
+                              })}
                             </>
                           )}
                         </span>
@@ -307,7 +303,7 @@ const BookingsPage = () => {
                   <div className="flex flex-col items-end justify-between shrink-0">
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        ${booking.totalAmount.toFixed(2)}
+                        {formatPriceFull(booking.totalAmount, booking.currency)}
                       </p>
                       <p className="text-xs text-gray-500">{tCommon("total")}</p>
                     </div>

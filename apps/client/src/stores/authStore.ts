@@ -16,6 +16,7 @@ import {
 import { getValidToken } from "@/lib/apiClient";
 import { routing } from "@/i18n/routing";
 import { readLocaleFromCookie } from "@/lib/localeCookie";
+import useBookingStore from "@/stores/bookingStore";
 
 interface AuthState {
   user: User | null;
@@ -104,6 +105,9 @@ const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Logout error:", error);
     } finally {
       clearAuth();
+      // Drop the persisted booking draft so user B logging in on a shared
+      // device doesn't land on /checkout with user A's space/host/pricing.
+      useBookingStore.getState().clearDraft();
       set({
         user: null,
         token: null,
@@ -125,6 +129,9 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   handleSessionExpired: () => {
     clearAuth();
+    // Same shared-device concern as `logout` — wipe the draft so it can't
+    // bleed across users after a session-expired bounce.
+    useBookingStore.getState().clearDraft();
     set({ user: null, token: null, isAuthenticated: false });
     if (typeof window !== "undefined") {
       // localePrefix is "never", so URL never carries the locale. Read the

@@ -9,7 +9,7 @@ import { fetchWithAuth, SessionExpiredError } from "@/lib/apiClient";
 import { ORDER_SERVICE_URL } from "@/lib/config";
 import { useTranslations } from "next-intl";
 import { Calendar, Clock, Users, AlertCircle, Check } from "lucide-react";
-import { formatPriceFull } from "@/lib/utils";
+import { formatBookingDate, formatPriceFull } from "@/lib/utils";
 
 const CheckoutPage = () => {
   const router = useRouter();
@@ -147,19 +147,11 @@ const CheckoutPage = () => {
             <div className="flex items-center gap-3 text-gray-600">
               <Calendar className="w-5 h-5" />
               <span>
-                {new Date(draft.startDate).toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatBookingDate(draft.startDate)}
                 {draft.endDate !== draft.startDate && (
                   <>
                     {" - "}
-                    {new Date(draft.endDate).toLocaleDateString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatBookingDate(draft.endDate)}
                   </>
                 )}
               </span>
