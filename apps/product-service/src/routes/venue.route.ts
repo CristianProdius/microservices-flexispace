@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   shouldBeHost,
   shouldBeHostOrAdmin,
+  resolveActingHost,
 } from "../middleware/authMiddleware.js";
 import {
   getMyVenues,
@@ -13,10 +14,10 @@ import {
 
 const router: Router = Router();
 
-router.get("/host/my", shouldBeHost, getMyVenues);
-router.post("/", shouldBeHost, createVenue);
+router.get("/host/my", shouldBeHost, resolveActingHost, getMyVenues);
+router.post("/", shouldBeHost, resolveActingHost, createVenue);
 router.get("/:id", getVenue);
-router.put("/:id", shouldBeHostOrAdmin, updateVenue);
-router.delete("/:id", shouldBeHostOrAdmin, deleteVenue);
+router.put("/:id", shouldBeHostOrAdmin, resolveActingHost, updateVenue);
+router.delete("/:id", shouldBeHostOrAdmin, resolveActingHost, deleteVenue);
 
 export default router;

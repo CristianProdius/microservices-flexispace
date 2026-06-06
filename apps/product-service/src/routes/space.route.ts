@@ -17,13 +17,13 @@ import {
   deleteReview,
   respondToReview,
 } from "../controllers/review.controller.js";
-import { shouldBeUser, shouldBeHost, shouldBeHostOrAdmin } from "../middleware/authMiddleware.js";
+import { shouldBeUser, shouldBeHost, shouldBeHostOrAdmin, resolveActingHost } from "../middleware/authMiddleware.js";
 
 const router: Router = Router();
 
 // Public routes
 router.get("/", getSpaces);
-router.get("/host/my", shouldBeHost, getMySpaces);
+router.get("/host/my", shouldBeHost, resolveActingHost, getMySpaces);
 router.get("/:id", getSpace);
 router.get("/:id/availability", getAvailability);
 router.get("/:id/reviews", getSpaceReviews);
@@ -35,10 +35,10 @@ router.put("/reviews/:reviewId", shouldBeUser, updateReview);
 router.delete("/reviews/:reviewId", shouldBeUser, deleteReview);
 
 // Host routes (space management)
-router.post("/", shouldBeHost, createSpace);
-router.put("/:id", shouldBeHostOrAdmin, updateSpace);
-router.delete("/:id", shouldBeHost, deleteSpace);
-router.put("/:id/availability", shouldBeHost, updateAvailability);
-router.post("/reviews/:reviewId/respond", shouldBeHost, respondToReview);
+router.post("/", shouldBeHost, resolveActingHost, createSpace);
+router.put("/:id", shouldBeHostOrAdmin, resolveActingHost, updateSpace);
+router.delete("/:id", shouldBeHost, resolveActingHost, deleteSpace);
+router.put("/:id/availability", shouldBeHost, resolveActingHost, updateAvailability);
+router.post("/reviews/:reviewId/respond", shouldBeHost, resolveActingHost, respondToReview);
 
 export default router;

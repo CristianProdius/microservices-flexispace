@@ -4,4 +4,5 @@ export {
   shouldBeAdmin,
   shouldBeHost,
   shouldBeHostOrAdmin,
+  resolveActingHost,
 } from "@repo/auth-middleware/express";
