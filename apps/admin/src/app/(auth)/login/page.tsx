@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
@@ -9,7 +9,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeRedirectPath } from "@/lib/safeRedirect";
 
+// useSearchParams forces the page out of static prerender in Next.js 15
+// unless its consumer is wrapped in a Suspense boundary. Split the form
+// into a child so the page shell still renders deterministically and the
+// `?next=` lookup happens inside Suspense.
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<LoginFormShell />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginFormShell() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2 text-center lg:text-left">
+        <h1 className="text-2xl font-semibold text-balance">Sign in</h1>
+        <p className="text-sm leading-6 text-[var(--auth-muted)] text-pretty">
+          Use your email and password to continue.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuthStore();
