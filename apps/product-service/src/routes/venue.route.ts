@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   shouldBeHost,
   shouldBeHostOrAdmin,
+  shouldBeAdmin,
   resolveActingHost,
 } from "../middleware/authMiddleware.js";
 import {
@@ -10,11 +11,13 @@ import {
   createVenue,
   updateVenue,
   deleteVenue,
+  getVenueCountsByHost,
 } from "../controllers/venue.controller.js";
 
 const router: Router = Router();
 
 router.get("/host/my", shouldBeHost, resolveActingHost, getMyVenues);
+router.get("/counts-by-host", shouldBeAdmin, getVenueCountsByHost);
 router.post("/", shouldBeHost, resolveActingHost, createVenue);
 router.get("/:id", getVenue);
 router.put("/:id", shouldBeHostOrAdmin, resolveActingHost, updateVenue);

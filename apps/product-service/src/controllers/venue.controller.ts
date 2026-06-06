@@ -264,3 +264,15 @@ export const deleteVenue = async (req: Request, res: Response) => {
   }
   res.status(200).json({ message: "Venue deleted successfully" });
 };
+
+export const getVenueCountsByHost = async (_req: Request, res: Response) => {
+  const grouped = await prisma.venue.groupBy({
+    by: ["hostId"],
+    _count: { _all: true },
+  });
+  const payload = grouped.map((row) => ({
+    hostId: row.hostId,
+    count: row._count._all,
+  }));
+  return res.status(200).json(payload);
+};
