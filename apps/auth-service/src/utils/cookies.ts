@@ -22,11 +22,22 @@ function sameSite(): "lax" | "none" | "strict" {
   return isSecure() ? "none" : "lax";
 }
 
+// When the auth-service is served from a different subdomain than the admin/
+// client apps (e.g. api.spacefly.ai vs admin.spacefly.ai), the session cookie
+// must be scoped to the parent domain so the browser sends it to both. Set
+// COOKIE_DOMAIN=.spacefly.ai in that case. Leave unset for single-host setups
+// and local dev — undefined means "host-only cookie" which is the safe default.
+function cookieDomain(): string | undefined {
+  const raw = process.env.COOKIE_DOMAIN?.trim();
+  return raw ? raw : undefined;
+}
+
 export function setAccessCookie(res: Response, token: string, maxAgeMs: number): void {
   res.cookie(ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: isSecure(),
     sameSite: sameSite(),
+    domain: cookieDomain(),
     path: ACCESS_COOKIE_PATH,
     maxAge: maxAgeMs,
   });
@@ -41,6 +52,7 @@ export function setRefreshCookie(
     httpOnly: true,
     secure: isSecure(),
     sameSite: sameSite(),
+    domain: cookieDomain(),
     path: REFRESH_COOKIE_PATH,
     maxAge: maxAgeMs,
   });
@@ -51,6 +63,7 @@ export function clearAccessCookie(res: Response): void {
     httpOnly: true,
     secure: isSecure(),
     sameSite: sameSite(),
+    domain: cookieDomain(),
     path: ACCESS_COOKIE_PATH,
   });
 }
@@ -60,6 +73,7 @@ export function clearRefreshCookie(res: Response): void {
     httpOnly: true,
     secure: isSecure(),
     sameSite: sameSite(),
+    domain: cookieDomain(),
     path: REFRESH_COOKIE_PATH,
   });
 }

@@ -13,6 +13,9 @@ x-api-env: &api-env
   # AUTHSVC-010: password-reset token signing.
   JWT_PASSWORD_RESET_SECRET: ${JWT_PASSWORD_RESET_SECRET:-}
   JWT_PASSWORD_RESET_EXPIRES_IN: ${JWT_PASSWORD_RESET_EXPIRES_IN:-30m}
+  # Parent-domain scope for the session cookie when api/admin run on different
+  # subdomains (set to .spacefly.ai in prod). Empty = host-only cookie.
+  COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
   CORS_ORIGINS: ${CORS_ORIGINS:-https://spacefly.ai,https://admin.spacefly.ai}
   KAFKA_BROKERS: kafka:9092
   KAFKA_ENABLED: ${KAFKA_ENABLED:-true}
