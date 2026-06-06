@@ -1,5 +1,6 @@
 import { createKafkaClient, isKafkaEnabled } from "@repo/kafka";
 import type { Producer } from "kafkajs";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import sendMail from "./utils/mailer.js";
 
@@ -47,14 +48,31 @@ let readinessDetails = ["startup has not completed"];
 // kafkajs redelivers in-process on throw. On rebalance the new owner restarts
 // the count from zero, which is the correct semantic (someone else gets a
 // fresh shot) and is bounded by MAX_RETRIES per consumer instance.
+//
+// AUD-023: a rebalance-induced redelivery from a different partition owner
+// CAN still cause `sendMail` to be invoked a second time. The durable safeguard
+// against that double-send is the deterministic `idempotencyKey` we pass to
+// `sendMail` (AUD-013) — Resend dedupes on that key for 24h, so a rebalance
+// race window is bounded to the same logical email and won't produce two
+// deliveries to the recipient.
 const attemptCounts = new Map<string, number>();
 const attemptKey = (topic: string, partition: number, offset: string) =>
   `${topic}:${partition}:${offset}`;
 
+// AUD-003: link-base envs are required for verification + password reset
+// templates. If either is missing the service refuses readiness rather than
+// silently falling back to `http://localhost:3002/...`, which would produce
+// emails that point at a non-existent endpoint in prod.
 const getEmailConfigErrors = () =>
   [
     process.env.RESEND_API_KEY ? null : "RESEND_API_KEY is not configured",
     process.env.RESEND_FROM_EMAIL ? null : "RESEND_FROM_EMAIL is not configured",
+    process.env.EMAIL_VERIFICATION_LINK_BASE
+      ? null
+      : "EMAIL_VERIFICATION_LINK_BASE is not configured",
+    process.env.PASSWORD_RESET_LINK_BASE
+      ? null
+      : "PASSWORD_RESET_LINK_BASE is not configured",
   ].filter((message): message is string => Boolean(message));
 
 type EmailEventMessage = {
@@ -73,14 +91,47 @@ type EmailEventMessage = {
     token?: string;
     userId?: string;
     name?: string | null;
+    expiresInMinutes?: number;
   };
 };
 
+class MissingEmailConfigError extends Error {
+  constructor(envVar: string) {
+    super(`${envVar} is not configured`);
+    this.name = "MissingEmailConfigError";
+  }
+}
+
+// AUD-003: throw if the env is missing — getEmailConfigErrors already prevents
+// the service from going ready without these, so this should never fire at
+// runtime. The throw is belt-and-suspenders for handler-time misuse and gives
+// us a typed signal we can introspect in tests.
 const verificationLinkFor = (token: string): string => {
-  const base = process.env.EMAIL_VERIFICATION_LINK_BASE || "http://localhost:3002/auth/verify-email";
+  const base = process.env.EMAIL_VERIFICATION_LINK_BASE;
+  if (!base) {
+    throw new MissingEmailConfigError("EMAIL_VERIFICATION_LINK_BASE");
+  }
   const separator = base.includes("?") ? "&" : "?";
   return `${base}${separator}token=${encodeURIComponent(token)}`;
 };
+
+// AUD-001: password-reset link builder follows the same shape as the
+// verification link. Producer (auth-service) sends a JWT in `token`; we
+// append it as a query param onto the configured base URL.
+const passwordResetLinkFor = (token: string): string => {
+  const base = process.env.PASSWORD_RESET_LINK_BASE;
+  if (!base) {
+    throw new MissingEmailConfigError("PASSWORD_RESET_LINK_BASE");
+  }
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(token)}`;
+};
+
+// AUD-013: produce a short, deterministic token hash for idempotency keys so
+// we can dedupe per-token without leaking the raw bearer token into Resend
+// logs or our own observability stack.
+const shortHash = (input: string): string =>
+  createHash("sha256").update(input).digest("hex").slice(0, 16);
 
 const formatCurrency = (amountInDollars: number | undefined) =>
   typeof amountInDollars === "number" ? `$${amountInDollars.toFixed(2)}` : undefined;
@@ -89,13 +140,17 @@ const subscriptions = [
   {
     topicName: "user.created",
     topicHandler: async (message: EmailEventMessage) => {
-      const { email, username } = message.value || {};
+      const { email, username, userId } = message.value || {};
 
       if (email) {
+        // AUD-013: dedupe welcome emails on userId (preferred) or email so a
+        // consumer-group rebalance can't double-send.
+        const idKey = `welcome:${userId ?? email}`;
         await sendMail({
           email,
           subject: "Welcome to Spacefly.ai",
           text: `Welcome ${username}. Your Spacefly.ai account has been created!`,
+          idempotencyKey: idKey,
         });
       }
     },
@@ -103,28 +158,64 @@ const subscriptions = [
   {
     topicName: "user.email-verification-requested",
     topicHandler: async (message: EmailEventMessage) => {
-      const { email, name, username, token } = message.value || {};
+      const { email, name, username, token, userId } = message.value || {};
       if (!email || !token) return;
 
       const link = verificationLinkFor(token);
       const greeting = name || username || "there";
+      // AUD-013: hash the token so it doesn't appear in idempotency keys /
+      // logs. If a new verification is requested, the token (and thus hash)
+      // changes, which is correct — we want a fresh email per token.
+      const idKey = `email-verification:${userId ?? email}:${shortHash(token)}`;
       await sendMail({
         email,
         subject: "Verify your Spacefly.ai email address",
         text: `Hi ${greeting},\n\nPlease verify your email address by visiting the following link (valid for 24 hours):\n\n${link}\n\nIf you did not create a Spacefly.ai account you can safely ignore this message.`,
+        idempotencyKey: idKey,
+      });
+    },
+  },
+  {
+    // AUD-001: subscribe to password reset events emitted by auth-service's
+    // POST /auth/forgot-password handler. Mirrors the verification email
+    // shape and uses PASSWORD_RESET_LINK_BASE for the click-through.
+    topicName: "user.password-reset-requested",
+    topicHandler: async (message: EmailEventMessage) => {
+      const { email, username, token, userId, expiresInMinutes } = message.value || {};
+      if (!email || !token) return;
+
+      const link = passwordResetLinkFor(token);
+      const greeting = username || "there";
+      const expiresCopy =
+        typeof expiresInMinutes === "number" && Number.isFinite(expiresInMinutes)
+          ? `valid for ${expiresInMinutes} minutes`
+          : "valid for a limited time";
+      // AUD-013: hash the token in the idempotency key so the raw bearer
+      // token never reaches Resend's idempotency store or our logs.
+      const idKey = `password-reset:${userId ?? email}:${shortHash(token)}`;
+      await sendMail({
+        email,
+        subject: "Reset your Spacefly.ai password",
+        text: `Hi ${greeting},\n\nWe received a request to reset your Spacefly.ai password. Use the link below to choose a new one (${expiresCopy}):\n\n${link}\n\nIf you did not request a password reset you can safely ignore this message — your password will remain unchanged.`,
+        idempotencyKey: idKey,
       });
     },
   },
   {
     topicName: "booking.created",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, hostEmail, spaceName, status } = message.value || {};
+      const { guestEmail, hostEmail, spaceName, status, bookingId } = message.value || {};
 
+      // AUD-013: dedupe per-booking so a redelivery doesn't double-send to
+      // either party. We send the guest and host emails under distinct keys
+      // because Resend dedupes per `idempotencyKey`, and they're distinct
+      // logical messages.
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking request was created",
           text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} has been created${status ? ` and is currently ${status.toLowerCase()}` : ""}.`,
+          idempotencyKey: bookingId ? `booking-created:guest:${bookingId}` : undefined,
         });
       }
 
@@ -133,6 +224,7 @@ const subscriptions = [
           email: hostEmail,
           subject: "New Spacefly.ai booking request",
           text: `You have a new booking request${spaceName ? ` for ${spaceName}` : ""}.`,
+          idempotencyKey: bookingId ? `booking-created:host:${bookingId}` : undefined,
         });
       }
     },
@@ -142,13 +234,16 @@ const subscriptions = [
     // state transition (the approve handler sets status to CONFIRMED).
     topicName: "booking.confirmed",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, guestName, spaceName } = message.value || {};
+      const { guestEmail, guestName, spaceName, bookingId } = message.value || {};
 
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking was confirmed",
           text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been confirmed.`,
+          // AUD-013: one key per (status, bookingId) so a later
+          // cancelled/completed transition still sends its own email.
+          idempotencyKey: bookingId ? `booking-confirmed:${bookingId}` : undefined,
         });
       }
     },
@@ -156,13 +251,14 @@ const subscriptions = [
   {
     topicName: "booking.rejected",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, spaceName, reason } = message.value || {};
+      const { guestEmail, spaceName, reason, bookingId } = message.value || {};
 
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking was declined",
           text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} was declined.${reason ? ` Reason: ${reason}` : ""}`,
+          idempotencyKey: bookingId ? `booking-rejected:${bookingId}` : undefined,
         });
       }
     },
@@ -170,7 +266,7 @@ const subscriptions = [
   {
     topicName: "booking.cancelled",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, hostEmail, spaceName, cancelledByRole } = message.value || {};
+      const { guestEmail, hostEmail, spaceName, cancelledByRole, bookingId } = message.value || {};
       const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledByRole ? ` by ${cancelledByRole.toLowerCase()}` : ""}.`;
 
       if (guestEmail) {
@@ -178,6 +274,7 @@ const subscriptions = [
           email: guestEmail,
           subject: "Your Spacefly.ai booking was cancelled",
           text,
+          idempotencyKey: bookingId ? `booking-cancelled:guest:${bookingId}` : undefined,
         });
       }
 
@@ -186,6 +283,7 @@ const subscriptions = [
           email: hostEmail,
           subject: "A Spacefly.ai booking was cancelled",
           text,
+          idempotencyKey: bookingId ? `booking-cancelled:host:${bookingId}` : undefined,
         });
       }
     },
@@ -193,7 +291,7 @@ const subscriptions = [
   {
     topicName: "booking.completed",
     topicHandler: async (message: EmailEventMessage) => {
-      const { guestEmail, spaceName, totalAmount } = message.value || {};
+      const { guestEmail, spaceName, totalAmount, bookingId } = message.value || {};
       const formattedTotal = formatCurrency(totalAmount);
 
       if (guestEmail) {
@@ -201,6 +299,7 @@ const subscriptions = [
           email: guestEmail,
           subject: "Your Spacefly.ai booking is complete",
           text: `Your booking${spaceName ? ` for ${spaceName}` : ""} is complete.${formattedTotal ? ` Total: ${formattedTotal}.` : ""}`,
+          idempotencyKey: bookingId ? `booking-completed:${bookingId}` : undefined,
         });
       }
     },

@@ -62,10 +62,13 @@ const sendMail = async ({
   );
 
   if (error) {
+    // AUD-036: do not echo recipient or full payload in error logs either.
     throw new Error(`Failed to send email: ${error.message}`);
   }
 
-  console.log("MESSAGE SENT:", data);
+  // AUD-036: log only the Resend message id, never the full response (which
+  // includes the recipient address and other PII).
+  console.log("Email sent:", { id: data?.id });
 };
 
 export default sendMail;
