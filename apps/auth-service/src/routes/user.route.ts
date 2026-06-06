@@ -454,8 +454,17 @@ router.delete("/:id", async (req, res) => {
           deletedAt: new Date(),
         },
       }),
-      // Invalidate any active refresh-token sessions.
+      // Invalidate any active legacy sessions (Session table).
       prisma.session.deleteMany({ where: { userId: id } }),
+      // Revoke every refresh token in the rotation chain so /auth/refresh
+      // can no longer mint a fresh access token for the deleted user. Without
+      // this, a soft-deleted user with a still-valid refresh token kept on
+      // their device could continue silently rolling new access tokens until
+      // the refresh token naturally expired (up to 7 days).
+      prisma.refreshToken.updateMany({
+        where: { userId: id, revoked: false },
+        data: { revoked: true },
+      }),
     ]);
 
     return res

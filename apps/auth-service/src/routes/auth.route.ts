@@ -289,10 +289,13 @@ router.post("/login", loginLimiter, async (req, res) => {
     const email = body.email ? normalizeEmail(body.email) : undefined;
     const username = body.username?.trim();
 
+    // findFirst (not findUnique) so we can apply the deletedAt filter — a
+    // soft-deleted user must not be able to authenticate even if their email
+    // happens to still be unique among deleted rows.
     const user = email
-      ? await prisma.user.findUnique({ where: { email } })
+      ? await prisma.user.findFirst({ where: { email, deletedAt: null } })
       : username
-        ? await prisma.user.findUnique({ where: { username } })
+        ? await prisma.user.findFirst({ where: { username, deletedAt: null } })
         : null;
 
     // AUTHSVC-003: always run bcrypt.compare so timing does not leak whether
@@ -480,10 +483,12 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
         .json({ message: "Refresh token reuse detected; please log in again." });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
+    const user = await prisma.user.findFirst({
+      where: { id: payload.userId, deletedAt: null },
     });
     if (!user) {
+      // Either the user vanished or was soft-deleted — refuse to rotate so the
+      // refresh chain dies with the account.
       return res.status(401).json({ message: "Invalid refresh token" });
     }
 
@@ -548,7 +553,9 @@ const handleVerifyEmail = async (token: string | undefined, res: Response) => {
     return res.status(400).json({ message: "Verification token is invalid or expired" });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+  const user = await prisma.user.findFirst({
+    where: { id: payload.userId, deletedAt: null },
+  });
   if (!user || user.email !== payload.email) {
     return res.status(400).json({ message: "Verification token is invalid or expired" });
   }
@@ -587,7 +594,9 @@ router.post("/resend-verification", async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
+    });
     if (user && !user.emailVerified) {
       sendVerificationEvent(user);
     }
@@ -633,7 +642,9 @@ router.post("/change-password", shouldBeUser, async (req, res) => {
         .json({ message: "New password must be different from the current password" });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    const user = await prisma.user.findFirst({
+      where: { id: req.userId, deletedAt: null },
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -691,8 +702,8 @@ router.get("/me", shouldBeUser, async (req, res) => {
   try {
     const userId = req.userId;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -715,9 +726,15 @@ router.get("/me", shouldBeUser, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // The effective commission rate the booking flow will use for this user:
-    // their per-host override if set, otherwise the platform default. This is
-    // read-only — only an admin can mutate the override.
+    // Commission only makes sense for hosts (and admins acting as one). Regular
+    // USER accounts don't get the field at all — neither the override nor the
+    // platform default, since exposing the default would leak business config
+    // to every signed-in customer.
+    if (user.role !== "HOST" && user.role !== "ADMIN") {
+      const { commissionRate: _commissionRate, ...rest } = user;
+      return res.status(200).json(rest);
+    }
+
     const envDefault = Number.parseFloat(process.env.DEFAULT_COMMISSION_RATE ?? "");
     const platformDefault = Number.isFinite(envDefault) && envDefault >= 0 ? envDefault : 0;
     const effectiveCommissionRate =
@@ -782,7 +799,9 @@ router.post("/become-host", shouldBeUser, async (req, res) => {
     const body = parseBody(becomeHostSchema, req.body ?? {}, res);
     if (!body) return;
 
-    const currentUser = await prisma.user.findUnique({ where: { id: userId } });
+    const currentUser = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -858,8 +877,8 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res) => {
     if (!body) return;
 
     const email = normalizeEmail(body.email);
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
       select: { id: true, email: true, username: true },
     });
 
@@ -914,8 +933,8 @@ router.post("/reset-password", resetPasswordLimiter, async (req, res) => {
       return res.status(400).json({ message: "Reset token has already been used" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
+    const user = await prisma.user.findFirst({
+      where: { id: payload.userId, deletedAt: null },
       select: { id: true, email: true },
     });
     if (!user || user.email !== normalizeEmail(payload.email)) {

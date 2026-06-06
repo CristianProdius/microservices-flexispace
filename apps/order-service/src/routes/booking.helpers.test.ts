@@ -420,4 +420,57 @@ describe("calculateBookingPrice commission model (PRICE-002)", () => {
       }
     }
   });
+
+  it("clamps an out-of-range per-host commission to 1.0 (PRICE-003)", () => {
+    // A stray 1.5 (stale row from before the admin validator was added, or a
+    // misconfigured manual UPDATE) must not make commission > subtotal.
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: 100,
+        pricePerHour: null,
+        pricingType: "DAILY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      null,
+      null,
+      1.5
+    );
+    expect(result.subtotal).toBe(100);
+    expect(result.serviceFee).toBe(100); // clamped to 1.0 -> 100% of subtotal
+  });
+});
+
+describe("calculateBookingPrice no-intersection zero-hour candidate (PRICE-004)", () => {
+  // Mon 2026-05-18 (dayOfWeek=1) open 09-12 only.
+  const availability = [
+    { dayOfWeek: 1, endTime: "12:00", isOpen: true, startTime: "09:00" },
+  ];
+
+  it("does not bill 0 when the requested window misses every open day", () => {
+    // Request Mon 13-18 against Mon 09-12 availability: billableHourlyHours
+    // returns 0. Before the fix, the hourly candidate was `pricePerHour * 0 = 0`
+    // and won Math.min, making the subtotal 0 and the booking free. The fix
+    // skips zero-hour candidates so a tier or the daily rate wins instead.
+    const result = calculateBookingPrice(
+      {
+        availability,
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: 200,
+        pricePerHour: 50,
+        pricingType: "BOTH",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      "13:00",
+      "18:00",
+      0.1
+    );
+    // Daily rate (200) is the only surviving candidate.
+    expect(result.subtotal).toBe(200);
+  });
 });

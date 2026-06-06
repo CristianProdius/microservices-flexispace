@@ -437,12 +437,18 @@ const billableHourlyHours = (
 // deduction. Per-host override on User.commissionRate; falls back to the
 // DEFAULT_COMMISSION_RATE env var; final fallback to 0 so a misconfigured env
 // can't silently double-charge or hide revenue.
+//
+// Clamps to [0, 1]: a stray 1.5 (from a stale row written before the admin
+// validator was added, or a misconfigured env) would make serviceFee > subtotal
+// and produce a negative host payout. The admin write-path enforces the same
+// range, but this function is the last line of defense at booking time.
 export const resolveCommissionRate = (hostCommissionRate: number | null | undefined): number => {
-  if (typeof hostCommissionRate === "number" && hostCommissionRate >= 0) {
-    return hostCommissionRate;
+  const clamp = (raw: number) => Math.max(0, Math.min(1, raw));
+  if (typeof hostCommissionRate === "number" && Number.isFinite(hostCommissionRate) && hostCommissionRate >= 0) {
+    return clamp(hostCommissionRate);
   }
   const fromEnv = Number.parseFloat(process.env.DEFAULT_COMMISSION_RATE ?? "");
-  return Number.isFinite(fromEnv) && fromEnv >= 0 ? fromEnv : 0;
+  return Number.isFinite(fromEnv) && fromEnv >= 0 ? clamp(fromEnv) : 0;
 };
 
 // Calculate booking price based on space pricing and duration.
@@ -519,7 +525,15 @@ export const calculateBookingPrice = (
       startTime!,
       endTime!
     );
-    candidates.push(roundCurrency(space.pricePerHour! * hours));
+    // Skip a zero-hour candidate. billableHourlyHours returns 0 when the
+    // requested time window doesn't intersect any open day (e.g. asking for
+    // Mon 13-18 against a Mon 09-12 availability). validateAvailabilityRules
+    // currently only checks that the day is open, not that the window
+    // intersects, so a zero would silently win Math.min and bill the
+    // booking for the cleaning fee alone.
+    if (hours > 0) {
+      candidates.push(roundCurrency(space.pricePerHour! * hours));
+    }
   }
   if (allowsDaily) {
     candidates.push(roundCurrency(space.pricePerDay! * days));
@@ -889,7 +903,15 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(404).send({ message: "Booking not found" });
       }
 
-      if (booking.hostId !== hostId && request.user?.role !== "ADMIN") {
+      // When an admin is "acting as" a specific host (X-Acting-Host-Id header
+      // applied by resolveActingHost), the blanket ADMIN override is suspended
+      // — they must own the booking AS that host, matching the venue/space
+      // controllers tightened in commit 9433cbd. Without this check, an admin
+      // impersonating host A could approve a booking belonging to host B,
+      // breaking the audit-log promise of the impersonation pretense.
+      const adminOverride =
+        request.user?.role === "ADMIN" && (request as any).actingHostId === undefined;
+      if (booking.hostId !== hostId && !adminOverride) {
         return reply.status(403).send({ message: "Not authorized" });
       }
 
@@ -1075,7 +1097,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(404).send({ message: "Booking not found" });
       }
 
-      if (booking.hostId !== hostId && request.user?.role !== "ADMIN") {
+      // Blanket ADMIN override is suspended while impersonating a specific
+      // host (see /approve for the full rationale).
+      const adminOverride =
+        request.user?.role === "ADMIN" && (request as any).actingHostId === undefined;
+      if (booking.hostId !== hostId && !adminOverride) {
         return reply.status(403).send({ message: "Not authorized" });
       }
 
@@ -1273,7 +1299,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(404).send({ message: "Booking not found" });
       }
 
-      if (booking.hostId !== hostId && request.user?.role !== "ADMIN") {
+      // Blanket ADMIN override is suspended while impersonating a specific
+      // host (see /approve for the full rationale).
+      const adminOverride =
+        request.user?.role === "ADMIN" && (request as any).actingHostId === undefined;
+      if (booking.hostId !== hostId && !adminOverride) {
         return reply.status(403).send({ message: "Not authorized" });
       }
 
