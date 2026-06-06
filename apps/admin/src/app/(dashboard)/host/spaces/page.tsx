@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   BadgeCheck,
@@ -52,7 +53,7 @@ interface Space {
 
 const HostSpacesPage = () => {
   const router = useRouter();
-  const { actingHostId } = useAuthStore();
+  const { actingHostId, isAdmin } = useAuthStore();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +187,10 @@ const HostSpacesPage = () => {
   const reviewedSpaces = spaces.filter(
     (space) => space.averageRating != null && space.averageRating > 0,
   ).length;
+
+  if (isAdmin && !actingHostId) {
+    return <HostEmptyAdminBanner />;
+  }
 
   if (loading) {
     return (

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   Calendar,
@@ -45,7 +46,7 @@ interface EarningsStats {
 
 const HostEarningsPage = () => {
   const router = useRouter();
-  const { actingHostId } = useAuthStore();
+  const { actingHostId, isAdmin } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<EarningsStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,6 +158,10 @@ const HostEarningsPage = () => {
   useEffect(() => {
     fetchEarnings();
   }, [fetchEarnings]);
+
+  if (isAdmin && !actingHostId) {
+    return <HostEmptyAdminBanner />;
+  }
 
   if (loading) {
     return (

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
+import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   AlertCircle,
@@ -45,7 +46,7 @@ interface HostBookingSummary {
 
 const HostDashboardPage = () => {
   const router = useRouter();
-  const { actingHostId, user } = useAuthStore();
+  const { actingHostId, user, isAdmin } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -136,6 +137,10 @@ const HostDashboardPage = () => {
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
+
+  if (isAdmin && !actingHostId) {
+    return <HostEmptyAdminBanner />;
+  }
 
   if (loading) {
     return (

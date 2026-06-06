@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useAuthStore from "@/stores/authStore";
+import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   Hotel,
@@ -39,7 +40,7 @@ interface Venue {
 
 const HostVenuesPage = () => {
   const router = useRouter();
-  const { actingHostId } = useAuthStore();
+  const { actingHostId, isAdmin } = useAuthStore();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +119,10 @@ const HostVenuesPage = () => {
   };
 
   const totalSpaces = venues.reduce((sum, v) => sum + (v._count?.spaces ?? 0), 0);
+
+  if (isAdmin && !actingHostId) {
+    return <HostEmptyAdminBanner />;
+  }
 
   if (loading) {
     return (

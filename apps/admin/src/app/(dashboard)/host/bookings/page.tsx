@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import useAuthStore from "@/stores/authStore";
+import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
   AlertCircle,
@@ -81,7 +82,7 @@ const normalizeStatusFilter = (raw: string | null): string => {
 const HostBookingsPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { actingHostId } = useAuthStore();
+  const { actingHostId, isAdmin } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -315,6 +316,10 @@ const HostBookingsPage = () => {
   const completedCount = bookings.filter(
     (booking) => booking.status === "COMPLETED"
   ).length;
+
+  if (isAdmin && !actingHostId) {
+    return <HostEmptyAdminBanner />;
+  }
 
   if (loading) {
     return (
