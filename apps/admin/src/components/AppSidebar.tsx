@@ -38,6 +38,7 @@ import {
 import useAuthStore from "@/stores/authStore";
 import { useRouter } from "next/navigation";
 import { Badge } from "./ui/badge";
+import { HostSwitcher } from "./HostSwitcher";
 
 const AppSidebar = () => {
   const { user, isAdmin, logout } = useAuthStore();
@@ -100,6 +101,7 @@ const AppSidebar = () => {
           <SidebarGroupLabel>
             {isAdmin ? "Host View" : "Host Dashboard"}
           </SidebarGroupLabel>
+          <HostSwitcher />
           <SidebarGroupContent>
             <SidebarMenu>
               {hostNavItems.map((item) => (
