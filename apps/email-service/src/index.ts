@@ -42,6 +42,19 @@ let ready = false;
 let consumerConnected = false;
 let readinessDetails = ["startup has not completed"];
 
+// AUD-EMAIL-READY: backoff schedule for Kafka setup retries. The previous
+// implementation gave up after the first transient `UNKNOWN_TOPIC_OR_PARTITION`
+// at boot, parking the service in a permanent "not_ready" state until an
+// operator restarted it. We now retry indefinitely (until shutdown) so the
+// service recovers on its own once Kafka stabilises.
+const KAFKA_BACKOFF_SEQUENCE_MS = [1_000, 2_000, 5_000, 10_000, 30_000];
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+let shuttingDown = false;
+// Guard against piling up multiple recovery loops if CRASH fires repeatedly.
+let consumerRecoveryPromise: Promise<void> | null = null;
+
 // In-memory attempt counter keyed by `topic:partition:offset`. Kafka message
 // headers are immutable from the consumer, so we cannot rewrite an attempt
 // count onto the original record; an in-process map is sufficient because
@@ -389,6 +402,160 @@ const publishToDlq = async (params: {
   }
 };
 
+// Retry a setup step with exponential backoff. Returns when the step succeeds
+// OR when `shuttingDown` flips to true (in which case we just resolve quietly
+// and let the shutdown path tear things down).
+const withBackoffUntilReady = async (
+  label: string,
+  step: () => Promise<void>,
+): Promise<void> => {
+  for (let attempt = 0; !shuttingDown; attempt++) {
+    try {
+      await step();
+      return;
+    } catch (err) {
+      const backoff =
+        KAFKA_BACKOFF_SEQUENCE_MS[
+          Math.min(attempt, KAFKA_BACKOFF_SEQUENCE_MS.length - 1)
+        ]!;
+      const msg = err instanceof Error ? err.message : String(err);
+      // Update readiness so /health reflects the current obstacle, not a
+      // stale snapshot from the first failure.
+      ready = false;
+      readinessDetails = [`${label} failed: ${msg}`];
+      console.warn(
+        `[email-service] ${label} attempt ${attempt + 1} failed: ${msg}; retrying in ${backoff}ms`,
+      );
+      await sleep(backoff);
+    }
+  }
+};
+
+const buildEachMessageHandler =
+  () => async ({ topic, partition, message }: { topic: string; partition: number; message: { value: Buffer | null; offset: string; headers?: Record<string, Buffer | string | (Buffer | string)[] | undefined> } }) => {
+    const subscription = subscriptions.find((candidate) => candidate.topicName === topic);
+    const rawValue = message.value;
+    const value = rawValue?.toString();
+
+    if (!subscription || !value) {
+      return;
+    }
+
+    // EMAIL-001/002: parse errors are poison messages — they will never
+    // succeed on retry, so park them in the DLQ immediately and commit.
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch (parseError) {
+      await publishToDlq({
+        sourceTopic: topic,
+        partition,
+        offset: message.offset,
+        originalValue: rawValue ?? null,
+        originalHeaders: message.headers,
+        attempts: 0,
+        reason: "parse_error",
+        error: parseError,
+      });
+      return;
+    }
+
+    const key = attemptKey(topic, partition, message.offset);
+    const attempts = (attemptCounts.get(key) ?? 0) + 1;
+    attemptCounts.set(key, attempts);
+
+    try {
+      await subscription.topicHandler(
+        parsed && typeof parsed === "object" ? (parsed as EmailEventMessage) : {},
+      );
+      attemptCounts.delete(key);
+    } catch (handlerError) {
+      if (attempts >= MAX_RETRIES) {
+        try {
+          await publishToDlq({
+            sourceTopic: topic,
+            partition,
+            offset: message.offset,
+            originalValue: rawValue ?? null,
+            originalHeaders: message.headers,
+            attempts,
+            reason: "max_retries_exceeded",
+            error: handlerError,
+          });
+          attemptCounts.delete(key);
+          return;
+        } catch (dlqError) {
+          console.error(
+            `[email-service] Could not park ${topic} message in DLQ; will retry handler. dlqError:`,
+            dlqError,
+          );
+          throw handlerError;
+        }
+      }
+
+      console.warn(
+        `[email-service] Handler failed for ${topic} (attempt ${attempts}/${MAX_RETRIES}); re-throwing for retry.`,
+        handlerError instanceof Error ? handlerError.message : handlerError,
+      );
+      throw handlerError;
+    }
+  };
+
+// Connect + subscribe + run the consumer, retrying until success (or shutdown).
+// Safe to call again after a CRASH: disconnects any stale state first.
+const setupConsumer = async (): Promise<void> => {
+  await withBackoffUntilReady("Kafka consumer setup", async () => {
+    if (consumerConnected) {
+      try {
+        await consumer.disconnect();
+      } catch {
+        // Ignore — we're about to reconnect.
+      }
+      consumerConnected = false;
+    }
+    await consumer.connect();
+    consumerConnected = true;
+    await consumer.subscribe({
+      topics: subscriptions.map((subscription) => subscription.topicName),
+      // Match @repo/kafka createConsumer's default. New consumer groups start
+      // at the earliest offset so we don't lose pre-existing booking events
+      // during a cold deploy. For an already-committed group this is a no-op.
+      fromBeginning: true,
+    });
+    await consumer.run({ eachMessage: buildEachMessageHandler() });
+
+    ready = true;
+    readinessDetails = [];
+    console.log("Email service is ready");
+  });
+};
+
+// AUD-EMAIL-READY: keep `ready`/`readinessDetails` in sync with kafkajs runtime
+// events instead of caching the first error forever. CRASH triggers a recovery
+// loop; CONNECT/DISCONNECT keep the readiness flag honest.
+consumer.on(consumer.events.DISCONNECT, () => {
+  if (shuttingDown) return;
+  ready = false;
+  readinessDetails = ["Kafka consumer disconnected (kafkajs will attempt to reconnect)"];
+  console.warn("[email-service] Consumer disconnected");
+});
+
+consumer.on(consumer.events.CRASH, ({ payload }) => {
+  if (shuttingDown) return;
+  ready = false;
+  const msg = payload?.error instanceof Error ? payload.error.message : "consumer crashed";
+  readinessDetails = [`Kafka consumer crashed: ${msg}`];
+  console.error("[email-service] Consumer crashed; attempting recovery:", msg);
+  if (consumerRecoveryPromise) return;
+  consumerRecoveryPromise = setupConsumer()
+    .catch((err) => {
+      console.error("[email-service] Consumer recovery loop exited:", err);
+    })
+    .finally(() => {
+      consumerRecoveryPromise = null;
+    });
+});
+
 const start = async () => {
   try {
     server.listen(PORT, () => {
@@ -412,103 +579,16 @@ const start = async () => {
     // Spin up a dedicated DLQ producer. We construct via kafkajs directly
     // (not @repo/kafka's createProducer) because the shared helper swallows
     // send errors, and we need failures to propagate so we can re-throw.
-    dlqProducer = kafka.producer();
-    await dlqProducer.connect();
-    dlqProducerConnected = true;
-    console.log("[email-service] DLQ producer connected");
-
-    await consumer.connect();
-    consumerConnected = true;
-    await consumer.subscribe({
-      topics: subscriptions.map((subscription) => subscription.topicName),
-      // Match @repo/kafka createConsumer's default. New consumer groups start
-      // at the earliest offset so we don't lose pre-existing booking events
-      // during a cold deploy. For an already-committed group this is a no-op.
-      fromBeginning: true,
+    await withBackoffUntilReady("DLQ producer connect", async () => {
+      const producer = kafka.producer();
+      await producer.connect();
+      dlqProducer = producer;
+      dlqProducerConnected = true;
+      console.log("[email-service] DLQ producer connected");
     });
 
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        const subscription = subscriptions.find((candidate) => candidate.topicName === topic);
-        const rawValue = message.value;
-        const value = rawValue?.toString();
-
-        if (!subscription || !value) {
-          return;
-        }
-
-        // EMAIL-001/002: parse errors are poison messages — they will never
-        // succeed on retry, so park them in the DLQ immediately and commit.
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(value);
-        } catch (parseError) {
-          await publishToDlq({
-            sourceTopic: topic,
-            partition,
-            offset: message.offset,
-            originalValue: rawValue ?? null,
-            originalHeaders: message.headers,
-            attempts: 0,
-            reason: "parse_error",
-            error: parseError,
-          });
-          return;
-        }
-
-        const key = attemptKey(topic, partition, message.offset);
-        const attempts = (attemptCounts.get(key) ?? 0) + 1;
-        attemptCounts.set(key, attempts);
-
-        try {
-          await subscription.topicHandler(parsed && typeof parsed === "object" ? (parsed as EmailEventMessage) : {});
-          // Success: drop the counter to bound memory.
-          attemptCounts.delete(key);
-        } catch (handlerError) {
-          if (attempts >= MAX_RETRIES) {
-            // Exhausted retries — park in DLQ and commit the offset by
-            // returning normally. If the DLQ publish itself throws, we let
-            // the throw propagate so kafkajs retries (rather than silently
-            // dropping the message — that would be the EMAIL-001 regression).
-            try {
-              await publishToDlq({
-                sourceTopic: topic,
-                partition,
-                offset: message.offset,
-                originalValue: rawValue ?? null,
-                originalHeaders: message.headers,
-                attempts,
-                reason: "max_retries_exceeded",
-                error: handlerError,
-              });
-              attemptCounts.delete(key);
-              return;
-            } catch (dlqError) {
-              // publishToDlq already logged. Re-throw the original handler
-              // error so kafkajs retries and we get another shot at the DLQ.
-              console.error(
-                `[email-service] Could not park ${topic} message in DLQ; will retry handler. dlqError:`,
-                dlqError
-              );
-              throw handlerError;
-            }
-          }
-
-          // Transient failure with retry budget remaining — re-throw so
-          // kafkajs backs off and re-invokes eachMessage on the same offset
-          // instead of silently committing (EMAIL-001).
-          console.warn(
-            `[email-service] Handler failed for ${topic} (attempt ${attempts}/${MAX_RETRIES}); re-throwing for retry.`,
-            handlerError instanceof Error ? handlerError.message : handlerError
-          );
-          throw handlerError;
-        }
-      },
-    });
-
-    ready = true;
-    readinessDetails = [];
-    console.log("Email service is ready");
+    if (shuttingDown) return;
+    await setupConsumer();
   } catch (error) {
     ready = false;
     readinessDetails = [error instanceof Error ? error.message : "Email service startup failed"];
@@ -521,9 +601,23 @@ start();
 const shutdown = async (signal: NodeJS.Signals) => {
   // EMAIL-008: flip readiness immediately so /health reports 503 and the
   // orchestrator stops sending traffic / new pods are spun up to take over.
+  // AUD-EMAIL-READY: also flip `shuttingDown` so any in-flight setup-retry
+  // loop bails out cleanly instead of fighting the disconnect calls below.
   ready = false;
   readinessDetails = ["shutting down"];
+  shuttingDown = true;
   console.log(`${signal} received. Shutting down email service...`);
+
+  // If a CRASH-driven recovery loop is currently mid-backoff, wait for it
+  // to notice `shuttingDown` and exit before we tear the consumer down so
+  // we don't race a reconnect against a disconnect.
+  if (consumerRecoveryPromise) {
+    try {
+      await consumerRecoveryPromise;
+    } catch {
+      // already logged by the recovery loop's own catch
+    }
+  }
 
   // EMAIL-008: drain in dependency order — consumer first (stop pulling new
   // work and let in-flight handlers finish), then DLQ producer (no longer
