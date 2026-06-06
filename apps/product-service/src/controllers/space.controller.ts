@@ -696,6 +696,9 @@ export const updateSpace = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid ID" });
   const userId = req.userId!;
   const userRole = req.user?.role;
+  // Admin gets a blanket override only when NOT impersonating a host; otherwise
+  // they must own the resource as the acting host.
+  const adminOverride = userRole === "ADMIN" && req.actingHostId === undefined;
 
   const existingSpace = await prisma.space.findUnique({
     where: { id: spaceId },
@@ -705,8 +708,7 @@ export const updateSpace = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Space not found" });
   }
 
-  // Check ownership (unless admin)
-  if (existingSpace.hostId !== userId && userRole !== "ADMIN") {
+  if (existingSpace.hostId !== userId && !adminOverride) {
     return res
       .status(403)
       .json({ message: "Not authorized to update this space" });
@@ -763,7 +765,7 @@ export const updateSpace = async (req: Request, res: Response) => {
     if (!venue) {
       return res.status(400).json({ message: "Venue not found" });
     }
-    if (venue.hostId !== userId && userRole !== "ADMIN") {
+    if (venue.hostId !== userId && !adminOverride) {
       return res.status(403).json({ message: "Venue does not belong to you" });
     }
     allowed.venueId = venueId;
@@ -885,6 +887,7 @@ export const deleteSpace = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid ID" });
   const userId = req.userId!;
   const userRole = req.user?.role;
+  const adminOverride = userRole === "ADMIN" && req.actingHostId === undefined;
 
   const existingSpace = await prisma.space.findUnique({
     where: { id: spaceId },
@@ -894,7 +897,7 @@ export const deleteSpace = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Space not found" });
   }
 
-  if (existingSpace.hostId !== userId && userRole !== "ADMIN") {
+  if (existingSpace.hostId !== userId && !adminOverride) {
     return res
       .status(403)
       .json({ message: "Not authorized to delete this space" });
@@ -998,7 +1001,8 @@ export const updateAvailability = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Space not found" });
   }
 
-  if (space.hostId !== userId && req.user?.role !== "ADMIN") {
+  const adminOverride = req.user?.role === "ADMIN" && req.actingHostId === undefined;
+  if (space.hostId !== userId && !adminOverride) {
     return res.status(403).json({ message: "Not authorized" });
   }
 

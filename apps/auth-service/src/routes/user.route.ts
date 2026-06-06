@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomBytes } from "crypto";
 import { prisma, Role } from "@repo/db";
 import { hashPassword, normalizeEmail } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
@@ -40,11 +41,9 @@ function slugifyForEmail(username: string): string {
 }
 
 function generateRandomPassword(): string {
-  // 64 random bytes -> base64. Used as a placeholder for lead accounts that
-  // cannot log in until an invite/password-reset flow rotates it.
-  const buf = Buffer.alloc(64);
-  for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
-  return buf.toString("base64");
+  // 64 cryptographically-secure random bytes. Lead accounts cannot log in
+  // until an invite/password-reset flow rotates it.
+  return randomBytes(64).toString("base64");
 }
 
 // Get all users (admin only)

@@ -110,8 +110,8 @@ export async function shouldBeHostOrAdmin(request: FastifyRequest, reply: Fastif
 }
 
 export async function resolveActingHost(request: FastifyRequest, reply: FastifyReply) {
-  const headerValue = request.headers["x-acting-host-id"];
-  const headerStr = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  const raw = request.headers["x-acting-host-id"];
+  const headerStr = (Array.isArray(raw) ? raw[0] : raw)?.trim();
   if (!headerStr) return;
 
   const user = (request as any).user;

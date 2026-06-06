@@ -153,9 +153,12 @@ export const updateVenue = async (req: Request, res: Response) => {
   if (Number.isNaN(venueId)) return res.status(400).json({ message: "Invalid ID" });
   const userId = req.userId!;
   const userRole = req.user?.role;
+  // When admin is acting as a specific host (actingHostId set), they must own
+  // the resource AS that host — the blanket ADMIN override is suspended.
+  const adminOverride = userRole === "ADMIN" && req.actingHostId === undefined;
   const existing = await prisma.venue.findUnique({ where: { id: venueId } });
   if (!existing) return res.status(404).json({ message: "Venue not found" });
-  if (existing.hostId !== userId && userRole !== "ADMIN") {
+  if (existing.hostId !== userId && !adminOverride) {
     return res
       .status(403)
       .json({ message: "Not authorized to update this venue" });
@@ -237,9 +240,10 @@ export const deleteVenue = async (req: Request, res: Response) => {
   if (Number.isNaN(venueId)) return res.status(400).json({ message: "Invalid ID" });
   const userId = req.userId!;
   const userRole = req.user?.role;
+  const adminOverride = userRole === "ADMIN" && req.actingHostId === undefined;
   const existing = await prisma.venue.findUnique({ where: { id: venueId } });
   if (!existing) return res.status(404).json({ message: "Venue not found" });
-  if (existing.hostId !== userId && userRole !== "ADMIN") {
+  if (existing.hostId !== userId && !adminOverride) {
     return res
       .status(403)
       .json({ message: "Not authorized to delete this venue" });

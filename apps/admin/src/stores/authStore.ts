@@ -134,6 +134,11 @@ const useAuthStore = create<AuthState>((set) => ({
 
     auth.saveTokens(response.accessToken, response.refreshToken);
     auth.saveUser(response.user);
+    // Clear any stale acting-host selection so a fresh session starts clean,
+    // even if a previous admin selection lingered in localStorage.
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(ACTING_HOST_STORAGE_KEY);
+    }
     set({
       user: response.user,
       token: response.accessToken,
@@ -141,6 +146,7 @@ const useAuthStore = create<AuthState>((set) => ({
       isAdmin: response.user.role === "ADMIN",
       isHost: response.user.role === "HOST",
       isHostOrAdmin: true,
+      actingHostId: null,
     });
     return response.user;
   },

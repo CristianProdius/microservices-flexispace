@@ -105,7 +105,7 @@ export async function shouldBeHostOrAdmin(req: Request, res: Response, next: Nex
 }
 
 export async function resolveActingHost(req: Request, res: Response, next: NextFunction) {
-  const headerValue = req.header("X-Acting-Host-Id");
+  const headerValue = req.header("X-Acting-Host-Id")?.trim();
   if (!headerValue) return next();
 
   // Only admins may impersonate; for everyone else the header is silently ignored.
