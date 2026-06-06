@@ -46,6 +46,7 @@ export {
   shouldBeAdmin as shouldBeAdminExpress,
   shouldBeHost as shouldBeHostExpress,
   shouldBeHostOrAdmin as shouldBeHostOrAdminExpress,
+  resolveActingHost as resolveActingHostExpress,
 } from "./express.js";
 
 // Fastify middleware

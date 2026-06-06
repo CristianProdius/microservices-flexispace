@@ -44,6 +44,8 @@ declare global {
     interface Request {
       user?: AuthUser;
       userId?: string;
+      actingHostId?: string;
+      realUserId?: string;
     }
   }
 }

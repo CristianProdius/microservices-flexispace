@@ -4,6 +4,7 @@ import type { VerifyFailureReason } from "./jwt.js";
 import type { AuthUser, JwtPayload } from "./types.js";
 import { hasVerifiedHostAccess } from "./authorization.js";
 import { isAccessTokenRevoked } from "./revocation.js";
+import { prisma } from "@repo/db";
 
 /**
  * Resolve the bearer token from the standard `Authorization` header or,
@@ -100,5 +101,43 @@ export async function shouldBeHostOrAdmin(req: Request, res: Response, next: Nex
   }
 
   attachUser(req, payload);
+  return next();
+}
+
+export async function resolveActingHost(req: Request, res: Response, next: NextFunction) {
+  const headerValue = req.header("X-Acting-Host-Id");
+  if (!headerValue) return next();
+
+  // Only admins may impersonate; for everyone else the header is silently ignored.
+  if (req.user?.role !== "ADMIN") return next();
+
+  const target = await prisma.user.findUnique({
+    where: { id: headerValue },
+    select: { id: true, role: true, deletedAt: true },
+  });
+
+  if (!target || target.deletedAt) {
+    return res.status(400).json({ message: "Invalid acting host" });
+  }
+  if (target.role !== "HOST" && target.role !== "ADMIN") {
+    return res.status(400).json({ message: "Invalid acting host" });
+  }
+
+  req.realUserId = req.userId;
+  req.actingHostId = target.id;
+  req.userId = target.id;
+
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    console.info(
+      JSON.stringify({
+        msg: "admin acting as host",
+        realUserId: req.realUserId,
+        actingHostId: req.actingHostId,
+        method: req.method,
+        path: req.path,
+      })
+    );
+  }
+
   return next();
 }
