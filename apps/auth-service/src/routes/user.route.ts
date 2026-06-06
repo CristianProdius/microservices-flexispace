@@ -33,6 +33,20 @@ function validatePassword(pw: unknown): { ok: true; value: string } | { ok: fals
   return { ok: true, value: pw };
 }
 
+const USERNAME_REGEX = /^[a-z0-9_-]+$/;
+
+function slugifyForEmail(username: string): string {
+  return username.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+}
+
+function generateRandomPassword(): string {
+  // 64 random bytes -> base64. Used as a placeholder for lead accounts that
+  // cannot log in until an invite/password-reset flow rotates it.
+  const buf = Buffer.alloc(64);
+  for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256);
+  return buf.toString("base64");
+}
+
 // Get all users (admin only)
 router.get("/", async (req, res) => {
   try {
@@ -71,15 +85,16 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get all hosts (admin only)
+// Get all hosts (admin only). Pass ?include=admins to also include ADMIN users.
 router.get("/hosts", async (req, res) => {
   try {
-    const { verified } = req.query;
+    const { verified, include } = req.query;
+    const includeAdmins = include === "admins";
 
     const hosts = await prisma.user.findMany({
       where: {
-        role: "HOST",
         deletedAt: null,
+        role: includeAdmins ? { in: ["HOST", "ADMIN"] } : "HOST",
         ...(verified !== undefined && { hostVerified: verified === "true" }),
       },
       select: {
@@ -92,18 +107,84 @@ router.get("/hosts", async (req, res) => {
         phone: true,
         bio: true,
         hostVerified: true,
+        emailVerified: true,
         hostingSince: true,
         createdAt: true,
         _count: {
           select: { spaces: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ name: "asc" }, { username: "asc" }],
     });
 
     return res.status(200).json(hosts);
   } catch (error) {
     return sendPrismaError(res, error, "Get hosts error");
+  }
+});
+
+// Create lead host account (admin only).
+// Lead accounts cannot log in until an invite/password-reset rotates the random
+// password. Used by the admin host-switcher to onboard new hosts.
+router.post("/hosts/lead", async (req, res) => {
+  try {
+    const { name, username, email: rawEmail, bio, hostingSince } = req.body ?? {};
+
+    if (typeof name !== "string" || name.trim().length === 0 || name.length > 80) {
+      return res.status(400).json({ message: "Name is required (max 80 chars)" });
+    }
+    if (typeof username !== "string" || !USERNAME_REGEX.test(username) || username.length < 3 || username.length > 32) {
+      return res.status(400).json({ message: "Username must be 3-32 chars, lowercase letters, digits, _ or -" });
+    }
+    if (bio !== undefined && bio !== null && (typeof bio !== "string" || bio.length > 500)) {
+      return res.status(400).json({ message: "Bio must be a string up to 500 chars" });
+    }
+
+    const email = rawEmail
+      ? normalizeEmail(String(rawEmail))
+      : `hosts+${slugifyForEmail(username)}@spacefly.ai`;
+
+    const existing = await prisma.user.findFirst({
+      where: { deletedAt: null, OR: [{ email }, { username }] },
+      select: { id: true },
+    });
+    if (existing) {
+      return res.status(409).json({ message: "User with this email or username already exists" });
+    }
+
+    const hashedPassword = await hashPassword(generateRandomPassword());
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword,
+        name: name.trim(),
+        role: "HOST",
+        hostVerified: true,
+        emailVerified: false,
+        mustChangePassword: true,
+        bio: typeof bio === "string" ? bio : null,
+        hostingSince: typeof hostingSince === "string" ? new Date(hostingSince) : null,
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        image: true,
+        bio: true,
+        hostVerified: true,
+        emailVerified: true,
+        hostingSince: true,
+        createdAt: true,
+      },
+    });
+
+    return res.status(201).json(user);
+  } catch (error) {
+    return sendPrismaError(res, error, "Create lead host error");
   }
 });
 
