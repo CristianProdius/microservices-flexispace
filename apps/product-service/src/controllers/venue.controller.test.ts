@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createVenue,
+  getMyVenues,
   getVenue,
   getVenueCountsByHost,
   updateVenue,
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => {
     },
     venue: {
       create: vi.fn(),
+      findMany: vi.fn(),
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
@@ -26,6 +28,7 @@ const mocks = vi.hoisted(() => {
     producerSend: vi.fn(),
     spaceUpdateMany: prisma.space.updateMany,
     venueCreate: prisma.venue.create,
+    venueFindMany: prisma.venue.findMany,
     venueFindUnique: prisma.venue.findUnique,
     venueFindFirst: prisma.venue.findFirst,
     venueUpdate: prisma.venue.update,
@@ -181,6 +184,69 @@ describe("venue controller contract", () => {
       where: { id: 7 },
       data: expect.objectContaining({ workingHours }),
     });
+  });
+
+  // Regression for the prod 500 reported on 2026-06-07: the old updateVenue
+  // cascaded location fields onto `prisma.space.updateMany` even though
+  // DB-010 had moved `address/city/state/country/postalCode/latitude/longitude`
+  // off the Space model. Prisma then threw "Unknown argument `address`" and
+  // every venue edit 500'd. The cascade is now dead — Space must NOT be
+  // touched when only location fields change on the venue.
+  it("does not cascade location fields onto Space.updateMany (POST-DB-010)", async () => {
+    mocks.venueFindUnique
+      .mockResolvedValueOnce({ id: 14, hostId: "host-1" })
+      .mockResolvedValueOnce({ id: 14 });
+    mocks.venueUpdate.mockResolvedValue({ id: 14 });
+    const req = {
+      params: { id: "14" },
+      body: {
+        address: "bd. Gagarin 10",
+        city: "Chișinău",
+        state: "Chișinău",
+        country: "Moldova",
+        postalCode: "MD-2001",
+        latitude: 47.01880363372516,
+        longitude: 28.87052792398627,
+      },
+      userId: "host-1",
+      user: { role: "HOST" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(mocks.venueUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.spaceUpdateMany).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+});
+
+// Regression for the prod report: deleting "Sala de conferințe" twice and
+// having it bounce back into the host's My Venues list each time. deleteVenue
+// only flips `isActive: false` to preserve booking history, so getMyVenues
+// must filter that out — otherwise the soft-deleted row stays visible and
+// the delete button looks broken.
+describe("getMyVenues hides soft-deleted venues", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("queries findMany with isActive:true and only counts active spaces", async () => {
+    mocks.venueFindMany.mockResolvedValueOnce([]);
+    const req = {
+      query: {},
+      userId: "local_community_business_center",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getMyVenues(req, res);
+
+    expect(mocks.venueFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { hostId: "local_community_business_center", isActive: true },
+        include: { _count: { select: { spaces: { where: { isActive: true } } } } },
+      }),
+    );
   });
 });
 

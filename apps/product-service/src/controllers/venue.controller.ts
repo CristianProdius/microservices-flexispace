@@ -25,9 +25,14 @@ export const getMyVenues = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Invalid page" });
   }
 
+  // Hide soft-deleted venues (isActive: false). Without this filter, a host
+  // who deletes a venue sees it bounce back into "My Venues" on the next
+  // page load — `deleteVenue` only flips `isActive: false` to preserve
+  // booking history, and the row still satisfies `where: { hostId }`. Same
+  // soft-delete posture as the public listing and `flattenVenue()` reads.
   const venues = await prisma.venue.findMany({
-    where: { hostId },
-    include: { _count: { select: { spaces: true } } },
+    where: { hostId, isActive: true },
+    include: { _count: { select: { spaces: { where: { isActive: true } } } } },
     orderBy: { createdAt: "desc" },
     take: limit,
     skip: (page - 1) * limit,
@@ -354,21 +359,14 @@ export const updateVenue = async (req: Request, res: Response) => {
     ...(workingHours !== undefined && { workingHours }),
   };
 
-  // Cascade location changes to all spaces under this venue
-  const locationFields = { address, city, state, country, postalCode, latitude, longitude };
-  const locationUpdates: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(locationFields)) {
-    if (value !== undefined) locationUpdates[key] = value;
-  }
-
-  if (Object.keys(locationUpdates).length > 0) {
-    await prisma.$transaction([
-      prisma.venue.update({ where: { id: venueId }, data: venueData }),
-      prisma.space.updateMany({ where: { venueId }, data: locationUpdates }),
-    ]);
-  } else {
-    await prisma.venue.update({ where: { id: venueId }, data: venueData });
-  }
+  // Location lives on the Venue model alone after DB-010 — `Space` no longer
+  // has address/city/state/country/postalCode/latitude/longitude columns, so
+  // the previous `prisma.space.updateMany` cascade now throws "Unknown
+  // argument `address`" and 500s the venue update. The Venue row's own
+  // location fields are already inside `venueData` above, so a single
+  // update is all that's needed. flattenVenue() on the GET path is what
+  // surfaces those fields to consumers that used to read them off Space.
+  await prisma.venue.update({ where: { id: venueId }, data: venueData });
 
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
   // TODO(KAFKA-001 follow-up): transactional outbox.
