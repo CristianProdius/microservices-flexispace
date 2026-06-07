@@ -24,9 +24,13 @@ const groupedCategoriesResponse = [
   },
 ];
 
-vi.mock("@/stores/authStore", () => ({
-  default: () => mockStore(),
-}));
+vi.mock("@/stores/authStore", () => {
+  const hook = (() => mockStore()) as (() => unknown) & {
+    getState: () => unknown;
+  };
+  hook.getState = () => mockStore();
+  return { default: hook };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -264,10 +268,10 @@ describe("admin edit space page", () => {
     );
 
     expect(updateRequest).toBeDefined();
-    expect(updateRequest?.[1]?.headers).toEqual({
-      "Content-Type": "application/json",
-      Authorization: "Bearer admin-token",
-    });
+    const updateHeaders = updateRequest?.[1]?.headers as Headers;
+    expect(updateHeaders).toBeInstanceOf(Headers);
+    expect(updateHeaders.get("content-type")).toBe("application/json");
+    expect(updateHeaders.get("authorization")).toBe("Bearer admin-token");
     expect(push).toHaveBeenCalledWith("/admin/spaces");
   });
 });

@@ -516,7 +516,8 @@
     "card": {
       "venues": "{count, plural, one {# venue} other {# venues}}",
       "spaces": "{count, plural, one {# space} other {# spaces}}",
-      "hostingSince": "Since {year}"
+      "hostingSince": "Since {year}",
+      "hostedBy": "Hosted by {name}"
     },
     "profile": {
       "backToHosts": "Back to hosts",

@@ -97,9 +97,13 @@ const expectedAvailabilityPayload = existingAvailabilityPayload.map(
   }),
 );
 
-vi.mock("@/stores/authStore", () => ({
-  default: () => mockStore(),
-}));
+vi.mock("@/stores/authStore", () => {
+  const hook = (() => mockStore()) as (() => unknown) & {
+    getState: () => unknown;
+  };
+  hook.getState = () => mockStore();
+  return { default: hook };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -396,10 +400,10 @@ describe("host edit space page", () => {
       pricingTiers: [],
       availability: expectedAvailabilityPayload,
     });
-    expect(updateRequest?.[1]?.headers).toEqual({
-      "Content-Type": "application/json",
-      Authorization: "Bearer test-token",
-    });
+    const updateHeaders = updateRequest?.[1]?.headers as Headers;
+    expect(updateHeaders).toBeInstanceOf(Headers);
+    expect(updateHeaders.get("content-type")).toBe("application/json");
+    expect(updateHeaders.get("authorization")).toBe("Bearer test-token");
     expect(push).toHaveBeenCalledWith("/host/spaces");
   });
 });

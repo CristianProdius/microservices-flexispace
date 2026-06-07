@@ -13,19 +13,14 @@ import {
 } from "@/components/spaces/space-form.shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import type { Space } from "@repo/types";
 
 const AdminEditSpacePage = () => {
   const params = useParams();
   const router = useRouter();
-  const {
-    getToken,
-    isAdmin,
-    isAuthenticated,
-    isLoading: authLoading,
-  } = useAuthStore();
+  const { isAdmin, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const id = params.id as string;
-  const [token, setToken] = useState<string | null>(null);
   const [initialValues, setInitialValues] = useState<SpaceFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -34,20 +29,7 @@ const AdminEditSpacePage = () => {
     setLoadError(null);
 
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      setToken(resolvedToken);
-
-      const response = await fetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`, {
-        headers: {
-          Authorization: `Bearer ${resolvedToken}`,
-        },
-      });
+      const response = await apiFetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`);
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({ message: "" }));
@@ -57,11 +39,15 @@ const AdminEditSpacePage = () => {
       const data = (await response.json()) as Space;
       setInitialValues(mapSpaceToFormValues(data));
     } catch (error) {
+      if (error instanceof UnauthenticatedError) {
+        router.push("/login");
+        return;
+      }
       setLoadError(error instanceof Error ? error.message : "Failed to load space");
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, id, router]);
+  }, [id, router]);
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {
@@ -75,28 +61,26 @@ const AdminEditSpacePage = () => {
   }, [authLoading, fetchSpace, isAdmin, isAuthenticated, router]);
 
   const handleUpdate = async (payload: SpaceFormPayload) => {
-    const resolvedToken = token ?? (await getToken());
+    try {
+      const response = await apiFetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!resolvedToken) {
-      router.push("/login");
-      throw new Error("Please sign in again.");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ message: "" }));
+        throw new Error(data.message || "Failed to update space");
+      }
+
+      router.push("/admin/spaces");
+    } catch (error) {
+      if (error instanceof UnauthenticatedError) {
+        router.push("/login");
+        throw new Error("Please sign in again.");
+      }
+      throw error;
     }
-
-    const response = await fetch(`${PRODUCT_SERVICE_URL}/spaces/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${resolvedToken}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({ message: "" }));
-      throw new Error(data.message || "Failed to update space");
-    }
-
-    router.push("/admin/spaces");
   };
 
   if (authLoading || isLoading) {
@@ -136,7 +120,6 @@ const AdminEditSpacePage = () => {
       title="Edit Space"
       description="Update the current listing details"
       backHref="/admin/spaces"
-      token={token}
       initialValues={initialValues}
       submitLabel="Update Space"
       submittingLabel="Saving..."

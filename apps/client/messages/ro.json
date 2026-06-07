@@ -516,7 +516,8 @@
     "card": {
       "venues": "{count, plural, one {# local} other {# locale}}",
       "spaces": "{count, plural, one {# spațiu} other {# spații}}",
-      "hostingSince": "Din {year}"
+      "hostingSince": "Din {year}",
+      "hostedBy": "Gazdă: {name}"
     },
     "profile": {
       "backToHosts": "Înapoi la gazde",

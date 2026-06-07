@@ -7,6 +7,8 @@ import { ArrowLeft, Check, Loader2, Upload, X } from "lucide-react";
 
 import { DashboardPageHeader, DashboardSection } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/apiFetch";
+import { uploadImage } from "@/lib/uploadImage";
 import {
   findCategoryBySlug,
   flattenCategoryGroups,
@@ -45,7 +47,6 @@ interface SpaceFormProps {
   title: string;
   description: string;
   backHref: string;
-  token: string | null;
   initialValues?: SpaceFormValues;
   defaultVenueId?: number;
   submitLabel: string;
@@ -68,7 +69,6 @@ const SpaceForm = ({
   title,
   description,
   backHref,
-  token,
   initialValues,
   defaultVenueId,
   submitLabel,
@@ -118,12 +118,12 @@ const SpaceForm = ({
     };
 
     const fetchVenues = async () => {
-      if (!token) return;
-
       try {
-        const res = await fetch(`${PRODUCT_SERVICE_URL}/venues/host/my`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Use apiFetch so the host-switcher's X-Acting-Host-Id header is
+        // attached when an admin is acting as a specific host. Without it the
+        // call goes out as plain admin and `getMyVenues` returns the admin's
+        // own (empty) venues, leaving the "Select Venue" dropdown empty.
+        const res = await apiFetch(`${PRODUCT_SERVICE_URL}/venues/host/my`);
 
         if (res.ok) {
           const venueData = (await res.json()) as VenueOption[];
@@ -136,7 +136,7 @@ const SpaceForm = ({
 
     fetchCategories();
     fetchVenues();
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     const fetchAmenities = async () => {
@@ -201,39 +201,11 @@ const SpaceForm = ({
     setUploadError(null);
 
     try {
-      if (!token) {
-        throw new Error("Please sign in again to upload images");
-      }
-
       for (const file of Array.from(files)) {
-        const formDataToUpload = new FormData();
-        formDataToUpload.append("file", file);
-
-        const response = await fetch(`${PRODUCT_SERVICE_URL}/uploads/images`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataToUpload,
-        });
-
-        if (!response.ok) {
-          let message = "Failed to upload image";
-
-          try {
-            const data = await response.json();
-            message = data.message || message;
-          } catch {
-            // Keep the default message when the response is not JSON.
-          }
-
-          throw new Error(message);
-        }
-
-        const data = (await response.json()) as { url: string };
+        const { url } = await uploadImage(file);
         setFormData((prev) => ({
           ...prev,
-          images: [...prev.images, data.url],
+          images: [...prev.images, url],
         }));
       }
     } catch (uploadingError) {

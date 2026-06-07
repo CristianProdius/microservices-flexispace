@@ -516,7 +516,8 @@
     "card": {
       "venues": "{count, plural, one {# заведение} few {# заведения} other {# заведений}}",
       "spaces": "{count, plural, one {# пространство} few {# пространства} other {# пространств}}",
-      "hostingSince": "С {year}"
+      "hostingSince": "С {year}",
+      "hostedBy": "Хост: {name}"
     },
     "profile": {
       "backToHosts": "К списку хостов",

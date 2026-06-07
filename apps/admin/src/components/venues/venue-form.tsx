@@ -10,9 +10,9 @@ const MapPickerDynamic = dynamic(() => import("./map-picker"), { ssr: false });
 
 import { DashboardPageHeader, DashboardSection } from "@/components/dashboard";
 import { Button } from "@/components/ui/button";
+import { uploadImage } from "@/lib/uploadImage";
 
 import {
-  PRODUCT_SERVICE_URL,
   WEEKDAYS,
   buildVenuePayload,
   createEmptyVenueFormValues,
@@ -29,7 +29,6 @@ interface VenueFormProps {
   title: string;
   description: string;
   backHref: string;
-  token: string | null;
   initialValues?: VenueFormValues;
   submitLabel: string;
   submittingLabel: string;
@@ -40,7 +39,6 @@ const VenueForm = ({
   title,
   description,
   backHref,
-  token,
   initialValues,
   submitLabel,
   submittingLabel,
@@ -68,39 +66,11 @@ const VenueForm = ({
     setUploadError(null);
 
     try {
-      if (!token) {
-        throw new Error("Please sign in again to upload images");
-      }
-
       for (const file of Array.from(files)) {
-        const formDataToUpload = new FormData();
-        formDataToUpload.append("file", file);
-
-        const response = await fetch(`${PRODUCT_SERVICE_URL}/uploads/images`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataToUpload,
-        });
-
-        if (!response.ok) {
-          let message = "Failed to upload image";
-
-          try {
-            const data = await response.json();
-            message = data.message || message;
-          } catch {
-            // Keep the default message when the response is not JSON.
-          }
-
-          throw new Error(message);
-        }
-
-        const data = (await response.json()) as { url: string };
+        const { url } = await uploadImage(file);
         setFormData((prev) => ({
           ...prev,
-          images: [...prev.images, data.url],
+          images: [...prev.images, url],
         }));
       }
     } catch (uploadingError) {

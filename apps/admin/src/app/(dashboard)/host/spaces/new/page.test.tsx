@@ -40,9 +40,15 @@ const defaultAvailabilityPayload = [
   { dayOfWeek: 6, startTime: "09:00", endTime: "21:00", isOpen: false },
 ];
 
-vi.mock("@/stores/authStore", () => ({
-  default: () => mockStore(),
-}));
+// apiFetch reads `useAuthStore.getState()` (Zustand's static accessor) rather
+// than the React hook, so the mocked default export needs to surface both.
+vi.mock("@/stores/authStore", () => {
+  const hook = (() => mockStore()) as (() => unknown) & {
+    getState: () => unknown;
+  };
+  hook.getState = () => mockStore();
+  return { default: hook };
+});
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -665,10 +671,12 @@ describe("host new space page", () => {
       pricingTiers: [],
       availability: defaultAvailabilityPayload,
     });
-    expect(createRequest?.[1]?.headers).toEqual({
-      "Content-Type": "application/json",
-      Authorization: "Bearer test-token",
-    });
+    // apiFetch always wraps headers in a Headers instance, so assert via
+    // the Headers API rather than a deep-equal on a plain object literal.
+    const createdHeaders = createRequest?.[1]?.headers as Headers;
+    expect(createdHeaders).toBeInstanceOf(Headers);
+    expect(createdHeaders.get("content-type")).toBe("application/json");
+    expect(createdHeaders.get("authorization")).toBe("Bearer test-token");
     expect(push).toHaveBeenCalledWith("/host/spaces");
   });
 

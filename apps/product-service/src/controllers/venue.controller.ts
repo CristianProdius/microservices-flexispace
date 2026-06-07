@@ -35,6 +35,137 @@ export const getMyVenues = async (req: Request, res: Response) => {
   res.status(200).json(venues);
 };
 
+// Public venue listing for the customer-facing "Browse Venues" page (previously
+// the page showed Hosts; product asked for one card per venue so customers go
+// directly to /venues/{id} instead of detouring through /hosts/[slug]).
+//
+// Soft-delete + isActive filters mirror getVenue (AUD-006/PRODSVC-015) so a
+// tombstoned host's venues or a hidden venue can't surface here either.
+const VENUES_LIST_DEFAULT_LIMIT = 24;
+const VENUES_LIST_MAX_LIMIT = 50;
+type VenueListSort = "newest" | "featured";
+const parseVenueListSort = (raw: unknown): VenueListSort =>
+  raw === "newest" ? "newest" : "featured";
+
+export const getVenuesList = async (req: Request, res: Response) => {
+  const page = parsePositiveIntegerWithDefault(req.query.page, 1);
+  if (page === null) {
+    return res.status(400).json({ message: "Invalid page" });
+  }
+  const limit = parsePositiveIntegerWithDefault(
+    req.query.limit,
+    VENUES_LIST_DEFAULT_LIMIT,
+    VENUES_LIST_MAX_LIMIT
+  );
+  if (limit === null) {
+    return res.status(400).json({ message: "Invalid limit" });
+  }
+
+  const city =
+    typeof req.query.city === "string" && req.query.city.length > 0
+      ? req.query.city
+      : undefined;
+  const verifiedOnly = req.query.verified === "true";
+  const searchRaw = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const search = searchRaw.length > 0 ? searchRaw : undefined;
+  const sort = parseVenueListSort(req.query.sort);
+
+  // Featured = verified hosts first, then by hostingSince (oldest established
+  // hosts surfaced before newcomers). Newest = recently-created venues first.
+  const orderBy =
+    sort === "featured"
+      ? [
+          { host: { hostVerified: "desc" as const } },
+          { host: { hostingSince: "asc" as const } },
+          { createdAt: "desc" as const },
+        ]
+      : [{ createdAt: "desc" as const }];
+
+  const where = {
+    isActive: true,
+    host: {
+      deletedAt: null,
+      ...(verifiedOnly ? { hostVerified: true } : {}),
+    },
+    ...(city ? { city } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" as const } },
+            { host: { name: { contains: search, mode: "insensitive" as const } } },
+            { host: { username: { contains: search, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total, cityRows] = await Promise.all([
+    prisma.venue.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        shortDescription: true,
+        city: true,
+        country: true,
+        images: true,
+        host: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+            hostingSince: true,
+            hostVerified: true,
+          },
+        },
+        _count: { select: { spaces: { where: { isActive: true } } } },
+      },
+    }),
+    prisma.venue.count({ where }),
+    prisma.venue.findMany({
+      where: { isActive: true, host: { deletedAt: null } },
+      distinct: ["city"],
+      select: { city: true },
+      orderBy: { city: "asc" },
+    }),
+  ]);
+
+  const availableCities = cityRows
+    .map((v) => v.city)
+    .filter((c): c is string => typeof c === "string" && c.length > 0);
+
+  res.status(200).json({
+    venues: rows.map((v) => ({
+      id: v.id,
+      name: v.name,
+      shortDescription: v.shortDescription,
+      city: v.city,
+      country: v.country,
+      images: Array.isArray(v.images) ? v.images : [],
+      spaceCount: v._count.spaces,
+      host: {
+        id: v.host.id,
+        name: v.host.name,
+        username: v.host.username,
+        image: v.host.image,
+        hostingSince: v.host.hostingSince ? v.host.hostingSince.toISOString() : null,
+        hostVerified: v.host.hostVerified,
+      },
+    })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(Math.ceil(total / limit), 1),
+    },
+    availableCities,
+  });
+};
+
 export const getVenue = async (req: Request, res: Response) => {
   const venueId = parseInt(req.params.id as string, 10);
   if (Number.isNaN(venueId)) return res.status(400).json({ message: "Invalid ID" });

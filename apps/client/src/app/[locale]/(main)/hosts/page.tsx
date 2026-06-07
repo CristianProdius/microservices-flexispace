@@ -2,12 +2,11 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
-import HostCard from "@/components/HostCard";
 import HostFilter from "@/components/HostFilter";
-import type { HostSummary } from "@repo/types";
+import VenueCard, { type VenueListItem } from "@/components/VenueCard";
 
-interface HostsResponse {
-  hosts: HostSummary[];
+interface VenuesResponse {
+  venues: VenueListItem[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
   availableCities: string[];
 }
@@ -21,9 +20,13 @@ interface HostsPageProps {
   }>;
 }
 
-async function getHosts(
+// Product decision: the "Browse Hosts" page now renders one card per venue and
+// links directly to /venues/{id}. Most hosts have one venue, so the previous
+// host→venue detour was redundant clicks. The /hosts/[slug] detail route still
+// exists for deep links and SEO.
+async function getVenues(
   params: Awaited<HostsPageProps["searchParams"]>
-): Promise<{ error: boolean; data: HostsResponse | null }> {
+): Promise<{ error: boolean; data: VenuesResponse | null }> {
   const qs = new URLSearchParams({ limit: "24" });
   if (params.city) qs.set("city", params.city);
   if (params.verified === "true") qs.set("verified", "true");
@@ -31,7 +34,7 @@ async function getHosts(
   if (params.sort) qs.set("sort", params.sort);
 
   try {
-    const res = await fetch(`${PRODUCT_SERVICE_URL}/hosts?${qs.toString()}`, {
+    const res = await fetch(`${PRODUCT_SERVICE_URL}/venues?${qs.toString()}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return { error: true, data: null };
@@ -44,7 +47,7 @@ async function getHosts(
 export default async function HostsPage({ searchParams }: HostsPageProps) {
   const params = await searchParams;
   const t = await getTranslations("hosts");
-  const result = await getHosts(params);
+  const result = await getVenues(params);
 
   if (result.error || !result.data) {
     return (
@@ -78,12 +81,12 @@ export default async function HostsPage({ searchParams }: HostsPageProps) {
 
       <HostFilter availableCities={result.data.availableCities} />
 
-      {result.data.hosts.length === 0 ? (
+      {result.data.venues.length === 0 ? (
         <p className="text-muted py-12 text-center">{t("empty")}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {result.data.hosts.map((host) => (
-            <HostCard key={host.id} host={host} />
+          {result.data.venues.map((venue) => (
+            <VenueCard key={venue.id} venue={venue} />
           ))}
         </div>
       )}

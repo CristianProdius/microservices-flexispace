@@ -14,13 +14,13 @@ import {
 } from "@/components/venues/venue-form.shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import useAuthStore from "@/stores/authStore";
+import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 
 const HostEditVenuePage = () => {
   const params = useParams();
   const router = useRouter();
-  const { getToken, isLoading: authLoading } = useAuthStore();
+  const { isLoading: authLoading } = useAuthStore();
   const id = params.id as string;
-  const [token, setToken] = useState<string | null>(null);
   const [initialValues, setInitialValues] = useState<VenueFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -29,20 +29,7 @@ const HostEditVenuePage = () => {
     setLoadError(null);
 
     try {
-      const resolvedToken = await getToken();
-
-      if (!resolvedToken) {
-        router.push("/login");
-        return;
-      }
-
-      setToken(resolvedToken);
-
-      const response = await fetch(`${PRODUCT_SERVICE_URL}/venues/${id}`, {
-        headers: {
-          Authorization: `Bearer ${resolvedToken}`,
-        },
-      });
+      const response = await apiFetch(`${PRODUCT_SERVICE_URL}/venues/${id}`);
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({ message: "" }));
@@ -52,11 +39,15 @@ const HostEditVenuePage = () => {
       const data = (await response.json()) as VenueResponse;
       setInitialValues(mapVenueToFormValues(data));
     } catch (error) {
+      if (error instanceof UnauthenticatedError) {
+        router.push("/login");
+        return;
+      }
       setLoadError(error instanceof Error ? error.message : "Failed to load venue");
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, id, router]);
+  }, [id, router]);
 
   useEffect(() => {
     if (authLoading) {
@@ -66,28 +57,26 @@ const HostEditVenuePage = () => {
   }, [authLoading, fetchVenue]);
 
   const handleUpdate = async (payload: VenueFormPayload) => {
-    const resolvedToken = token ?? (await getToken());
+    try {
+      const response = await apiFetch(`${PRODUCT_SERVICE_URL}/venues/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!resolvedToken) {
-      router.push("/login");
-      throw new Error("Please sign in again.");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ message: "" }));
+        throw new Error(data.message || "Failed to update venue");
+      }
+
+      router.push("/host/venues");
+    } catch (error) {
+      if (error instanceof UnauthenticatedError) {
+        router.push("/login");
+        throw new Error("Please sign in again.");
+      }
+      throw error;
     }
-
-    const response = await fetch(`${PRODUCT_SERVICE_URL}/venues/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${resolvedToken}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({ message: "" }));
-      throw new Error(data.message || "Failed to update venue");
-    }
-
-    router.push("/host/venues");
   };
 
   if (authLoading || isLoading) {
@@ -127,7 +116,6 @@ const HostEditVenuePage = () => {
       title="Edit Venue"
       description="Update the details for your venue"
       backHref="/host/venues"
-      token={token}
       initialValues={initialValues}
       submitLabel="Update Venue"
       submittingLabel="Saving..."

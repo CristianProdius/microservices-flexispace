@@ -8,6 +8,7 @@ import {
 import {
   getMyVenues,
   getVenue,
+  getVenuesList,
   createVenue,
   updateVenue,
   deleteVenue,
@@ -16,6 +17,10 @@ import {
 
 const router: Router = Router();
 
+// Public Browse Venues listing (replaces the customer-facing Browse Hosts
+// page). Must be declared before the `/:id` catch-all so `/venues` doesn't
+// fall through to it.
+router.get("/", getVenuesList);
 router.get("/host/my", shouldBeHost, resolveActingHost, getMyVenues);
 router.get("/counts-by-host", shouldBeAdmin, getVenueCountsByHost);
 router.post("/", shouldBeHost, resolveActingHost, createVenue);
