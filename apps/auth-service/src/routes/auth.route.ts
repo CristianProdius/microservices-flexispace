@@ -514,21 +514,63 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
       return res.status(200).json({ accessToken });
     }
 
-    const stored = await prisma.refreshToken.findUnique({
-      where: { jti },
+    // AUD-027: atomic claim. The previous implementation read `stored`
+    // then later wrote `usedAt = now` in a separate statement, so two
+    // concurrent requests with the same refresh token could both pass
+    // the `stored.usedAt == null` check, both mint successors, and then
+    // a third request with the original token would be flagged as
+    // "reuse" and revoke the entire chain — logging the user out across
+    // every tab/app sharing the .spacefly.ai cookie. The fix is a
+    // single conditional `updateMany`: only the request that flips
+    // `usedAt` from null to now is allowed to rotate. Anyone else gets
+    // a benign 409 RACE response.
+    const now = new Date();
+    const claim = await prisma.refreshToken.updateMany({
+      where: {
+        jti,
+        userId: payload.userId,
+        usedAt: null,
+        revoked: false,
+        expiresAt: { gt: now },
+      },
+      data: { usedAt: now },
     });
 
-    if (!stored || stored.userId !== payload.userId) {
-      return res.status(401).json({ message: "Invalid refresh token" });
-    }
-    if (stored.revoked) {
-      return res.status(401).json({ message: "Refresh token revoked" });
-    }
-    if (stored.expiresAt < new Date()) {
-      return res.status(401).json({ message: "Refresh token expired" });
-    }
-    if (stored.usedAt) {
-      // Reuse detected — revoke the whole chain and the user's sessions.
+    if (claim.count === 0) {
+      // The claim failed. Re-read to figure out why so we return the
+      // right error code without revoking the chain on a legitimate
+      // race.
+      const stored = await prisma.refreshToken.findUnique({ where: { jti } });
+
+      if (!stored || stored.userId !== payload.userId) {
+        return res.status(401).json({ message: "Invalid refresh token" });
+      }
+      if (stored.revoked) {
+        return res.status(401).json({ message: "Refresh token revoked" });
+      }
+      if (stored.expiresAt < now) {
+        return res.status(401).json({ message: "Refresh token expired" });
+      }
+
+      // usedAt is set. Distinguish a recent concurrent rotation (race)
+      // from a stale reuse attempt (theft). A token that was rotated
+      // within the last few seconds is almost certainly a race — the
+      // browser already has the winning request's Set-Cookie applied,
+      // so the client just needs to retry and the new cookie will be
+      // sent on the next attempt. A token that was rotated long ago is
+      // suspicious and warrants revoking the chain (which is what the
+      // old code did unconditionally).
+      const REFRESH_RACE_WINDOW_MS = 10_000;
+      const rotatedAt = stored.usedAt?.getTime() ?? 0;
+      if (stored.replacedBy && now.getTime() - rotatedAt < REFRESH_RACE_WINDOW_MS) {
+        return res.status(409).json({
+          code: "REFRESH_RACE",
+          message:
+            "Refresh token already rotated by a concurrent request; retry with the new cookie.",
+        });
+      }
+
+      // Stale rotation → likely real reuse. Revoke the chain as before.
       await revokeRefreshChain(jti, payload.userId);
       clearAuthCookies(res);
       return res
@@ -536,6 +578,7 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
         .json({ message: "Refresh token reuse detected; please log in again." });
     }
 
+    // We won the claim. From here on we're the sole rotator for this jti.
     const user = await prisma.user.findFirst({
       where: { id: payload.userId, deletedAt: null },
     });
@@ -562,11 +605,23 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
       hostVerified: user.hostVerified,
     });
 
-    await persistRefreshToken({
-      jti: newJti,
-      userId: user.id,
-      replaces: { id: stored.id, jti: stored.jti },
-    });
+    // Mint the new token row and link the old → new. We already set
+    // `usedAt` above via the atomic claim, so this transaction only
+    // needs to (a) create the successor and (b) record replacedBy on
+    // the parent.
+    await prisma.$transaction([
+      prisma.refreshToken.create({
+        data: {
+          jti: newJti,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + refreshLifetimeMs()),
+        },
+      }),
+      prisma.refreshToken.update({
+        where: { jti },
+        data: { replacedBy: newJti },
+      }),
+    ]);
 
     // Mirror the new token into the legacy Session table and delete the
     // old session row so logout-by-token keeps working.

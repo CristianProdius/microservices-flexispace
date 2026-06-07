@@ -66,12 +66,35 @@ export async function logout(refreshToken: string): Promise<void> {
   });
 }
 
+// AUD-027: when an admin page and a customer page (or two browser tabs) hit
+// `/auth/refresh` simultaneously with the same `.spacefly.ai`-scoped cookie,
+// the auth-service detects exactly one winner via an atomic claim and tells
+// the loser to retry via HTTP 409 with `code: "REFRESH_RACE"`. By the time
+// the loser sees that response, the browser has already applied the
+// winner's `Set-Cookie`, so a single retry will pick up the new refresh
+// token and succeed without revoking the chain.
+const REFRESH_RACE_RETRY_DELAY_MS = 250;
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function refreshAccessToken(refreshToken: string): Promise<string> {
-  const res = await fetchAuth("/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
+  const doRequest = () =>
+    fetchAuth("/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+  let res = await doRequest();
+
+  if (res.status === 409) {
+    // Try to read the code without consuming the body on the success path.
+    const body = await res.clone().json().catch(() => ({}));
+    if (body?.code === "REFRESH_RACE") {
+      await sleep(REFRESH_RACE_RETRY_DELAY_MS);
+      res = await doRequest();
+    }
+  }
 
   if (!res.ok) {
     throw new Error("Failed to refresh token");

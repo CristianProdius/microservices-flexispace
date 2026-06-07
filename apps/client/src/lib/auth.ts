@@ -86,14 +86,34 @@ export interface RefreshResponse {
   refreshToken?: string;
 }
 
+// AUD-027: on a `409 { code: "REFRESH_RACE" }` from auth-service (two tabs
+// or apps refreshing the same `.spacefly.ai` cookie simultaneously), retry
+// once after a short backoff. By then the winning request's `Set-Cookie`
+// has updated the browser's refresh token and the retry will succeed
+// without forcing a logout.
+const REFRESH_RACE_RETRY_DELAY_MS = 250;
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function refreshAccessToken(
   refreshToken: string
 ): Promise<RefreshResponse> {
-  const res = await fetchAuth("/auth/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
+  const doRequest = () =>
+    fetchAuth("/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+  let res = await doRequest();
+
+  if (res.status === 409) {
+    const body = await res.clone().json().catch(() => ({}));
+    if (body?.code === "REFRESH_RACE") {
+      await sleep(REFRESH_RACE_RETRY_DELAY_MS);
+      res = await doRequest();
+    }
+  }
 
   if (!res.ok) {
     throw new Error("Failed to refresh token");
