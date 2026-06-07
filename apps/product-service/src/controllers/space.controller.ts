@@ -684,11 +684,50 @@ export const getSpace = async (req: Request, res: Response) => {
     .json(resolveTranslations(spaceWithRating, lang, SPACE_TRANSLATION_FIELDS));
 };
 
+// Shared whitelist used by both create and update paths to guard against
+// "Unknown argument" Prisma errors when an old client posts a stale payload
+// (e.g. fields like `address/city/country` that DB-010 moved off Space onto
+// Venue), and as defense-in-depth against mass-assignment of model fields
+// like `hostId` from the request body. Mirrors updateSpace's allowedKeys.
+const SPACE_WRITE_KEYS = [
+  "name",
+  "shortDescription",
+  "description",
+  "spaceType",
+  "pricingType",
+  "pricePerHour",
+  "pricePerDay",
+  "cleaningFee",
+  "capacity",
+  "minBookingHours",
+  "maxBookingHours",
+  "images",
+  "isActive",
+  "instantBook",
+  "cancellationPolicy",
+  "houseRules",
+  "categorySlug",
+  "currency",
+  "nameTranslations",
+  "shortDescTranslations",
+  "descriptionTranslations",
+  "videoUrl",
+] as const;
+
 // Create space (HOST only)
 export const createSpace = async (req: Request, res: Response) => {
   const hostId = req.userId!;
-  const { amenityIds, venueId, pricingTiers, availability, ...spaceData } =
-    req.body;
+  const { amenityIds, venueId, pricingTiers, availability } = req.body;
+  // Whitelist-pluck so a stale payload with location fields (or any other
+  // non-whitelisted property) can't reach `tx.space.create` and trigger
+  // "Unknown argument" 500s. See updateSpace for the same pattern. Typed as
+  // `any` to satisfy Prisma's strict SpaceCreateInput shape — runtime
+  // validation (categorySlug, videoUrl, tiers, availability) happens below.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const spaceData: any = {};
+  for (const key of SPACE_WRITE_KEYS) {
+    if (req.body[key] !== undefined) spaceData[key] = req.body[key];
+  }
   const availabilityResult = normalizeAvailability(availability);
 
   if ("message" in availabilityResult) {
@@ -857,33 +896,10 @@ export const updateSpace = async (req: Request, res: Response) => {
     normalizedPricingTiers = tierResult.value;
   }
 
-  // Whitelist allowed update fields to prevent mass assignment
+  // Whitelist allowed update fields to prevent mass assignment. Shared with
+  // createSpace via SPACE_WRITE_KEYS so the two paths can't drift.
   const allowed: Record<string, unknown> = {};
-  const allowedKeys = [
-    "name",
-    "shortDescription",
-    "description",
-    "spaceType",
-    "pricingType",
-    "pricePerHour",
-    "pricePerDay",
-    "cleaningFee",
-    "capacity",
-    "minBookingHours",
-    "maxBookingHours",
-    "images",
-    "isActive",
-    "instantBook",
-    "cancellationPolicy",
-    "houseRules",
-    "categorySlug",
-    "currency",
-    "nameTranslations",
-    "shortDescTranslations",
-    "descriptionTranslations",
-    "videoUrl",
-  ] as const;
-  for (const key of allowedKeys) {
+  for (const key of SPACE_WRITE_KEYS) {
     if (body[key] !== undefined) allowed[key] = body[key];
   }
 

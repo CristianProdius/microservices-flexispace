@@ -48,7 +48,15 @@ vi.mock("@repo/db", async () => {
     venue: { findUnique: vi.fn() },
     booking: { findMany: vi.fn() },
     spaceAmenity: { deleteMany: vi.fn(), createMany: vi.fn() },
-    $transaction: vi.fn(async (ops: unknown[]) => ops),
+    spaceCategory: { findUnique: vi.fn() },
+    $transaction: vi.fn(async (input: unknown) => {
+      // Support both shapes used in this controller: array form (Promise.all)
+      // and callback form `(tx) => ...` where the tx receives the same mock.
+      if (typeof input === "function") {
+        return (input as (tx: typeof prisma) => unknown)(prisma);
+      }
+      return Promise.all(input as Promise<unknown>[]);
+    }),
     $queryRaw: vi.fn(),
   };
   return { ...actual, prisma };
@@ -60,6 +68,7 @@ const { producer } = await import("../utils/kafka.js");
 const {
   getSpaces,
   checkAvailability,
+  createSpace,
   updateAvailability,
   validatePricingTiers,
 } = await import("./space.controller.js");
@@ -459,5 +468,80 @@ describe("validatePricingTiers - AUD-008", () => {
       price: 1,
     }));
     expect(validatePricingTiers(tiers).ok).toBe(false);
+  });
+});
+
+// Mirror of the updateVenue regression at c353c9d: if a stale client posts
+// location fields like `address/city/country` (left over from before DB-010
+// moved them off Space onto Venue), createSpace must filter them out via
+// the SPACE_WRITE_KEYS whitelist instead of letting them reach
+// `tx.space.create` and produce an "Unknown argument `address`" 500.
+describe("createSpace - SPACE_WRITE_KEYS whitelist (POST-DB-010)", () => {
+  it("drops non-whitelisted fields (e.g. address/city) from the create payload", async () => {
+    (prisma.venue.findUnique as AnyMock).mockResolvedValue({
+      id: 1,
+      hostId: "user-1",
+    });
+    (prisma.space.create as AnyMock).mockResolvedValue({
+      id: 99,
+      category: null,
+      amenities: [],
+    });
+
+    const req = buildReq({
+      body: {
+        // Whitelisted: should survive.
+        name: "Test space",
+        shortDescription: "Short",
+        description: "Long description text",
+        pricingType: "HOURLY",
+        pricePerHour: 10,
+        cleaningFee: 0,
+        capacity: 4,
+        images: ["/img.png"],
+        // Non-whitelisted (legacy / mass-assignment risk): must be stripped.
+        address: "Old denormalised field",
+        city: "Chișinău",
+        state: "Chișinău",
+        country: "Moldova",
+        postalCode: "MD-2001",
+        latitude: 47.0188,
+        longitude: 28.8705,
+        hostId: "attacker-id",
+        // Transaction inputs (consumed before the whitelist):
+        venueId: 1,
+        availability: Array.from({ length: 7 }, (_, dayOfWeek) => ({
+          dayOfWeek,
+          startTime: "09:00",
+          endTime: "18:00",
+          isOpen: dayOfWeek < 5,
+        })),
+      },
+    });
+    const res = buildRes();
+
+    await createSpace(req, res as never);
+
+    expect(prisma.space.create).toHaveBeenCalledTimes(1);
+    const callArgs = (prisma.space.create as AnyMock).mock.calls[0]?.[0];
+    expect(callArgs).toBeDefined();
+    const dataKeys = Object.keys(callArgs.data);
+
+    // Whitelisted fields are present.
+    expect(dataKeys).toEqual(
+      expect.arrayContaining(["name", "description", "pricingType"]),
+    );
+    // Non-whitelisted fields are NOT in the create payload — otherwise
+    // Prisma would 500 with "Unknown argument `address`" at runtime.
+    expect(dataKeys).not.toContain("address");
+    expect(dataKeys).not.toContain("city");
+    expect(dataKeys).not.toContain("state");
+    expect(dataKeys).not.toContain("country");
+    expect(dataKeys).not.toContain("postalCode");
+    expect(dataKeys).not.toContain("latitude");
+    expect(dataKeys).not.toContain("longitude");
+    // hostId is set from `req.userId`, not from the body — mass-assignment
+    // protection.
+    expect(callArgs.data.hostId).toBe("user-1");
   });
 });

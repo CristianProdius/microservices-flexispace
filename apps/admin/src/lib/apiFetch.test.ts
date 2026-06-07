@@ -40,6 +40,22 @@ describe("apiFetch", () => {
     expect((init.headers as Headers).get("x-acting-host-id")).toBe("host-1");
   });
 
+  // The original prod bugs (venue update silently lost the photo, space-edit
+  // venue dropdown empty) all involved POST/PUT verbs while admin was acting
+  // as a host. Pin the X-Acting-Host-Id behaviour across verbs so a future
+  // refactor that branches on `init.method` can't drop it for writes.
+  it.each([
+    ["POST", "host-2"],
+    ["PUT", "host-3"],
+    ["DELETE", "host-4"],
+  ])("attaches X-Acting-Host-Id on %s verbs too", async (method, host) => {
+    state.actingHostId = host;
+    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(new Response("{}"));
+    await apiFetch("https://api/x", { method });
+    const init = fetchSpy.mock.calls[0]![1] as RequestInit;
+    expect((init.headers as Headers).get("x-acting-host-id")).toBe(host);
+  });
+
   it("omits X-Acting-Host-Id when not admin", async () => {
     state.isAdmin = false;
     state.actingHostId = "host-1";
