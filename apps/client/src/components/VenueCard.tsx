@@ -35,6 +35,9 @@ const VenueCard = ({ venue }: { venue: VenueListItem }) => {
       : venue.city || venue.country || "";
   const heroImage = venue.images[0] ?? null;
   const venueHref = `/venues/${venue.id}` as const;
+  const hostingYear = venue.host.hostingSince
+    ? new Date(venue.host.hostingSince).getFullYear()
+    : null;
 
   return (
     <div className="group">
@@ -52,6 +55,11 @@ const VenueCard = ({ venue }: { venue: VenueListItem }) => {
             <div className="absolute inset-0 flex items-center justify-center text-5xl font-semibold text-foreground">
               {venueInitial}
             </div>
+          )}
+          {hostingYear && (
+            <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-foreground text-xs px-2 py-1 rounded-full border border-border/50">
+              {t("hostingSince", { year: hostingYear })}
+            </span>
           )}
           {venue.host.hostVerified && (
             <span className="absolute top-3 right-3 inline-flex items-center gap-1 bg-success/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">

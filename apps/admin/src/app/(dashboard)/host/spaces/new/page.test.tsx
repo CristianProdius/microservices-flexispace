@@ -699,4 +699,40 @@ describe("host new space page", () => {
 
     expect(venueSelect?.value).toBe("7");
   });
+
+  // Regression for the original report: when an admin acts as a specific host
+  // (host-switcher sets `actingHostId`), every outbound request from the space
+  // form must carry the `X-Acting-Host-Id` header so the backend's
+  // `resolveActingHost` middleware swaps `req.userId` to the impersonated
+  // host. Without this, getMyVenues returned the admin's own (empty) venues
+  // and the "Select Venue" dropdown stayed empty.
+  it("attaches X-Acting-Host-Id on outbound calls when admin is acting as a host", async () => {
+    mockStore.mockReturnValue({
+      token: "test-token",
+      getToken: vi.fn(async () => "test-token"),
+      isLoading: false,
+      isAdmin: true,
+      actingHostId: "acting-host-123",
+    });
+
+    const pageModule = await import("./page");
+
+    await act(async () => {
+      root.render(React.createElement(pageModule.default));
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const fetchMock = vi.mocked(globalThis.fetch);
+    const venueCall = fetchMock.mock.calls.find((call) =>
+      call[0]?.toString().endsWith("/venues/host/my"),
+    );
+    expect(venueCall).toBeDefined();
+    const venueHeaders = venueCall?.[1]?.headers as Headers;
+    expect(venueHeaders).toBeInstanceOf(Headers);
+    expect(venueHeaders.get("x-acting-host-id")).toBe("acting-host-123");
+  });
 });

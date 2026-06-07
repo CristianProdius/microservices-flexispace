@@ -43,9 +43,16 @@ export const getMyVenues = async (req: Request, res: Response) => {
 // tombstoned host's venues or a hidden venue can't surface here either.
 const VENUES_LIST_DEFAULT_LIMIT = 24;
 const VENUES_LIST_MAX_LIMIT = 50;
-type VenueListSort = "newest" | "featured";
-const parseVenueListSort = (raw: unknown): VenueListSort =>
-  raw === "newest" ? "newest" : "featured";
+// The shared `HostFilter` UI exposes `featured | mostVenues | newest`. On a
+// per-venue listing "mostVenues" doesn't have a 1:1 host-equivalent (each row
+// IS a venue) so we map it to the most useful adjacent signal: venues with
+// the most active spaces first. This keeps the filter pill honest instead of
+// silently falling back to `featured`.
+type VenueListSort = "newest" | "featured" | "mostVenues";
+const parseVenueListSort = (raw: unknown): VenueListSort => {
+  if (raw === "newest" || raw === "mostVenues") return raw;
+  return "featured";
+};
 
 export const getVenuesList = async (req: Request, res: Response) => {
   const page = parsePositiveIntegerWithDefault(req.query.page, 1);
@@ -71,7 +78,9 @@ export const getVenuesList = async (req: Request, res: Response) => {
   const sort = parseVenueListSort(req.query.sort);
 
   // Featured = verified hosts first, then by hostingSince (oldest established
-  // hosts surfaced before newcomers). Newest = recently-created venues first.
+  // hosts surfaced before newcomers). MostVenues (here: most spaces) =
+  // venues with the largest active-space count first. Newest = recently-
+  // created venues first.
   const orderBy =
     sort === "featured"
       ? [
@@ -79,7 +88,12 @@ export const getVenuesList = async (req: Request, res: Response) => {
           { host: { hostingSince: "asc" as const } },
           { createdAt: "desc" as const },
         ]
-      : [{ createdAt: "desc" as const }];
+      : sort === "mostVenues"
+        ? [
+            { spaces: { _count: "desc" as const } },
+            { createdAt: "desc" as const },
+          ]
+        : [{ createdAt: "desc" as const }];
 
   const where = {
     isActive: true,
