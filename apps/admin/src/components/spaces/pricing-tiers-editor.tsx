@@ -16,12 +16,48 @@ interface PricingTiersEditorProps {
   currency: string;
 }
 
-const PricingTiersEditor = ({ tiers, onChange, currency }: PricingTiersEditorProps) => {
-  const currencySymbol = CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || currency;
+const PricingTiersEditor = ({
+  tiers,
+  onChange,
+  currency,
+}: PricingTiersEditorProps) => {
+  const currencySymbol =
+    CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] || currency;
+  const dayMinutes = 24 * 60;
+  const customDaysValue = "custom-days";
+  const customMinutesValue = "custom-minutes";
+  const presetForMinutes = (minutes: number) =>
+    PRICING_TIER_PRESETS.find((preset) => preset.minutes === minutes);
+  const isWholeDayDuration = (minutes: number) =>
+    minutes >= dayMinutes && minutes % dayMinutes === 0;
+  const durationValueForTier = (minutes: number) => {
+    if (presetForMinutes(minutes)) return minutes.toString();
+    return isWholeDayDuration(minutes) ? customDaysValue : customMinutesValue;
+  };
+  const formatDayLabel = (days: number) =>
+    `${days} ${days === 1 ? "day" : "days"}`;
+  const formatMinuteLabel = (minutes: number) =>
+    `${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+  const customDaysFromMinutes = (minutes: number) => {
+    if (isWholeDayDuration(minutes)) {
+      return minutes / dayMinutes;
+    }
+    return 10;
+  };
+  const customMinutesFromMinutes = (minutes: number) =>
+    Number.isInteger(minutes) && minutes > 0 ? minutes : 60;
+  const normalizeDays = (value: string) => {
+    const days = parseInt(value, 10);
+    return Number.isInteger(days) && days > 0 ? days : 1;
+  };
+  const normalizeMinutes = (value: string) => {
+    const minutes = parseInt(value, 10);
+    return Number.isInteger(minutes) && minutes > 0 ? minutes : 1;
+  };
 
   const addTier = () => {
     const firstUnused = PRICING_TIER_PRESETS.find(
-      (preset) => !tiers.some((t) => t.minutes === preset.minutes)
+      (preset) => !tiers.some((t) => t.minutes === preset.minutes),
     );
     const newTier: PricingTier = firstUnused
       ? { minutes: firstUnused.minutes, label: firstUnused.label, price: "" }
@@ -33,7 +69,11 @@ const PricingTiersEditor = ({ tiers, onChange, currency }: PricingTiersEditorPro
     onChange(tiers.filter((_, i) => i !== index));
   };
 
-  const updateTier = (index: number, field: keyof PricingTier, value: string | number) => {
+  const updateTier = (
+    index: number,
+    field: keyof PricingTier,
+    value: string | number,
+  ) => {
     const updated = tiers.map((tier, i) => {
       if (i !== index) return tier;
       if (field === "minutes") {
@@ -46,11 +86,65 @@ const PricingTiersEditor = ({ tiers, onChange, currency }: PricingTiersEditorPro
     onChange(updated);
   };
 
+  const updateDuration = (index: number, value: string) => {
+    if (value !== customDaysValue && value !== customMinutesValue) {
+      updateTier(index, "minutes", value);
+      return;
+    }
+
+    const currentMinutes = tiers[index]?.minutes ?? 0;
+    const minutes =
+      value === customDaysValue
+        ? (presetForMinutes(currentMinutes)
+            ? 10
+            : customDaysFromMinutes(currentMinutes)) * dayMinutes
+        : customMinutesFromMinutes(currentMinutes);
+    const label =
+      value === customDaysValue
+        ? formatDayLabel(minutes / dayMinutes)
+        : presetForMinutes(currentMinutes)
+          ? formatMinuteLabel(minutes)
+          : tiers[index]?.label || formatMinuteLabel(minutes);
+    const updated = tiers.map((tier, i) =>
+      i === index ? { ...tier, minutes, label } : tier,
+    );
+    onChange(updated);
+  };
+
+  const updateCustomDays = (index: number, value: string) => {
+    const days = normalizeDays(value);
+    const updated = tiers.map((tier, i) =>
+      i === index
+        ? {
+            ...tier,
+            minutes: days * dayMinutes,
+            label: formatDayLabel(days),
+          }
+        : tier,
+    );
+    onChange(updated);
+  };
+
+  const updateCustomMinutes = (index: number, value: string) => {
+    const minutes = normalizeMinutes(value);
+    const updated = tiers.map((tier, i) =>
+      i === index
+        ? {
+            ...tier,
+            minutes,
+            label: formatMinuteLabel(minutes),
+          }
+        : tier,
+    );
+    onChange(updated);
+  };
+
   return (
     <div className="space-y-3">
       <label className={labelClassName}>Pricing Tiers</label>
       <p className="text-sm text-muted-foreground">
-        Define interval-based pricing for longer bookings. These override the default hourly/daily rates.
+        Define interval-based pricing for longer bookings. These override the
+        default hourly/daily rates.
       </p>
 
       {tiers.map((tier, index) => (
@@ -62,8 +156,8 @@ const PricingTiersEditor = ({ tiers, onChange, currency }: PricingTiersEditorPro
               </label>
             )}
             <select
-              value={tier.minutes}
-              onChange={(e) => updateTier(index, "minutes", e.target.value)}
+              value={durationValueForTier(tier.minutes)}
+              onChange={(e) => updateDuration(index, e.target.value)}
               className={fieldClassName}
             >
               {PRICING_TIER_PRESETS.map((preset) => (
@@ -71,8 +165,48 @@ const PricingTiersEditor = ({ tiers, onChange, currency }: PricingTiersEditorPro
                   {preset.label}
                 </option>
               ))}
+              <option value={customDaysValue}>Custom days</option>
+              <option value={customMinutesValue}>Custom minutes</option>
             </select>
           </div>
+
+          {durationValueForTier(tier.minutes) === customDaysValue && (
+            <div className="w-28 shrink-0">
+              {index === 0 && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Days
+                </label>
+              )}
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={customDaysFromMinutes(tier.minutes)}
+                onChange={(e) => updateCustomDays(index, e.target.value)}
+                className={fieldClassName}
+                aria-label="Custom duration in days"
+              />
+            </div>
+          )}
+
+          {durationValueForTier(tier.minutes) === customMinutesValue && (
+            <div className="w-32 shrink-0">
+              {index === 0 && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Minutes
+                </label>
+              )}
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={customMinutesFromMinutes(tier.minutes)}
+                onChange={(e) => updateCustomMinutes(index, e.target.value)}
+                className={fieldClassName}
+                aria-label="Custom duration in minutes"
+              />
+            </div>
+          )}
 
           <div className="flex-1">
             {index === 0 && (

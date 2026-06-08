@@ -41,5 +41,6 @@ export const PRICING_TIER_PRESETS = [
   { minutes: 2880, label: "2 days" },
   { minutes: 4320, label: "3 days" },
   { minutes: 10080, label: "1 week" },
+  { minutes: 20160, label: "2 weeks" },
   { minutes: 43200, label: "1 month" },
 ] as const;
