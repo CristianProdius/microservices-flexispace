@@ -46,6 +46,19 @@ function generateRandomPassword(): string {
   return randomBytes(64).toString("base64");
 }
 
+// Human-transcribable temp password: 14 chars from an unambiguous alphabet
+// (no 0/O/1/l/I) so an admin can read it aloud or copy it from a note without
+// transcription errors. >= PASSWORD_MIN_LENGTH by construction.
+function generateTempPassword(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = randomBytes(14);
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    out += alphabet[bytes[i]! % alphabet.length];
+  }
+  return out;
+}
+
 // Get all users (admin only)
 router.get("/", async (req, res) => {
   try {
@@ -375,6 +388,51 @@ router.put("/:id", async (req, res) => {
     return res.status(200).json(user);
   } catch (error) {
     return sendPrismaError(res, error, "Update user error");
+  }
+});
+
+// Set (or generate) a temporary password for an existing user and force a
+// rotation on next login. Returns the plaintext exactly once so the admin can
+// hand it to the host. Mounted under `/users` with shouldBeAdmin.
+router.post("/:id/temp-password", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body ?? {};
+
+    const existing = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let tempPassword: string;
+    if (password !== undefined && password !== null && password !== "") {
+      const pwCheck = validatePassword(password);
+      if (!pwCheck.ok) {
+        return res.status(400).json({ message: pwCheck.message });
+      }
+      tempPassword = pwCheck.value;
+    } else {
+      tempPassword = generateTempPassword();
+    }
+
+    const hashedPassword = await hashPassword(tempPassword);
+
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword, mustChangePassword: true },
+      select: { id: true },
+    });
+
+    // Invalidate existing sessions so the only way back in is the new temp
+    // password, which then forces the onboarding wizard.
+    await prisma.session.deleteMany({ where: { userId: id } });
+
+    return res.status(200).json({ tempPassword });
+  } catch (error) {
+    return sendPrismaError(res, error, "Set temp password error");
   }
 });
 
