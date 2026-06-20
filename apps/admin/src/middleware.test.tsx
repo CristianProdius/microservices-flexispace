@@ -65,6 +65,17 @@ describe("admin edge middleware", () => {
     expect(result.url.searchParams.get("next")).toBe("/admin/users");
   });
 
+  it("redirects unauthenticated /onboarding requests to /login", () => {
+    const req = buildRequest("/onboarding");
+
+    const result = middleware(
+      req as unknown as Parameters<typeof middleware>[0]
+    ) as unknown as { type: string; url: URL };
+
+    expect(result.type).toBe("redirect");
+    expect(result.url.pathname).toBe("/login");
+  });
+
   it("redirects requests with a malformed cookie value", () => {
     const req = buildRequest("/host/spaces", "not-a-jwt");
 

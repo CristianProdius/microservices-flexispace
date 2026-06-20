@@ -66,5 +66,5 @@ export const config = {
   // and Next.js internals (`_next/*`, static assets) are intentionally
   // excluded; the `/` landing page redirects users client-side already and
   // does not render any protected content.
-  matcher: ["/admin/:path*", "/host/:path*"],
+  matcher: ["/admin/:path*", "/host/:path*", "/onboarding/:path*"],
 };
