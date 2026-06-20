@@ -113,6 +113,20 @@ export const resetPasswordLimiter = rateLimit({
 });
 
 /**
+ * Onboarding set-password: 10 per 15 min per IP. The endpoint is already
+ * gated on an authenticated session with mustChangePassword === true; this
+ * just sheds abuse.
+ */
+export const onboardingSetPasswordLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: ipKey,
+  handler: standardResponse,
+});
+
+/**
  * AUD-029: resend-verification rate limiter.
  * 3 attempts per 15-min window per (ip, email). Resending verification
  * emails to arbitrary addresses is a mailbomb vector, and a legitimate
