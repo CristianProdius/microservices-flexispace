@@ -90,10 +90,13 @@ export async function onboardingSetPassword(newPassword: string): Promise<void> 
 
 /** Current account, including the mustChangePassword flag. */
 export async function getMe(): Promise<MeResponse> {
-  const token = getAccessToken();
-  const res = await fetchAuth("/auth/me", {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  // Cookie-authoritative: rely on the HttpOnly `spacefly_access` cookie that
+  // fetchAuth sends via credentials:include, NOT the localStorage bearer token.
+  // The server prefers the Authorization header over the cookie, so a stale
+  // localStorage token would shadow a fresh cookie and 401 — which would make
+  // the onboarding guard wrongly treat a still-flagged host as done. Omitting
+  // the header lets the always-fresh cookie authenticate the read.
+  const res = await fetchAuth("/auth/me");
   if (!res.ok) {
     throw new Error("Failed to load account");
   }
