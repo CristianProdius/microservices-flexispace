@@ -25,6 +25,7 @@ import {
   refreshSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  onboardingSetPasswordSchema,
   becomeHostSchema,
 } from "../utils/validation.js";
 import {
@@ -33,6 +34,7 @@ import {
   refreshLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
+  onboardingSetPasswordLimiter,
   resendVerificationLimiter,
 } from "../utils/rateLimit.js";
 import {
@@ -806,6 +808,62 @@ router.post("/change-password", shouldBeUser, async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Onboarding set-password. Distinct from /change-password: it does NOT require
+// the current password and does NOT log the user out, so the onboarding wizard
+// flows straight through. It is usable ONLY while mustChangePassword === true,
+// so it can never act as a current-password bypass once onboarding is done.
+// ---------------------------------------------------------------------------
+router.post(
+  "/onboarding/set-password",
+  onboardingSetPasswordLimiter,
+  shouldBeUser,
+  async (req, res) => {
+    try {
+      const body = parseBody(onboardingSetPasswordSchema, req.body, res);
+      if (!body) return;
+
+      const user = await prisma.user.findFirst({
+        where: { id: req.userId, deletedAt: null },
+      });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.mustChangePassword !== true) {
+        return res
+          .status(403)
+          .json({ message: "Password change is not required for this account" });
+      }
+
+      const newHash = await hashPassword(body.newPassword);
+
+      const updated = await prisma.user.update({
+        where: { id: user.id },
+        data: { password: newHash, mustChangePassword: false },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          role: true,
+          image: true,
+          mustChangePassword: true,
+        },
+      });
+
+      // Intentionally NO session/token revocation here. The account was just
+      // provisioned and has a single active session (the one completing the
+      // wizard), so there is nothing stale to revoke and the current session
+      // stays valid for the rest of onboarding.
+      return res.status(200).json({ user: updated });
+    } catch (error) {
+      console.error("Onboarding set-password error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+);
 
 // =================== ME ====================
 router.get("/me", shouldBeUser, async (req, res) => {
