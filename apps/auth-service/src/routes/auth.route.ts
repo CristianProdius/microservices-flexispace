@@ -827,6 +827,7 @@ router.get("/me", shouldBeUser, async (req, res) => {
         hostingSince: true,
         hostApplicationPending: true,
         emailVerified: true,
+        mustChangePassword: true,
         commissionRate: true,
         createdAt: true,
       },
