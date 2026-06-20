@@ -49,7 +49,11 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      const user = await login(email, password);
+      const { user, requiresPasswordChange } = await login(email, password);
+      if (requiresPasswordChange) {
+        router.replace("/onboarding");
+        return;
+      }
       // Honour `?next=` from the middleware redirect when it's a safe,
       // same-origin path; otherwise fall back to the role-based default.
       const safeNext = safeRedirectPath(searchParams.get("next"));

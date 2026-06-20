@@ -462,13 +462,16 @@ importers:
       '@prisma/client':
         specifier: ^6.16.0
         version: 6.16.0(prisma@6.16.0(typescript@5.9.2))(typescript@5.9.2)
+      bcryptjs:
+        specifier: ^2.4.3
+        version: 2.4.3
     devDependencies:
-      '@repo/auth-middleware':
-        specifier: workspace:*
-        version: link:../auth-middleware
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/bcryptjs':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@types/node':
         specifier: ^24.3.1
         version: 24.5.2

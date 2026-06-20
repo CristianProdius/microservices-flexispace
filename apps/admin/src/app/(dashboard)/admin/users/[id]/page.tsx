@@ -21,6 +21,7 @@ import { BadgeCheck, Candy, Citrus, Shield } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
+import SetTempPassword from "@/components/SetTempPassword";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { User } from "@repo/types";
@@ -197,21 +198,31 @@ const SingleUserPage = () => {
           <div className="bg-primary-foreground p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-semibold">User Information</h1>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button>Edit User</Button>
-                </SheetTrigger>
-                <EditUser
-                  user={{
-                    id: user.id,
-                    email: user.email,
-                    username: user.username,
-                    name: user.name,
-                    role: user.role,
-                  }}
-                  onUpdated={fetchUser}
-                />
-              </Sheet>
+              <div className="flex gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button>Edit User</Button>
+                  </SheetTrigger>
+                  <EditUser
+                    user={{
+                      id: user.id,
+                      email: user.email,
+                      username: user.username,
+                      name: user.name,
+                      role: user.role,
+                    }}
+                    onUpdated={fetchUser}
+                  />
+                </Sheet>
+                {user.role === "HOST" && (
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline">Set temp password</Button>
+                    </SheetTrigger>
+                    <SetTempPassword userId={user.id} email={user.email} />
+                  </Sheet>
+                )}
+              </div>
             </div>
             <div className="space-y-4 mt-4">
               <div className="flex flex-col gap-2 mb-8">

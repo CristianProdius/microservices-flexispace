@@ -1,8 +1,16 @@
 import { randomBytes } from "node:crypto";
 import { PrismaClient } from "../generated/prisma";
-import { hashPassword } from "@repo/auth-middleware";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+// Hash directly with bcrypt (cost 12, matching @repo/auth-middleware's default)
+// rather than importing @repo/auth-middleware. That dependency made @repo/db
+// depend on @repo/auth-middleware, which already depends on @repo/db — a cycle
+// turbo rejects ("Invalid package dependency graph"). The output format is
+// identical ($2a$12$…), so seeded logins still verify via comparePassword.
+const hashPassword = (password: string): Promise<string> =>
+  bcrypt.hash(password, 12);
 
 // DB-011: Refuse to seed production unless explicitly opted-in. The seed
 // plants well-known accounts (admin/demo host/demo user) and reference data;

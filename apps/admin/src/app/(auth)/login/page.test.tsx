@@ -68,12 +68,15 @@ describe("admin login page", () => {
 
   it("submits credentials and redirects admins to /admin on success", async () => {
     login.mockResolvedValueOnce({
-      id: "admin-1",
-      email: "admin@spacefly.ai",
-      username: "admin",
-      name: "Admin",
-      role: "ADMIN",
-      image: null,
+      user: {
+        id: "admin-1",
+        email: "admin@spacefly.ai",
+        username: "admin",
+        name: "Admin",
+        role: "ADMIN",
+        image: null,
+      },
+      requiresPasswordChange: false,
     });
 
     const pageModule = await import("./page");
@@ -112,12 +115,15 @@ describe("admin login page", () => {
 
   it("redirects hosts to /host on successful login", async () => {
     login.mockResolvedValueOnce({
-      id: "host-1",
-      email: "host@spacefly.ai",
-      username: "host",
-      name: "Host",
-      role: "HOST",
-      image: null,
+      user: {
+        id: "host-1",
+        email: "host@spacefly.ai",
+        username: "host",
+        name: "Host",
+        role: "HOST",
+        image: null,
+      },
+      requiresPasswordChange: false,
     });
 
     const pageModule = await import("./page");
@@ -185,15 +191,59 @@ describe("admin login page", () => {
     expect(container.textContent).toContain("Invalid credentials");
   });
 
+  it("redirects to /onboarding when a password change is required", async () => {
+    login.mockResolvedValueOnce({
+      user: {
+        id: "host-1",
+        email: "host@spacefly.ai",
+        username: "host",
+        name: "Host",
+        role: "HOST",
+        image: null,
+      },
+      requiresPasswordChange: true,
+    });
+
+    const pageModule = await import("./page");
+
+    await act(async () => {
+      root.render(React.createElement(pageModule.default));
+    });
+
+    const email = container.querySelector("#email") as HTMLInputElement | null;
+    const password = container.querySelector(
+      "#password"
+    ) as HTMLInputElement | null;
+    const form = container.querySelector("form");
+
+    if (!email || !password || !form) {
+      return;
+    }
+
+    await act(async () => {
+      setInputValue(email, "host@spacefly.ai");
+      setInputValue(password, "TempPass123");
+    });
+
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    expect(replace).toHaveBeenCalledWith("/onboarding");
+  });
+
   it("honours a safe ?next= path from the middleware redirect", async () => {
     searchParamsValue = "next=%2Fadmin%2Fbookings";
     login.mockResolvedValueOnce({
-      id: "admin-1",
-      email: "admin@spacefly.ai",
-      username: "admin",
-      name: "Admin",
-      role: "ADMIN",
-      image: null,
+      user: {
+        id: "admin-1",
+        email: "admin@spacefly.ai",
+        username: "admin",
+        name: "Admin",
+        role: "ADMIN",
+        image: null,
+      },
+      requiresPasswordChange: false,
     });
 
     const pageModule = await import("./page");
@@ -227,12 +277,15 @@ describe("admin login page", () => {
   it("falls back to the role default when ?next= is unsafe", async () => {
     searchParamsValue = "next=https%3A%2F%2Fevil.example.com%2Fphish";
     login.mockResolvedValueOnce({
-      id: "host-1",
-      email: "host@spacefly.ai",
-      username: "host",
-      name: "Host",
-      role: "HOST",
-      image: null,
+      user: {
+        id: "host-1",
+        email: "host@spacefly.ai",
+        username: "host",
+        name: "Host",
+        role: "HOST",
+        image: null,
+      },
+      requiresPasswordChange: false,
     });
 
     const pageModule = await import("./page");

@@ -1,4 +1,5 @@
 import AppSidebar from "@/components/AppSidebar";
+import OnboardingGuard from "@/components/OnboardingGuard";
 import Navbar from "@/components/Navbar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -16,6 +17,7 @@ export default async function RootLayout({
 
   return (
     <QueryProvider>
+      <OnboardingGuard />
       <div className="flex">
         <ThemeProvider
           attribute="class"

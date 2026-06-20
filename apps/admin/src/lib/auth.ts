@@ -37,6 +37,7 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+  requiresPasswordChange: boolean;
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -64,6 +65,42 @@ export async function logout(refreshToken: string): Promise<void> {
     },
     body: JSON.stringify({ refreshToken }),
   });
+}
+
+export interface MeResponse extends User {
+  mustChangePassword?: boolean;
+}
+
+/** Onboarding-only password set (no current password; keeps the session). */
+export async function onboardingSetPassword(newPassword: string): Promise<void> {
+  const token = getAccessToken();
+  const res = await fetchAuth("/auth/onboarding/set-password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ newPassword }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Could not set your new password");
+  }
+}
+
+/** Current account, including the mustChangePassword flag. */
+export async function getMe(): Promise<MeResponse> {
+  // Cookie-authoritative: rely on the HttpOnly `spacefly_access` cookie that
+  // fetchAuth sends via credentials:include, NOT the localStorage bearer token.
+  // The server prefers the Authorization header over the cookie, so a stale
+  // localStorage token would shadow a fresh cookie and 401 — which would make
+  // the onboarding guard wrongly treat a still-flagged host as done. Omitting
+  // the header lets the always-fresh cookie authenticate the read.
+  const res = await fetchAuth("/auth/me");
+  if (!res.ok) {
+    throw new Error("Failed to load account");
+  }
+  return res.json();
 }
 
 // AUD-027: when an admin page and a customer page (or two browser tabs) hit

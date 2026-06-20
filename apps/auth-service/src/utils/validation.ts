@@ -66,6 +66,11 @@ export const resetPasswordSchema = z.object({
 });
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;
 
+export const onboardingSetPasswordSchema = z.object({
+  newPassword: passwordSchema,
+});
+export type OnboardingSetPasswordBody = z.infer<typeof onboardingSetPasswordSchema>;
+
 export const becomeHostSchema = z.object({
   phone: z.string().trim().min(1).max(40).optional(),
   bio: z.string().trim().max(2000).optional(),
