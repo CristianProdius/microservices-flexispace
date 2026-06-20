@@ -93,7 +93,10 @@ interface AuthState {
   isHostOrAdmin: boolean;
   actingHostId: string | null;
   setActingHost: (id: string | null) => void;
-  login: (email: string, password: string) => Promise<User>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ user: User; requiresPasswordChange: boolean }>;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
   initialize: () => void;
@@ -156,7 +159,10 @@ const useAuthStore = create<AuthState>((set) => ({
       isHostOrAdmin: true,
       actingHostId: null,
     });
-    return response.user;
+    return {
+      user: response.user,
+      requiresPasswordChange: response.requiresPasswordChange === true,
+    };
   },
 
   setActingHost: (id: string | null) => {
