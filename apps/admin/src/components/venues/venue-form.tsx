@@ -33,6 +33,7 @@ interface VenueFormProps {
   submitLabel: string;
   submittingLabel: string;
   onSubmit: (payload: VenueFormPayload) => Promise<void>;
+  hostField?: React.ReactNode;
 }
 
 const VenueForm = ({
@@ -43,6 +44,7 @@ const VenueForm = ({
   submitLabel,
   submittingLabel,
   onSubmit,
+  hostField,
 }: VenueFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +134,7 @@ const VenueForm = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {hostField}
         <DashboardSection title="Basic Information" contentClassName="space-y-4">
           <div className="space-y-4">
             <div>
