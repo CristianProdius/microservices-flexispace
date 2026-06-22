@@ -78,7 +78,22 @@ export function clearRefreshCookie(res: Response): void {
   });
 }
 
-/** Set both access + refresh cookies; used after register/login/refresh. */
+/**
+ * Set both access + refresh cookies; used after register/login/refresh.
+ *
+ * The access COOKIE is deliberately given the REFRESH lifetime as its browser
+ * `maxAge`, NOT the (short) access-JWT lifetime. The JWT inside still carries
+ * its own 15-min `exp` and is what the API verifies, so authorization is
+ * unchanged. But the cookie outliving the JWT lets the admin edge middleware
+ * tell "lapsed access token, session still alive" (serve the shell, let the
+ * client refresh) apart from "no session" (bounce to /login). Tying the
+ * cookie's maxAge to the 15-min JWT made the cookie vanish the instant the
+ * token expired, so an idle tab got bounced to /login every 15 min despite a
+ * valid 7-day refresh session — the "have to log in twice" symptom.
+ *
+ * `accessMaxAgeMs` is retained for call-site compatibility but is no longer
+ * used for the cookie lifetime (the JWT's own exp governs API expiry).
+ */
 export function setAuthCookies(
   res: Response,
   accessToken: string,
@@ -86,7 +101,8 @@ export function setAuthCookies(
   refreshMaxAgeMs: number,
   accessMaxAgeMs: number,
 ): void {
-  setAccessCookie(res, accessToken, accessMaxAgeMs);
+  void accessMaxAgeMs;
+  setAccessCookie(res, accessToken, refreshMaxAgeMs);
   setRefreshCookie(res, refreshToken, refreshMaxAgeMs);
 }
 

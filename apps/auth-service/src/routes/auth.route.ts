@@ -647,11 +647,24 @@ router.post("/logout", async (req, res) => {
 // chain and force re-authentication.
 router.post("/refresh", refreshLimiter, async (req, res) => {
   try {
-    const body = parseBody(refreshSchema, req.body, res);
-    if (!body) return;
-
-    const refreshToken: string | undefined =
-      body.refreshToken ?? req.cookies?.[REFRESH_COOKIE_NAME];
+    // AUD-027 / AUTHSVC: prefer the COOKIE over the body. The HttpOnly
+    // spacefly_refresh cookie is overwritten with the rotated token on every
+    // refresh (setAuthCookies below), so it is always the freshest credential.
+    // A client that keeps a stale copy in its request body (the admin app's
+    // localStorage path did exactly this) would otherwise replay an already-
+    // used parent jti and trip reuse-detection → chain revocation → a spurious
+    // second login. Cookie-first makes the freshest token authoritative; body
+    // remains a fallback for legacy non-cookie clients.
+    //
+    // Validate the body ONLY when there is no cookie to fall back on — a valid
+    // refresh cookie must not be rejected just because a legacy client also
+    // sent a malformed `refreshToken` in the body.
+    let refreshToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
+    if (!refreshToken) {
+      const body = parseBody(refreshSchema, req.body, res);
+      if (!body) return; // parseBody has already sent a 400 for a bad body.
+      refreshToken = body.refreshToken;
+    }
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required" });
@@ -730,9 +743,16 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
       // sent on the next attempt. A token that was rotated long ago is
       // suspicious and warrants revoking the chain (which is what the
       // old code did unconditionally).
+      //
+      // Note we intentionally do NOT gate this on `stored.replacedBy`: the
+      // winning request sets `usedAt` (the atomic claim) and only links
+      // `replacedBy` a moment later in a separate write. A replay landing in
+      // that in-flight window has usedAt set but replacedBy still null; gating
+      // on replacedBy would misread it as theft and revoke a live session. The
+      // recency window is the correct race signal on its own.
       const REFRESH_RACE_WINDOW_MS = 10_000;
       const rotatedAt = stored.usedAt?.getTime() ?? 0;
-      if (stored.replacedBy && now.getTime() - rotatedAt < REFRESH_RACE_WINDOW_MS) {
+      if (now.getTime() - rotatedAt < REFRESH_RACE_WINDOW_MS) {
         return res.status(409).json({
           code: "REFRESH_RACE",
           message:

@@ -41,23 +41,31 @@ function redirectToLogin(req: NextRequest) {
 export function middleware(req: NextRequest) {
   const token = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
   if (!token) {
+    // No session cookie at all → genuinely unauthenticated. Bounce to /login.
     return redirectToLogin(req);
   }
 
   const payload = decodeJwtPayload(token);
   if (!payload) {
+    // Malformed/garbage cookie → treat as no session.
     return redirectToLogin(req);
   }
 
-  // `exp` is seconds since epoch per RFC 7519.
-  if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) {
-    return redirectToLogin(req);
-  }
-
-  // Note: role-based gating (admin vs host areas) is intentionally kept in
-  // the client layouts as defense-in-depth. The edge middleware's job is
-  // to prevent any unauthenticated request from receiving the protected
-  // HTML shell — leaking sidebar copy and route names was the bug.
+  // The access COOKIE intentionally outlives its 15-min JWT (see
+  // apps/auth-service/src/utils/cookies.ts). An expired `exp` here therefore
+  // does NOT mean "logged out" — it means the short-lived access token lapsed
+  // while the 7-day refresh session is almost certainly still valid. Bouncing
+  // such a request to /login every 15 minutes was the "have to log in twice"
+  // bug. Instead we serve the protected shell and let the client silently
+  // refresh (authStore.initialize / getToken → /auth/refresh re-mints a fresh
+  // access cookie). This does not weaken the gate: a forged or expired cookie
+  // only reaches the static UI shell — every data request still verifies the
+  // JWT at the API boundary and 401s until a real refresh succeeds, the same
+  // posture as the documented "logged out" view. A truly dead session (no
+  // refresh token) self-heals to /login from the client guards.
+  //
+  // Role-based gating (admin vs host areas) stays in the client layouts as
+  // defense-in-depth.
   return NextResponse.next();
 }
 

@@ -64,6 +64,14 @@ export function DataTable<TData, TValue>({
   const mutation = useMutation({
     mutationFn: async () => {
       const token = await getToken();
+      // getToken() returns null once the session is dead. Sending
+      // `Authorization: Bearer null` would just 401 and surface a confusing
+      // toast with no way forward — route to /login instead so the user can
+      // re-authenticate (Symptom B: "auth broken, no redirect").
+      if (!token) {
+        router.push("/login");
+        throw new Error("Your session has expired. Please sign in again.");
+      }
       const selectedRows = table.getSelectedRowModel().rows;
 
       const results = await Promise.allSettled(
