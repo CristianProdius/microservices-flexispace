@@ -90,6 +90,7 @@ services:
       <<: *api-env
       PORT: 8003
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      INVITE_LINK_BASE: ${INVITE_LINK_BASE}
     expose:
       - "8003"
     healthcheck:
