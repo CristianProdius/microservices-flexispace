@@ -4,6 +4,7 @@ import { prisma, Role } from "@repo/db";
 import { hashPassword, normalizeEmail } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
 import { sendPrismaError } from "../utils/prismaErrors.js";
+import { generateInviteToken, INVITE_TTL_DAYS } from "../utils/inviteToken.js";
 
 const router: Router = Router();
 
@@ -57,6 +58,13 @@ function generateTempPassword(): string {
     out += alphabet[bytes[i]! % alphabet.length];
   }
   return out;
+}
+
+// Magic-link base for invites, e.g. https://admin.spacefly.ai/accept-invite.
+// The raw token is appended as ?token=...; only its hash is stored.
+function buildInviteUrl(rawToken: string): string {
+  const base = process.env.INVITE_LINK_BASE ?? "";
+  return `${base}?token=${encodeURIComponent(rawToken)}`;
 }
 
 // Get all users (admin only)
@@ -197,6 +205,68 @@ router.post("/hosts/lead", async (req, res) => {
     return res.status(201).json(user);
   } catch (error) {
     return sendPrismaError(res, error, "Create lead host error");
+  }
+});
+
+// Create (or refresh) an email invite for an existing user. Admin-only via
+// the /users mount guard. Deletes any prior unaccepted invite for the user,
+// inserts a fresh Invite (hash stored, raw emitted), and emits user.invited.
+// Returns the inviteUrl so the admin can copy it as an offline fallback.
+router.post("/:id/invite", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { raw, tokenHash } = generateInviteToken();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const invitedById = req.userId ?? null;
+
+    // One live invite per user: clear prior unaccepted invites, then insert.
+    await prisma.$transaction([
+      prisma.invite.deleteMany({ where: { userId: user.id, acceptedAt: null } }),
+      prisma.invite.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          email: user.email,
+          role: user.role,
+          invitedById,
+          expiresAt,
+        },
+      }),
+    ]);
+
+    // Best-effort publish (GOTCHA 9): the Invite row is the durable side
+    // effect; a Kafka outage must not fail the admin call — the returned
+    // inviteUrl lets the admin relay the link manually.
+    try {
+      await producer.send("user.invited", {
+        value: {
+          email: user.email,
+          name: user.name ?? null,
+          token: raw,
+          role: user.role,
+        },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.invited event for",
+        user.id,
+        "- invite created but email will not fire:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
+    return res.status(200).json({ inviteUrl: buildInviteUrl(raw), expiresAt: expiresAt.toISOString() });
+  } catch (error) {
+    return sendPrismaError(res, error, "Create invite error");
   }
 });
 
