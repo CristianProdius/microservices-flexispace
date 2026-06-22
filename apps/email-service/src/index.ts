@@ -141,6 +141,18 @@ const passwordResetLinkFor = (token: string): string => {
   return `${base}${separator}token=${encodeURIComponent(token)}`;
 };
 
+// Invite link builder — same shape as verification/reset. Producer
+// (auth-service) sends the invite token in `token`; we append it onto
+// INVITE_LINK_BASE as a query param.
+const inviteLinkFor = (token: string): string => {
+  const base = process.env.INVITE_LINK_BASE;
+  if (!base) {
+    throw new MissingEmailConfigError("INVITE_LINK_BASE");
+  }
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(token)}`;
+};
+
 // AUD-013: produce a short, deterministic token hash for idempotency keys so
 // we can dedupe per-token without leaking the raw bearer token into Resend
 // logs or our own observability stack.
