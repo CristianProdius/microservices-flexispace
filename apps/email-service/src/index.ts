@@ -202,6 +202,26 @@ const subscriptions = [
     },
   },
   {
+    topicName: "user.invited",
+    topicHandler: async (message: EmailEventMessage) => {
+      const { email, name, username, token, userId } = message.value || {};
+      if (!email || !token) return;
+
+      const link = inviteLinkFor(token);
+      const greeting = name || username || "there";
+      // AUD-013: hash the token into the idempotency key so a consumer-group
+      // rebalance redelivering this message can't double-send, without
+      // leaking the raw token into Resend's dedupe store or logs.
+      const idKey = `user-invited:${userId ?? email}:${shortHash(token)}`;
+      await sendMail({
+        email,
+        subject: "You've been invited to Spacefly.ai",
+        text: `Hi ${greeting},\n\nYou've been invited to join Spacefly.ai. Accept your invitation using the link below:\n\n${link}\n\nIf you weren't expecting this invitation you can safely ignore this message.`,
+        idempotencyKey: idKey,
+      });
+    },
+  },
+  {
     // AUD-001: subscribe to password reset events emitted by auth-service's
     // POST /auth/forgot-password handler. Mirrors the verification email
     // shape and uses PASSWORD_RESET_LINK_BASE for the click-through.
