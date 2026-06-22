@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => {
   return {
     prisma,
     producerSend: vi.fn(),
+    lookupActiveUser: vi.fn(),
     spaceUpdateMany: prisma.space.updateMany,
     venueCreate: prisma.venue.create,
     venueFindMany: prisma.venue.findMany,
@@ -46,6 +47,10 @@ vi.mock("../utils/kafka.js", () => ({
   },
 }));
 
+vi.mock("@repo/auth-middleware", () => ({
+  lookupActiveUser: mocks.lookupActiveUser,
+}));
+
 const createResponse = () => {
   const res = {
     json: vi.fn(),
@@ -62,6 +67,34 @@ const createResponse = () => {
 describe("venue controller contract", () => {
   afterEach(() => {
     vi.resetAllMocks();
+  });
+
+  it("lets an ADMIN assign a venue to an explicit body.hostId", async () => {
+    mocks.lookupActiveUser.mockResolvedValueOnce({ id: "host-9", role: "HOST" });
+    mocks.venueCreate.mockResolvedValue({ id: 21, hostId: "host-9" });
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: "host-9",
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(mocks.lookupActiveUser).toHaveBeenCalledWith("host-9");
+    expect(mocks.venueCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ hostId: "host-9" }),
+    });
+    expect(mocks.producerSend).toHaveBeenCalledWith("venue.created", {
+      value: { id: 21, hostId: "host-9" },
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 
   it("persists media, currency, and translations when creating venues", async () => {
