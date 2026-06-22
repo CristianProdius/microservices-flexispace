@@ -18,6 +18,7 @@ import {
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import { producer } from "../utils/kafka.js";
+import { hashInviteToken } from "../utils/inviteToken.js";
 import {
   parseBody,
   registerSchema,
@@ -27,6 +28,7 @@ import {
   resetPasswordSchema,
   onboardingSetPasswordSchema,
   becomeHostSchema,
+  acceptInviteSchema,
 } from "../utils/validation.js";
 import {
   loginLimiter,
@@ -36,6 +38,7 @@ import {
   resetPasswordLimiter,
   onboardingSetPasswordLimiter,
   resendVerificationLimiter,
+  acceptInviteLimiter,
 } from "../utils/rateLimit.js";
 import {
   setAuthCookies,
@@ -290,6 +293,48 @@ router.post("/register", registerLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Public: validate an invite token so the accept page can render the
+// invitee's email/name (or a friendly "no longer valid" state).
+// No auth — the user is not logged in yet.
+router.get("/invite/:token", async (req, res) => {
+  try {
+    const raw = req.params.token ?? "";
+    if (!raw || raw.length < 20 || raw.length > 4096) {
+      return res.status(200).json({ valid: false, reason: "INVALID" });
+    }
+
+    const tokenHash = hashInviteToken(raw);
+    const invite = await prisma.invite.findUnique({
+      where: { tokenHash },
+      select: {
+        email: true,
+        acceptedAt: true,
+        expiresAt: true,
+        user: { select: { name: true, deletedAt: true } },
+      },
+    });
+
+    if (!invite || invite.user.deletedAt) {
+      return res.status(200).json({ valid: false, reason: "INVALID" });
+    }
+    if (invite.acceptedAt) {
+      return res.status(200).json({ valid: false, reason: "ALREADY_ACCEPTED" });
+    }
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      return res.status(200).json({ valid: false, reason: "EXPIRED" });
+    }
+
+    return res.status(200).json({
+      valid: true,
+      email: invite.email,
+      name: invite.user.name ?? undefined,
+    });
+  } catch (error) {
+    console.error("Invite validate error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
