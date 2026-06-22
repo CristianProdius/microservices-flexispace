@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus, X } from "lucide-react";
+import { ChevronDown, Plus, Store, X } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import { CreateLeadHostModal, type CreatedHost } from "./CreateLeadHostModal";
@@ -101,14 +101,19 @@ export function HostSwitcher() {
   if (!isAdmin) return null;
 
   return (
-    <div className="px-2 py-2">
+    <div className="px-2 py-2 group-data-[collapsible=icon]:px-0">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="w-full flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-left text-sm hover:bg-accent/30 transition-colors"
+            title={
+              selected
+                ? `Acting as: ${selected.name || selected.username}`
+                : "Select a host…"
+            }
+            className="w-full flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-left text-sm hover:bg-accent/30 transition-colors group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:mx-auto"
           >
-            <span className="truncate">
+            <span className="truncate group-data-[collapsible=icon]:hidden">
               {selected ? (
                 <>
                   <span className="text-muted-foreground">Acting as:</span>{" "}
@@ -120,7 +125,8 @@ export function HostSwitcher() {
                 <span className="text-muted-foreground">Select a host…</span>
               )}
             </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <Store className="hidden size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:block" />
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
