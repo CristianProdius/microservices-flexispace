@@ -65,7 +65,10 @@ function generateTempPassword(): string {
 // The raw token is appended as ?token=...; only its hash is stored.
 function buildInviteUrl(rawToken: string): string {
   const base = process.env.INVITE_LINK_BASE ?? "";
-  return `${base}?token=${encodeURIComponent(rawToken)}`;
+  // Mirror email-service's inviteLinkFor: append with `&` when the base
+  // already carries a query string so we don't emit a second `?`.
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(rawToken)}`;
 }
 
 // Get all users (admin only)
@@ -288,10 +291,13 @@ router.post("/host-invite", async (req, res) => {
       select: { id: true, role: true },
     });
 
-    if (existing && existing.role !== "HOST" && existing.role !== "ADMIN") {
+    // Only an existing HOST may be reused. Reusing an ADMIN would reset that
+    // admin's password/emailVerified on accept, and a USER would be silently
+    // promoted — both are rejected with 409.
+    if (existing && existing.role !== "HOST") {
       return res
         .status(409)
-        .json({ message: "A user with this email already exists with a different role." });
+        .json({ message: "A non-host account already uses this email." });
     }
 
     let userId: string;

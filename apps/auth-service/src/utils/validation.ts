@@ -22,10 +22,14 @@ const usernameSchema = z
   .max(32, "username must be at most 32 characters")
   .regex(/^[a-zA-Z0-9_]+$/, "username may only contain letters, digits, and underscore");
 
+// bcrypt truncates at 72 bytes and hashPassword throws above that, so 72 is
+// a hard upper bound. Every consumer of this schema (register, reset,
+// onboarding set-password, accept-invite) feeds the value into hashPassword,
+// so capping here keeps an over-long password a friendly 400 instead of a 500.
 const passwordSchema = z
   .string()
   .min(8, "password must be at least 8 characters")
-  .max(256, "password is too long");
+  .max(72, "password is too long");
 
 export const registerSchema = z.object({
   email: emailSchema,

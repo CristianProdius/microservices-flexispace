@@ -48,6 +48,19 @@ import {
 
 const router: Router = Router();
 
+/**
+ * Sentinel thrown inside the invite-accept transaction when the atomic
+ * single-use consume fails (the invite was already accepted, expired, or
+ * consumed by a concurrent request). Throwing it rolls back the whole
+ * transaction; the outer catch maps it to HTTP 410.
+ */
+class InviteAlreadyConsumedError extends Error {
+  constructor() {
+    super("invite already consumed");
+    this.name = "InviteAlreadyConsumedError";
+  }
+}
+
 /** Convert a duration string like "30d", "1h", "15m", "30s" to milliseconds. */
 function parseExpiry(str: string): number {
   const match = str.match(/^(\d+)(s|m|h|d)$/);
@@ -377,6 +390,20 @@ router.post("/invite/accept", acceptInviteLimiter, async (req, res) => {
     // Apply the password + verification + accepted-at atomically, then
     // drop any prior sessions for this user (the invite is a fresh start).
     const updatedUser = await prisma.$transaction(async (tx) => {
+      // AUTHSVC-M1: atomic single-use + expiry gate. This conditional
+      // updateMany is the authoritative consume — only the request that
+      // flips acceptedAt from null (on a still-unexpired invite) wins.
+      // Two concurrent requests with the same token can no longer both
+      // succeed (TOCTOU replay). The cheap pre-checks above stay for fast
+      // friendly responses, but this is the real gate. Throwing rolls back
+      // the whole transaction (password/verification/session changes).
+      const consumed = await tx.invite.updateMany({
+        where: { id: invite.id, acceptedAt: null, expiresAt: { gt: new Date() } },
+        data: { acceptedAt: new Date() },
+      });
+      if (consumed.count !== 1) {
+        throw new InviteAlreadyConsumedError();
+      }
       const u = await tx.user.update({
         where: { id: user.id },
         data: {
@@ -384,10 +411,6 @@ router.post("/invite/accept", acceptInviteLimiter, async (req, res) => {
           mustChangePassword: false,
           emailVerified: true,
         },
-      });
-      await tx.invite.update({
-        where: { id: invite.id },
-        data: { acceptedAt: new Date() },
       });
       await tx.session.deleteMany({ where: { userId: user.id } });
       return u;
@@ -429,6 +452,11 @@ router.post("/invite/accept", acceptInviteLimiter, async (req, res) => {
       refreshToken: tokens.refreshToken,
     });
   } catch (error) {
+    if (error instanceof InviteAlreadyConsumedError) {
+      return res.status(410).json({
+        message: "This invite has already been used or has expired.",
+      });
+    }
     console.error("Invite accept error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
