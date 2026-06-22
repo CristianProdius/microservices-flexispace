@@ -84,4 +84,25 @@ describe("AcceptInvitePage", () => {
     await act(async () => { for (let i = 0; i < 5; i += 1) await Promise.resolve(); });
     expect(container.textContent).toContain("no longer valid");
   });
+
+  it("shows a retryable state on a transient lookup failure and recovers", async () => {
+    getInvite.mockReset().mockRejectedValueOnce(new Error("invite_lookup_transient"));
+    const mod = await import("./page");
+    await act(async () => { root.render(React.createElement(mod.default)); });
+    await act(async () => { for (let i = 0; i < 5; i += 1) await Promise.resolve(); });
+    // Transient copy + retry, not the terminal "no longer valid" screen.
+    expect(container.textContent).toContain("Something went wrong loading your invite.");
+    expect(container.textContent).not.toContain("no longer valid");
+
+    // Retry succeeds and renders the set-password form for the invitee.
+    getInvite.mockResolvedValueOnce({ valid: true, email: "ada@spacefly.ai", name: "Ada" });
+    const retry = Array.from(container.querySelectorAll("button")).find(
+      (b) => b.textContent?.includes("Retry")
+    ) as HTMLButtonElement;
+    await act(async () => {
+      retry.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => { for (let i = 0; i < 5; i += 1) await Promise.resolve(); });
+    expect(container.textContent).toContain("ada@spacefly.ai");
+  });
 });

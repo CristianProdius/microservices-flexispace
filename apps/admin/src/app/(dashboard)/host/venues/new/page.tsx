@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
@@ -16,6 +16,17 @@ import { createHostInvite } from "@/lib/invites";
 const NewVenuePage = () => {
   const router = useRouter();
   const [host, setHost] = useState<HostSelection | null>(null);
+  // Caches the HOST id created during a NEW-host attempt so that a retry after
+  // a failed venue POST reuses it instead of re-inviting (which would orphan a
+  // host and invalidate the first invite link).
+  const createdHostIdRef = useRef<string | null>(null);
+
+  // Reset the cached host id whenever the host selection changes so picking a
+  // different/new host re-invites correctly.
+  const onHostChange = useCallback((next: HostSelection | null) => {
+    createdHostIdRef.current = null;
+    setHost(next);
+  }, []);
 
   const handleCreate = useCallback(
     async (payload: VenueFormPayload) => {
@@ -27,12 +38,18 @@ const NewVenuePage = () => {
           if (!host.name.trim() || !host.email.trim()) {
             throw new Error("Enter the new host's name and email.");
           }
-          const { userId } = await createHostInvite({
-            name: host.name.trim(),
-            email: host.email.trim(),
-          });
-          hostId = userId;
-          invited = true;
+          if (createdHostIdRef.current) {
+            // A prior attempt already invited this host; reuse it on retry.
+            hostId = createdHostIdRef.current;
+          } else {
+            const { userId } = await createHostInvite({
+              name: host.name.trim(),
+              email: host.email.trim(),
+            });
+            createdHostIdRef.current = userId;
+            hostId = userId;
+            invited = true;
+          }
         } else if (host?.kind === "existing") {
           hostId = host.id;
         }
@@ -71,7 +88,7 @@ const NewVenuePage = () => {
       submitLabel="Create Venue"
       submittingLabel="Creating..."
       onSubmit={handleCreate}
-      hostField={<HostField value={host} onChange={setHost} />}
+      hostField={<HostField value={host} onChange={onHostChange} />}
     />
   );
 };

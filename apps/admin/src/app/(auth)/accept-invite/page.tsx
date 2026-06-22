@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
@@ -32,19 +32,33 @@ function AcceptInviteForm() {
   const token = searchParams.get("token") ?? "";
 
   const [lookup, setLookup] = useState<InviteLookup | null>(null);
+  const [transient, setTransient] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  const loadInvite = useCallback(() => {
     if (!token) {
+      setTransient(false);
       setLookup({ valid: false, reason: "missing_token" });
       return;
     }
+    setTransient(false);
+    setLookup(null);
     getInvite(token)
-      .then(setLookup)
-      .catch(() => setLookup({ valid: false, reason: "lookup_failed" }));
+      .then((result) => {
+        setLookup(result);
+      })
+      .catch(() => {
+        // Transient (network / 5xx) failure — offer a retry instead of the
+        // terminal "no longer valid" screen.
+        setTransient(true);
+      });
   }, [token]);
+
+  useEffect(() => {
+    loadInvite();
+  }, [loadInvite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +74,27 @@ function AcceptInviteForm() {
       setSubmitting(false);
     }
   };
+
+  if (transient) {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2 text-center lg:text-left">
+          <h1 className="text-2xl font-semibold">Something went wrong</h1>
+          <p className="text-sm text-[var(--auth-muted)]">
+            Something went wrong loading your invite.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="xl"
+          onClick={loadInvite}
+          className="h-12 w-full rounded-xl bg-[var(--auth-brand)] text-white hover:bg-[var(--auth-brand-hover)]"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   if (!lookup) return <AcceptInviteShell />;
 

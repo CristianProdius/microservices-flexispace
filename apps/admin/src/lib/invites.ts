@@ -53,13 +53,35 @@ export async function createHostInvite(input: {
   return res.json();
 }
 
+/**
+ * Thrown by getInvite for transient failures (network error or 5xx) so the
+ * caller can offer a retry instead of showing the terminal "invalid" screen.
+ */
+export class InviteLookupTransientError extends Error {
+  constructor() {
+    super("invite_lookup_transient");
+    this.name = "InviteLookupTransientError";
+  }
+}
+
 /** Public: validate a token and read the invitee's email/name (no auth). */
 export async function getInvite(token: string): Promise<InviteLookup> {
-  const res = await fetch(
-    `${AUTH_SERVICE_URL}/auth/invite/${encodeURIComponent(token)}`,
-    { credentials: "include" }
-  );
+  let res: Response;
+  try {
+    res = await fetch(
+      `${AUTH_SERVICE_URL}/auth/invite/${encodeURIComponent(token)}`,
+      { credentials: "include" }
+    );
+  } catch {
+    // Network/connection failure — transient, let the caller retry.
+    throw new InviteLookupTransientError();
+  }
+  if (res.status >= 500) {
+    // Server-side blip — transient, let the caller retry.
+    throw new InviteLookupTransientError();
+  }
   if (!res.ok) {
+    // A genuine 4xx means the invite is invalid/expired.
     return { valid: false, reason: "lookup_failed" };
   }
   return res.json();
