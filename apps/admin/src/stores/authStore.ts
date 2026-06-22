@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as auth from "@/lib/auth";
-import type { User } from "@/lib/auth";
+import type { AuthResponse, User } from "@/lib/auth";
 
 // Refresh proactively when the access token has this many seconds (or fewer)
 // of remaining lifetime. Keeps `getToken` from racing the real expiry while
@@ -97,6 +97,7 @@ interface AuthState {
     email: string,
     password: string
   ) => Promise<{ user: User; requiresPasswordChange: boolean }>;
+  setSession: (session: AuthResponse) => void;
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
   initialize: () => void;
@@ -163,6 +164,24 @@ const useAuthStore = create<AuthState>((set) => ({
       user: response.user,
       requiresPasswordChange: response.requiresPasswordChange === true,
     };
+  },
+
+  setSession: (session: AuthResponse) => {
+    auth.saveTokens(session.accessToken, session.refreshToken);
+    auth.saveUser(session.user);
+    // Clear any stale acting-host selection so a fresh session starts clean.
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(ACTING_HOST_STORAGE_KEY);
+    }
+    set({
+      user: session.user,
+      token: session.accessToken,
+      isAuthenticated: true,
+      isAdmin: session.user.role === "ADMIN",
+      isHost: session.user.role === "HOST",
+      isHostOrAdmin: true,
+      actingHostId: null,
+    });
   },
 
   setActingHost: (id: string | null) => {
