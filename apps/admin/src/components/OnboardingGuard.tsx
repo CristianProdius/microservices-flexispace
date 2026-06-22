@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getMe } from "@/lib/auth";
+import useAuthStore from "@/stores/authStore";
 
 /**
  * Belt-and-braces: login already redirects a flagged host to /onboarding, but
@@ -12,7 +13,15 @@ import { getMe } from "@/lib/auth";
  */
 export default function OnboardingGuard() {
   const router = useRouter();
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
   useEffect(() => {
+    // Wait until the store has finished establishing/validating the session.
+    // Probing /auth/me before then would hit the auth-service with a stale or
+    // already-cleared access cookie and surface a spurious 401 in the console.
+    if (isLoading || !isAuthenticated) return;
+
     let cancelled = false;
     getMe()
       .then((me) => {
@@ -24,6 +33,6 @@ export default function OnboardingGuard() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, isLoading, isAuthenticated]);
   return null;
 }

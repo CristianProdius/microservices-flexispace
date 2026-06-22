@@ -115,25 +115,83 @@ const useAuthStore = create<AuthState>((set) => ({
       ? window.localStorage.getItem(ACTING_HOST_STORAGE_KEY)
       : null,
 
-  initialize: () => {
+  initialize: async () => {
     // Only run on client side
     if (typeof window === "undefined") {
       set({ isLoading: false });
       return;
     }
 
+    const loggedOut = {
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      isHost: false,
+      isHostOrAdmin: false,
+    } as const;
+
     const user = auth.getStoredUser();
     const token = auth.getAccessToken();
+
+    // No stored credentials → clean logged-out state. We never touch the
+    // auth-service, so a fresh/incognito visitor sees no 401s.
+    if (!token || !user) {
+      set({
+        ...loggedOut,
+        actingHostId: window.localStorage.getItem(ACTING_HOST_STORAGE_KEY),
+        isLoading: false,
+      });
+      return;
+    }
+
+    // Optimistically surface the stored session while we validate it.
     set({
       user,
       token,
-      isAuthenticated: !!token && !!user,
-      isAdmin: user?.role === "ADMIN",
-      isHost: user?.role === "HOST",
-      isHostOrAdmin: user?.role === "HOST" || user?.role === "ADMIN",
+      isAuthenticated: true,
+      isAdmin: user.role === "ADMIN",
+      isHost: user.role === "HOST",
+      isHostOrAdmin: user.role === "HOST" || user.role === "ADMIN",
       actingHostId: window.localStorage.getItem(ACTING_HOST_STORAGE_KEY),
-      isLoading: false,
+      isLoading: true,
     });
+
+    // Access token still good → ready to go, no network call.
+    if (!isTokenNearExpiry(token)) {
+      set({ isLoading: false });
+      return;
+    }
+
+    // The access token has lapsed (its cookie has too — both are 15-min TTL).
+    // Recover the session BEFORE any dashboard guard probes /auth/me with the
+    // expired cookie; otherwise a returning visitor's lapsed-or-dead session
+    // surfaces as 401s on /auth/me and /auth/refresh in the console.
+    const refreshToken = auth.getRefreshToken();
+    if (!refreshToken) {
+      // Expired access token and nothing to refresh with → dead session.
+      auth.clearAuth();
+      set({ ...loggedOut, isLoading: false });
+      return;
+    }
+
+    try {
+      const newToken = await auth.refreshAccessToken(refreshToken);
+      auth.saveTokens(newToken, refreshToken);
+      set({ token: newToken, isLoading: false });
+    } catch (error) {
+      if (error instanceof auth.SessionExpiredError) {
+        // Refresh token is dead — clear the session so guards skip their
+        // /auth/me probe and the user gets a clean login (refreshAccessToken
+        // has already wiped localStorage).
+        auth.clearAuth();
+        set({ ...loggedOut, isLoading: false });
+      } else {
+        // Transient / auth-service unreachable: keep the optimistic session
+        // (AUD-034 — don't bounce on a blip) and let getToken retry on demand.
+        set({ isLoading: false });
+      }
+    }
   },
 
   login: async (email: string, password: string) => {
@@ -280,10 +338,30 @@ const useAuthStore = create<AuthState>((set) => ({
       })();
     }
 
-    // Bubble refresh errors instead of silently logging the user out. Callers
-    // can then distinguish "auth service unreachable" from "no session" and
-    // surface a real error rather than a mid-session bounce to /login.
-    return inFlightRefresh;
+    // Bubble refresh errors instead of silently logging the user out, EXCEPT
+    // when the auth-service explicitly rejected our refresh token (401). A
+    // SessionExpiredError means the session is dead, so self-heal: drop the
+    // stale state and return null so the caller routes cleanly to /login
+    // rather than thrashing the server with a token it has already rejected.
+    // Other errors (auth-service unreachable) still bubble so callers can
+    // distinguish a transient blip from "no session".
+    try {
+      return await inFlightRefresh;
+    } catch (error) {
+      if (error instanceof auth.SessionExpiredError) {
+        // refreshAccessToken already cleared localStorage; sync the store.
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isAdmin: false,
+          isHost: false,
+          isHostOrAdmin: false,
+        });
+        return null;
+      }
+      throw error;
+    }
   },
 }));
 

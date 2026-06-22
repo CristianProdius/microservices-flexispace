@@ -40,6 +40,21 @@ export interface AuthResponse {
   requiresPasswordChange: boolean;
 }
 
+/**
+ * Thrown when the auth-service rejects our credentials with 401 — i.e. the
+ * stored session is genuinely dead (refresh token expired/revoked/invalid),
+ * as opposed to a transient or network failure. Callers use this to self-heal:
+ * drop the stale session and route to /login instead of thrashing the
+ * auth-service with a token it has already rejected (and surfacing repeated
+ * 401s on /auth/me & /auth/refresh in the console).
+ */
+export class SessionExpiredError extends Error {
+  constructor(message = "Session expired") {
+    super(message);
+    this.name = "SessionExpiredError";
+  }
+}
+
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetchAuth("/auth/login", {
     method: "POST",
@@ -131,6 +146,14 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
       await sleep(REFRESH_RACE_RETRY_DELAY_MS);
       res = await doRequest();
     }
+  }
+
+  if (res.status === 401) {
+    // The refresh token is dead (expired/revoked/invalid). Drop the stale local
+    // session so the app stops replaying a credential the server has already
+    // rejected, and signal callers to route cleanly to /login.
+    clearAuth();
+    throw new SessionExpiredError("Refresh token rejected");
   }
 
   if (!res.ok) {
