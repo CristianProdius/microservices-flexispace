@@ -22,6 +22,7 @@ import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
 import SetTempPassword from "@/components/SetTempPassword";
+import SendInvite from "@/components/SendInvite";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { User } from "@repo/types";
@@ -220,6 +221,14 @@ const SingleUserPage = () => {
                       <Button variant="outline">Set temp password</Button>
                     </SheetTrigger>
                     <SetTempPassword userId={user.id} email={user.email} />
+                  </Sheet>
+                )}
+                {user.role === "HOST" && (
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline">Send invite</Button>
+                    </SheetTrigger>
+                    <SendInvite userId={user.id} email={user.email} />
                   </Sheet>
                 )}
               </div>
