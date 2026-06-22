@@ -647,9 +647,6 @@ router.post("/logout", async (req, res) => {
 // chain and force re-authentication.
 router.post("/refresh", refreshLimiter, async (req, res) => {
   try {
-    const body = parseBody(refreshSchema, req.body, res);
-    if (!body) return;
-
     // AUD-027 / AUTHSVC: prefer the COOKIE over the body. The HttpOnly
     // spacefly_refresh cookie is overwritten with the rotated token on every
     // refresh (setAuthCookies below), so it is always the freshest credential.
@@ -658,8 +655,16 @@ router.post("/refresh", refreshLimiter, async (req, res) => {
     // used parent jti and trip reuse-detection → chain revocation → a spurious
     // second login. Cookie-first makes the freshest token authoritative; body
     // remains a fallback for legacy non-cookie clients.
-    const refreshToken: string | undefined =
-      req.cookies?.[REFRESH_COOKIE_NAME] ?? body.refreshToken;
+    //
+    // Validate the body ONLY when there is no cookie to fall back on — a valid
+    // refresh cookie must not be rejected just because a legacy client also
+    // sent a malformed `refreshToken` in the body.
+    let refreshToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
+    if (!refreshToken) {
+      const body = parseBody(refreshSchema, req.body, res);
+      if (!body) return; // parseBody has already sent a 400 for a bad body.
+      refreshToken = body.refreshToken;
+    }
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required" });
