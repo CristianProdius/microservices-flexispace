@@ -145,3 +145,17 @@ export const resendVerificationLimiter = rateLimit({
   },
   handler: standardResponse,
 });
+
+/**
+ * Accept-invite: 10 per 15 min per IP. Mirrors onboardingSetPasswordLimiter.
+ * The single-use tokenHash row is the real defence (an accepted invite
+ * can't be replayed); this just shuts down a token-guessing loop early.
+ */
+export const acceptInviteLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: ipKey,
+  handler: standardResponse,
+});

@@ -3,6 +3,7 @@ import { prisma } from "@repo/db";
 import { producer } from "../utils/kafka.js";
 import { resolveTranslations, VENUE_TRANSLATION_FIELDS } from "../lib/translations.js";
 import { parsePositiveIntegerWithDefault } from "../lib/validation.js";
+import { lookupActiveUser } from "@repo/auth-middleware";
 
 // PRODSVC-012: cap host-scoped lists so a host with thousands of venues can't
 // blow up memory/CPU or generate huge payloads. Allow client-provided paging.
@@ -239,7 +240,6 @@ export const getVenue = async (req: Request, res: Response) => {
 };
 
 export const createVenue = async (req: Request, res: Response) => {
-  const hostId = req.userId!;
   const {
     name,
     shortDescription,
@@ -258,7 +258,28 @@ export const createVenue = async (req: Request, res: Response) => {
     longitude,
     currency,
     workingHours,
+    hostId: bodyHostId,
   } = req.body;
+  // Default owner is the (possibly impersonated) caller. An ADMIN may instead
+  // assign the venue to an explicit host via body.hostId — validated against the
+  // same active-user cache resolveActingHost uses. body.hostId wins over the
+  // X-Acting-Host-Id header when both are present. Non-admins' body.hostId is
+  // ignored.
+  let hostId = req.userId!;
+  if (bodyHostId !== undefined && req.user?.role === "ADMIN") {
+    // Type-validate before hitting Prisma: a non-string (object/array) flows
+    // into `prisma.user.findFirst` as a malformed `where` and throws
+    // PrismaClientValidationError -> unhandled 500. Reject it as the intended
+    // 400 "Invalid host" instead.
+    if (typeof bodyHostId !== "string" || bodyHostId.length === 0) {
+      return res.status(400).json({ message: "Invalid host" });
+    }
+    const target = await lookupActiveUser(bodyHostId);
+    if (!target || (target.role !== "HOST" && target.role !== "ADMIN")) {
+      return res.status(400).json({ message: "Invalid host" });
+    }
+    hostId = target.id;
+  }
   if (!name || !address || !city || !country) {
     return res
       .status(400)

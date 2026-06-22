@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => {
   return {
     prisma,
     producerSend: vi.fn(),
+    lookupActiveUser: vi.fn(),
     spaceUpdateMany: prisma.space.updateMany,
     venueCreate: prisma.venue.create,
     venueFindMany: prisma.venue.findMany,
@@ -46,6 +47,10 @@ vi.mock("../utils/kafka.js", () => ({
   },
 }));
 
+vi.mock("@repo/auth-middleware", () => ({
+  lookupActiveUser: mocks.lookupActiveUser,
+}));
+
 const createResponse = () => {
   const res = {
     json: vi.fn(),
@@ -62,6 +67,123 @@ const createResponse = () => {
 describe("venue controller contract", () => {
   afterEach(() => {
     vi.resetAllMocks();
+  });
+
+  it("lets an ADMIN assign a venue to an explicit body.hostId", async () => {
+    mocks.lookupActiveUser.mockResolvedValueOnce({ id: "host-9", role: "HOST" });
+    mocks.venueCreate.mockResolvedValue({ id: 21, hostId: "host-9" });
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: "host-9",
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(mocks.lookupActiveUser).toHaveBeenCalledWith("host-9");
+    expect(mocks.venueCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ hostId: "host-9" }),
+    });
+    expect(mocks.producerSend).toHaveBeenCalledWith("venue.created", {
+      value: { id: 21, hostId: "host-9" },
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it("rejects body.hostId that is not an active HOST/ADMIN with 400 and no create", async () => {
+    mocks.lookupActiveUser.mockResolvedValueOnce(null);
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: "ghost",
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid host" });
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-string body.hostId with 400 before hitting Prisma", async () => {
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: { $ne: null },
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid host" });
+    expect(mocks.lookupActiveUser).not.toHaveBeenCalled();
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects body.hostId resolving to a USER with 400", async () => {
+    mocks.lookupActiveUser.mockResolvedValueOnce({ id: "u-1", role: "USER" });
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: "u-1",
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("ignores body.hostId for a non-ADMIN caller and uses req.userId", async () => {
+    mocks.venueCreate.mockResolvedValue({ id: 22, hostId: "host-1" });
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: "someone-else",
+      },
+      userId: "host-1",
+      user: { userId: "host-1", email: "h@b.co", role: "HOST", hostVerified: true },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(mocks.lookupActiveUser).not.toHaveBeenCalled();
+    expect(mocks.venueCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ hostId: "host-1" }),
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 
   it("persists media, currency, and translations when creating venues", async () => {

@@ -24,6 +24,7 @@ jobs:
       RESEND_FROM_EMAIL: noreply@example.com
       EMAIL_VERIFICATION_LINK_BASE: https://spacefly.ai/verify-email
       PASSWORD_RESET_LINK_BASE: https://admin.spacefly.ai/reset-password
+      INVITE_LINK_BASE: https://admin.spacefly.ai/accept-invite
       S3_ACCESS_KEY_ID: ci-minio-root
       S3_SECRET_ACCESS_KEY: ci-minio-root-password
       MINIO_ROOT_USER: ci-minio-root

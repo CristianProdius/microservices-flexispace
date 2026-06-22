@@ -18,6 +18,7 @@ import {
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import { producer } from "../utils/kafka.js";
+import { hashInviteToken } from "../utils/inviteToken.js";
 import {
   parseBody,
   registerSchema,
@@ -27,6 +28,7 @@ import {
   resetPasswordSchema,
   onboardingSetPasswordSchema,
   becomeHostSchema,
+  acceptInviteSchema,
 } from "../utils/validation.js";
 import {
   loginLimiter,
@@ -36,6 +38,7 @@ import {
   resetPasswordLimiter,
   onboardingSetPasswordLimiter,
   resendVerificationLimiter,
+  acceptInviteLimiter,
 } from "../utils/rateLimit.js";
 import {
   setAuthCookies,
@@ -44,6 +47,19 @@ import {
 } from "../utils/cookies.js";
 
 const router: Router = Router();
+
+/**
+ * Sentinel thrown inside the invite-accept transaction when the atomic
+ * single-use consume fails (the invite was already accepted, expired, or
+ * consumed by a concurrent request). Throwing it rolls back the whole
+ * transaction; the outer catch maps it to HTTP 410.
+ */
+class InviteAlreadyConsumedError extends Error {
+  constructor() {
+    super("invite already consumed");
+    this.name = "InviteAlreadyConsumedError";
+  }
+}
 
 /** Convert a duration string like "30d", "1h", "15m", "30s" to milliseconds. */
 function parseExpiry(str: string): number {
@@ -290,6 +306,158 @@ router.post("/register", registerLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Public: validate an invite token so the accept page can render the
+// invitee's email/name (or a friendly "no longer valid" state).
+// No auth — the user is not logged in yet.
+router.get("/invite/:token", async (req, res) => {
+  try {
+    const raw = req.params.token ?? "";
+    if (!raw || raw.length < 20 || raw.length > 4096) {
+      return res.status(200).json({ valid: false, reason: "INVALID" });
+    }
+
+    const tokenHash = hashInviteToken(raw);
+    const invite = await prisma.invite.findUnique({
+      where: { tokenHash },
+      select: {
+        email: true,
+        acceptedAt: true,
+        expiresAt: true,
+        user: { select: { name: true, deletedAt: true } },
+      },
+    });
+
+    if (!invite || invite.user.deletedAt) {
+      return res.status(200).json({ valid: false, reason: "INVALID" });
+    }
+    if (invite.acceptedAt) {
+      return res.status(200).json({ valid: false, reason: "ALREADY_ACCEPTED" });
+    }
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      return res.status(200).json({ valid: false, reason: "EXPIRED" });
+    }
+
+    return res.status(200).json({
+      valid: true,
+      email: invite.email,
+      name: invite.user.name ?? undefined,
+    });
+  } catch (error) {
+    console.error("Invite validate error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Public, rate-limited: accept an invite. Sets the user's own password,
+// clears mustChangePassword, sets emailVerified=true (the emailed token
+// proves ownership — closes the prod EMAIL_NOT_VERIFIED gate), marks the
+// invite accepted, drops the user's existing sessions, and issues a fresh
+// session exactly like login. No shouldBeUser — invitee isn't logged in.
+router.post("/invite/accept", acceptInviteLimiter, async (req, res) => {
+  try {
+    const body = parseBody(acceptInviteSchema, req.body, res);
+    if (!body) return;
+
+    const tokenHash = hashInviteToken(body.token);
+    const invite = await prisma.invite.findUnique({
+      where: { tokenHash },
+      select: { id: true, userId: true, acceptedAt: true, expiresAt: true },
+    });
+
+    if (!invite) {
+      return res.status(400).json({ message: "This invite is no longer valid." });
+    }
+    if (invite.acceptedAt) {
+      return res.status(410).json({ message: "This invite has already been used." });
+    }
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      return res.status(410).json({ message: "This invite has expired." });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: invite.userId, deletedAt: null },
+    });
+    if (!user) {
+      return res.status(400).json({ message: "This invite is no longer valid." });
+    }
+
+    const newHash = await hashPassword(body.newPassword);
+
+    // Apply the password + verification + accepted-at atomically, then
+    // drop any prior sessions for this user (the invite is a fresh start).
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // AUTHSVC-M1: atomic single-use + expiry gate. This conditional
+      // updateMany is the authoritative consume — only the request that
+      // flips acceptedAt from null (on a still-unexpired invite) wins.
+      // Two concurrent requests with the same token can no longer both
+      // succeed (TOCTOU replay). The cheap pre-checks above stay for fast
+      // friendly responses, but this is the real gate. Throwing rolls back
+      // the whole transaction (password/verification/session changes).
+      const consumed = await tx.invite.updateMany({
+        where: { id: invite.id, acceptedAt: null, expiresAt: { gt: new Date() } },
+        data: { acceptedAt: new Date() },
+      });
+      if (consumed.count !== 1) {
+        throw new InviteAlreadyConsumedError();
+      }
+      const u = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          password: newHash,
+          mustChangePassword: false,
+          emailVerified: true,
+        },
+      });
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      return u;
+    });
+
+    // Issue a fresh session — identical to the login handler.
+    const refreshJti = uuidv4();
+    const tokens = signTokenPair(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        hostVerified: updatedUser.hostVerified,
+      },
+      { refreshJti },
+    );
+
+    await persistRefreshToken({ jti: refreshJti, userId: updatedUser.id });
+    await prisma.session.create({
+      data: {
+        userId: updatedUser.id,
+        token: tokens.refreshToken,
+        expiresAt: new Date(Date.now() + refreshLifetimeMs()),
+      },
+    });
+
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken, refreshLifetimeMs(), accessLifetimeMs());
+
+    return res.status(200).json({
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        image: updatedUser.image,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (error) {
+    if (error instanceof InviteAlreadyConsumedError) {
+      return res.status(410).json({
+        message: "This invite has already been used or has expired.",
+      });
+    }
+    console.error("Invite accept error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });

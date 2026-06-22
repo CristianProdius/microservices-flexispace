@@ -179,6 +179,18 @@ exports.Prisma.PasswordResetUseScalarFieldEnum = {
   usedAt: 'usedAt'
 };
 
+exports.Prisma.InviteScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  email: 'email',
+  role: 'role',
+  invitedById: 'invitedById',
+  expiresAt: 'expiresAt',
+  acceptedAt: 'acceptedAt',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.RevokedAccessTokenScalarFieldEnum = {
   jti: 'jti',
   userId: 'userId',
@@ -459,6 +471,7 @@ exports.Prisma.ModelName = {
   RefreshToken: 'RefreshToken',
   HostApplication: 'HostApplication',
   PasswordResetUse: 'PasswordResetUse',
+  Invite: 'Invite',
   RevokedAccessToken: 'RevokedAccessToken',
   Venue: 'Venue',
   ExchangeRate: 'ExchangeRate',

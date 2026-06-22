@@ -24,6 +24,7 @@ export {
 export type {
   User,
   Session,
+  Invite,
   Venue,
   ExchangeRate,
   Space,

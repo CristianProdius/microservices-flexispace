@@ -89,6 +89,7 @@ export interface VenueFormPayload {
   videoUrl: string | null;
   currency: Currency;
   workingHours: WorkingHoursValue | null;
+  hostId?: string;
 }
 
 export const createEmptyVenueFormValues = (): VenueFormValues => ({

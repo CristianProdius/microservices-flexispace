@@ -4,6 +4,8 @@ import { prisma, Role } from "@repo/db";
 import { hashPassword, normalizeEmail } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
 import { sendPrismaError } from "../utils/prismaErrors.js";
+import { generateInviteToken, INVITE_TTL_DAYS } from "../utils/inviteToken.js";
+import { hostInviteSchema, parseBody } from "../utils/validation.js";
 
 const router: Router = Router();
 
@@ -57,6 +59,16 @@ function generateTempPassword(): string {
     out += alphabet[bytes[i]! % alphabet.length];
   }
   return out;
+}
+
+// Magic-link base for invites, e.g. https://admin.spacefly.ai/accept-invite.
+// The raw token is appended as ?token=...; only its hash is stored.
+function buildInviteUrl(rawToken: string): string {
+  const base = process.env.INVITE_LINK_BASE ?? "";
+  // Mirror email-service's inviteLinkFor: append with `&` when the base
+  // already carries a query string so we don't emit a second `?`.
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(rawToken)}`;
 }
 
 // Get all users (admin only)
@@ -197,6 +209,157 @@ router.post("/hosts/lead", async (req, res) => {
     return res.status(201).json(user);
   } catch (error) {
     return sendPrismaError(res, error, "Create lead host error");
+  }
+});
+
+// Create (or refresh) an email invite for an existing user. Admin-only via
+// the /users mount guard. Deletes any prior unaccepted invite for the user,
+// inserts a fresh Invite (hash stored, raw emitted), and emits user.invited.
+// Returns the inviteUrl so the admin can copy it as an offline fallback.
+router.post("/:id/invite", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { raw, tokenHash } = generateInviteToken();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const invitedById = req.userId ?? null;
+
+    // One live invite per user: clear prior unaccepted invites, then insert.
+    await prisma.$transaction([
+      prisma.invite.deleteMany({ where: { userId: user.id, acceptedAt: null } }),
+      prisma.invite.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          email: user.email,
+          role: user.role,
+          invitedById,
+          expiresAt,
+        },
+      }),
+    ]);
+
+    // Best-effort publish (GOTCHA 9): the Invite row is the durable side
+    // effect; a Kafka outage must not fail the admin call — the returned
+    // inviteUrl lets the admin relay the link manually.
+    try {
+      await producer.send("user.invited", {
+        value: {
+          email: user.email,
+          name: user.name ?? null,
+          token: raw,
+          role: user.role,
+        },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.invited event for",
+        user.id,
+        "- invite created but email will not fire:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
+    return res.status(200).json({ inviteUrl: buildInviteUrl(raw), expiresAt: expiresAt.toISOString() });
+  } catch (error) {
+    return sendPrismaError(res, error, "Create invite error");
+  }
+});
+
+// Find-or-create a HOST by normalized email, then create an invite + emit
+// user.invited. Used by the venue form's "new host" path. Admin-only via
+// the /users mount guard. 409 if the email already exists as a non-HOST
+// (don't silently change someone's role).
+router.post("/host-invite", async (req, res) => {
+  try {
+    const body = parseBody(hostInviteSchema, req.body, res);
+    if (!body) return;
+
+    const email = normalizeEmail(body.email);
+    const name = body.name.trim();
+
+    const existing = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      select: { id: true, role: true },
+    });
+
+    // Only an existing HOST may be reused. Reusing an ADMIN would reset that
+    // admin's password/emailVerified on accept, and a USER would be silently
+    // promoted — both are rejected with 409.
+    if (existing && existing.role !== "HOST") {
+      return res
+        .status(409)
+        .json({ message: "A non-host account already uses this email." });
+    }
+
+    let userId: string;
+    let created: boolean;
+
+    if (existing) {
+      userId = existing.id;
+      created = false;
+    } else {
+      // Mirror lead-host creation semantics: verified host, unusable random
+      // password, mustChangePassword=true. A unique username is derived from
+      // the email local-part; collisions are avoided with a short suffix.
+      const hashedPassword = await hashPassword(generateRandomPassword());
+      const base = slugifyForEmail(email.split("@")[0] ?? "host").slice(0, 24) || "host";
+      const username = `${base}-${randomBytes(3).toString("hex")}`;
+
+      const user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          password: hashedPassword,
+          name,
+          role: "HOST",
+          hostVerified: true,
+          emailVerified: false,
+          mustChangePassword: true,
+        },
+        select: { id: true },
+      });
+      userId = user.id;
+      created = true;
+    }
+
+    const { raw, tokenHash } = generateInviteToken();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+    const invitedById = req.userId ?? null;
+
+    await prisma.$transaction([
+      prisma.invite.deleteMany({ where: { userId, acceptedAt: null } }),
+      prisma.invite.create({
+        data: { userId, tokenHash, email, role: "HOST", invitedById, expiresAt },
+      }),
+    ]);
+
+    try {
+      await producer.send("user.invited", {
+        value: { email, name, token: raw, role: "HOST" },
+      });
+    } catch (err) {
+      console.error(
+        "Failed to publish user.invited event (host-invite) for",
+        userId,
+        "- invite created but email will not fire:",
+        err instanceof Error ? err.message : err,
+      );
+    }
+
+    return res
+      .status(201)
+      .json({ userId, inviteUrl: buildInviteUrl(raw), created });
+  } catch (error) {
+    return sendPrismaError(res, error, "Host invite error");
   }
 });
 

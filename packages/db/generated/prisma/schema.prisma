@@ -117,6 +117,7 @@ model User {
   bookingsAsHost    Booking[]          @relation("HostBookings")
   reviews           Review[] // Reviews written by this user
   payouts           Payout[] // Payouts for hosts
+  invites           Invite[] // Invitations issued to this user
 
   @@index([role])
   @@index([deletedAt])
@@ -187,6 +188,25 @@ model PasswordResetUse {
   usedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// First-time-access invitations. An admin invites a user by email; the raw
+// token is emailed (magic link) and only its sha-256 hash is stored here.
+// Accepting an invite sets the user's password + emailVerified=true. Distinct
+// from PasswordResetUse: role-agnostic, carries inviter/role context, auditable.
+model Invite {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  email       String
+  role        Role
+  invitedById String?
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
 
   @@index([userId])
 }

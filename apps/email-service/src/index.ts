@@ -86,6 +86,7 @@ const getEmailConfigErrors = () =>
     process.env.PASSWORD_RESET_LINK_BASE
       ? null
       : "PASSWORD_RESET_LINK_BASE is not configured",
+    process.env.INVITE_LINK_BASE ? null : "INVITE_LINK_BASE is not configured",
   ].filter((message): message is string => Boolean(message));
 
 type EmailEventMessage = {
@@ -140,6 +141,18 @@ const passwordResetLinkFor = (token: string): string => {
   return `${base}${separator}token=${encodeURIComponent(token)}`;
 };
 
+// Invite link builder — same shape as verification/reset. Producer
+// (auth-service) sends the invite token in `token`; we append it onto
+// INVITE_LINK_BASE as a query param.
+const inviteLinkFor = (token: string): string => {
+  const base = process.env.INVITE_LINK_BASE;
+  if (!base) {
+    throw new MissingEmailConfigError("INVITE_LINK_BASE");
+  }
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}token=${encodeURIComponent(token)}`;
+};
+
 // AUD-013: produce a short, deterministic token hash for idempotency keys so
 // we can dedupe per-token without leaking the raw bearer token into Resend
 // logs or our own observability stack.
@@ -184,6 +197,26 @@ const subscriptions = [
         email,
         subject: "Verify your Spacefly.ai email address",
         text: `Hi ${greeting},\n\nPlease verify your email address by visiting the following link (valid for 24 hours):\n\n${link}\n\nIf you did not create a Spacefly.ai account you can safely ignore this message.`,
+        idempotencyKey: idKey,
+      });
+    },
+  },
+  {
+    topicName: "user.invited",
+    topicHandler: async (message: EmailEventMessage) => {
+      const { email, name, username, token, userId } = message.value || {};
+      if (!email || !token) return;
+
+      const link = inviteLinkFor(token);
+      const greeting = name || username || "there";
+      // AUD-013: hash the token into the idempotency key so a consumer-group
+      // rebalance redelivering this message can't double-send, without
+      // leaking the raw token into Resend's dedupe store or logs.
+      const idKey = `user-invited:${userId ?? email}:${shortHash(token)}`;
+      await sendMail({
+        email,
+        subject: "You've been invited to Spacefly.ai",
+        text: `Hi ${greeting},\n\nYou've been invited to join Spacefly.ai. Accept your invitation using the link below:\n\n${link}\n\nIf you weren't expecting this invitation you can safely ignore this message.`,
         idempotencyKey: idKey,
       });
     },
