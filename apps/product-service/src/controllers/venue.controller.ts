@@ -267,6 +267,13 @@ export const createVenue = async (req: Request, res: Response) => {
   // ignored.
   let hostId = req.userId!;
   if (bodyHostId !== undefined && req.user?.role === "ADMIN") {
+    // Type-validate before hitting Prisma: a non-string (object/array) flows
+    // into `prisma.user.findFirst` as a malformed `where` and throws
+    // PrismaClientValidationError -> unhandled 500. Reject it as the intended
+    // 400 "Invalid host" instead.
+    if (typeof bodyHostId !== "string" || bodyHostId.length === 0) {
+      return res.status(400).json({ message: "Invalid host" });
+    }
     const target = await lookupActiveUser(bodyHostId);
     if (!target || (target.role !== "HOST" && target.role !== "ADMIN")) {
       return res.status(400).json({ message: "Invalid host" });

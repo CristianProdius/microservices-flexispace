@@ -119,6 +119,28 @@ describe("venue controller contract", () => {
     expect(mocks.venueCreate).not.toHaveBeenCalled();
   });
 
+  it("rejects a non-string body.hostId with 400 before hitting Prisma", async () => {
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        hostId: { $ne: null },
+      },
+      userId: "admin-1",
+      user: { userId: "admin-1", email: "a@b.co", role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid host" });
+    expect(mocks.lookupActiveUser).not.toHaveBeenCalled();
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
   it("rejects body.hostId resolving to a USER with 400", async () => {
     mocks.lookupActiveUser.mockResolvedValueOnce({ id: "u-1", role: "USER" });
     const req = {
