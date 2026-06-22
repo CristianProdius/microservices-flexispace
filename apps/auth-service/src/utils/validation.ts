@@ -71,6 +71,18 @@ export const onboardingSetPasswordSchema = z.object({
 });
 export type OnboardingSetPasswordBody = z.infer<typeof onboardingSetPasswordSchema>;
 
+export const acceptInviteSchema = z.object({
+  token: z.string().min(20).max(4096),
+  newPassword: passwordSchema,
+});
+export type AcceptInviteBody = z.infer<typeof acceptInviteSchema>;
+
+export const hostInviteSchema = z.object({
+  name: z.string().trim().min(1, "name is required").max(120),
+  email: emailSchema,
+});
+export type HostInviteBody = z.infer<typeof hostInviteSchema>;
+
 export const becomeHostSchema = z.object({
   phone: z.string().trim().min(1).max(40).optional(),
   bio: z.string().trim().max(2000).optional(),
