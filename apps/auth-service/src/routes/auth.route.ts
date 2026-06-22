@@ -339,6 +339,101 @@ router.get("/invite/:token", async (req, res) => {
   }
 });
 
+// Public, rate-limited: accept an invite. Sets the user's own password,
+// clears mustChangePassword, sets emailVerified=true (the emailed token
+// proves ownership — closes the prod EMAIL_NOT_VERIFIED gate), marks the
+// invite accepted, drops the user's existing sessions, and issues a fresh
+// session exactly like login. No shouldBeUser — invitee isn't logged in.
+router.post("/invite/accept", acceptInviteLimiter, async (req, res) => {
+  try {
+    const body = parseBody(acceptInviteSchema, req.body, res);
+    if (!body) return;
+
+    const tokenHash = hashInviteToken(body.token);
+    const invite = await prisma.invite.findUnique({
+      where: { tokenHash },
+      select: { id: true, userId: true, acceptedAt: true, expiresAt: true },
+    });
+
+    if (!invite) {
+      return res.status(400).json({ message: "This invite is no longer valid." });
+    }
+    if (invite.acceptedAt) {
+      return res.status(410).json({ message: "This invite has already been used." });
+    }
+    if (invite.expiresAt.getTime() <= Date.now()) {
+      return res.status(410).json({ message: "This invite has expired." });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: invite.userId, deletedAt: null },
+    });
+    if (!user) {
+      return res.status(400).json({ message: "This invite is no longer valid." });
+    }
+
+    const newHash = await hashPassword(body.newPassword);
+
+    // Apply the password + verification + accepted-at atomically, then
+    // drop any prior sessions for this user (the invite is a fresh start).
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          password: newHash,
+          mustChangePassword: false,
+          emailVerified: true,
+        },
+      });
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { acceptedAt: new Date() },
+      });
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      return u;
+    });
+
+    // Issue a fresh session — identical to the login handler.
+    const refreshJti = uuidv4();
+    const tokens = signTokenPair(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        hostVerified: updatedUser.hostVerified,
+      },
+      { refreshJti },
+    );
+
+    await persistRefreshToken({ jti: refreshJti, userId: updatedUser.id });
+    await prisma.session.create({
+      data: {
+        userId: updatedUser.id,
+        token: tokens.refreshToken,
+        expiresAt: new Date(Date.now() + refreshLifetimeMs()),
+      },
+    });
+
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken, refreshLifetimeMs(), accessLifetimeMs());
+
+    return res.status(200).json({
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        image: updatedUser.image,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (error) {
+    console.error("Invite accept error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // =================== LOGIN ====================
 //
 // We deliberately keep the existing comparePassword + 401 shape intact —
