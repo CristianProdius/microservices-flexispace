@@ -10,6 +10,12 @@ vi.mock("@/lib/auth", () => ({
   getRefreshToken: vi.fn(),
   getStoredUser: vi.fn(),
   clearAuth: vi.fn(),
+  SessionExpiredError: class SessionExpiredError extends Error {
+    constructor(message = "Session expired") {
+      super(message);
+      this.name = "SessionExpiredError";
+    }
+  },
 }));
 
 import * as auth from "@/lib/auth";
@@ -77,6 +83,109 @@ describe("authStore", () => {
       const header = base64Url(JSON.stringify({ alg: "HS256" }));
       const payload = base64Url(JSON.stringify({ sub: "u1" }));
       expect(isTokenNearExpiry(`${header}.${payload}.sig`)).toBe(true);
+    });
+  });
+
+  describe("initialize", () => {
+    const adminUser = { id: "u1", email: "a@b.c", username: "a", name: null, role: "ADMIN", image: null };
+
+    it("logs out without calling the auth-service when nothing is stored", async () => {
+      vi.mocked(auth.getStoredUser).mockReturnValue(null);
+      vi.mocked(auth.getAccessToken).mockReturnValue(null);
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(false);
+      expect(s.isLoading).toBe(false);
+      expect(auth.refreshAccessToken).not.toHaveBeenCalled();
+    });
+
+    it("stays authenticated without refreshing when the stored token is fresh", async () => {
+      const fresh = makeJwt(Math.floor(Date.now() / 1000) + 60 * 60);
+      vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
+      vi.mocked(auth.getAccessToken).mockReturnValue(fresh);
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(true);
+      expect(s.isAdmin).toBe(true);
+      expect(s.isLoading).toBe(false);
+      expect(auth.refreshAccessToken).not.toHaveBeenCalled();
+    });
+
+    it("recovers a stale session by refreshing before the app probes /me", async () => {
+      const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
+      const refreshed = makeJwt(Math.floor(Date.now() / 1000) + 60 * 60);
+      vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
+      vi.mocked(auth.getAccessToken).mockReturnValue(stale);
+      vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
+      vi.mocked(auth.refreshAccessToken).mockResolvedValue(refreshed);
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(true);
+      expect(s.token).toBe(refreshed);
+      expect(auth.saveTokens).toHaveBeenCalledWith(refreshed, "refresh-1");
+      expect(s.isLoading).toBe(false);
+    });
+
+    it("clears the dead session when the boot refresh is rejected (401)", async () => {
+      const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
+      vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
+      vi.mocked(auth.getAccessToken).mockReturnValue(stale);
+      vi.mocked(auth.getRefreshToken).mockReturnValue("dead-refresh");
+      vi.mocked(auth.refreshAccessToken).mockRejectedValue(
+        new auth.SessionExpiredError("expired")
+      );
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(false);
+      expect(s.user).toBeNull();
+      expect(auth.clearAuth).toHaveBeenCalled();
+      expect(s.isLoading).toBe(false);
+    });
+
+    it("logs out when the access token is stale and there is no refresh token", async () => {
+      const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
+      vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
+      vi.mocked(auth.getAccessToken).mockReturnValue(stale);
+      vi.mocked(auth.getRefreshToken).mockReturnValue(null);
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(false);
+      expect(auth.clearAuth).toHaveBeenCalled();
+      expect(auth.refreshAccessToken).not.toHaveBeenCalled();
+      expect(s.isLoading).toBe(false);
+    });
+
+    it("keeps the optimistic session on a transient (non-401) refresh failure", async () => {
+      const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
+      vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
+      vi.mocked(auth.getAccessToken).mockReturnValue(stale);
+      vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
+      vi.mocked(auth.refreshAccessToken).mockRejectedValue(
+        new Error("auth-service unreachable")
+      );
+
+      const { default: store } = await import("./authStore");
+      await store.getState().initialize();
+
+      const s = store.getState();
+      expect(s.isAuthenticated).toBe(true);
+      expect(auth.clearAuth).not.toHaveBeenCalled();
+      expect(s.isLoading).toBe(false);
     });
   });
 
@@ -163,6 +272,21 @@ describe("authStore", () => {
       await expect(store.getState().getToken()).rejects.toThrow(
         "auth-service unreachable"
       );
+    });
+
+    it("logs out and returns null when refresh fails with SessionExpiredError", async () => {
+      const stale = makeJwt(Math.floor(Date.now() / 1000) - 1);
+      vi.mocked(auth.getAccessToken).mockReturnValue(stale);
+      vi.mocked(auth.getRefreshToken).mockReturnValue("dead-refresh");
+      vi.mocked(auth.refreshAccessToken).mockRejectedValue(
+        new auth.SessionExpiredError("expired")
+      );
+
+      const { default: store } = await import("./authStore");
+      const token = await store.getState().getToken();
+      expect(token).toBeNull();
+      expect(store.getState().isAuthenticated).toBe(false);
+      expect(store.getState().user).toBeNull();
     });
 
     it("cools off briefly after a refresh failure before retrying (AUD-034)", async () => {
