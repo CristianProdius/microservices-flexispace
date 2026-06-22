@@ -86,6 +86,7 @@ const getEmailConfigErrors = () =>
     process.env.PASSWORD_RESET_LINK_BASE
       ? null
       : "PASSWORD_RESET_LINK_BASE is not configured",
+    process.env.INVITE_LINK_BASE ? null : "INVITE_LINK_BASE is not configured",
   ].filter((message): message is string => Boolean(message));
 
 type EmailEventMessage = {

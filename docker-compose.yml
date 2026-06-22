@@ -177,6 +177,7 @@ services:
       # to become ready without them — operators set these per-environment.
       EMAIL_VERIFICATION_LINK_BASE: ${EMAIL_VERIFICATION_LINK_BASE:?EMAIL_VERIFICATION_LINK_BASE is required}
       PASSWORD_RESET_LINK_BASE: ${PASSWORD_RESET_LINK_BASE:?PASSWORD_RESET_LINK_BASE is required}
+      INVITE_LINK_BASE: ${INVITE_LINK_BASE:?INVITE_LINK_BASE is required}
     expose:
       - "8004"
     healthcheck:
