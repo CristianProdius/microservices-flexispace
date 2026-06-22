@@ -24,6 +24,7 @@ import { Trash2 } from "lucide-react";
 import useAuthStore from "@/stores/authStore";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 import { deleteUsers, type DeleteUsersResult } from "./delete-users";
 
 interface User {
@@ -65,10 +66,17 @@ export function DataTable<TData, TValue>({
   });
 
   const { getToken } = useAuthStore();
+  const router = useRouter();
 
   const mutation = useMutation<DeleteUsersResult, Error>({
     mutationFn: async () => {
       const token = await getToken();
+      // A dead session yields a null token; redirect to /login rather than
+      // calling the API with no credential and surfacing a dead-end toast.
+      if (!token) {
+        router.push("/login");
+        throw new Error("Your session has expired. Please sign in again.");
+      }
       const selectedRows = table.getSelectedRowModel().rows;
       const selectedIds = selectedRows.map((row) => (row.original as User).id);
 

@@ -14,6 +14,14 @@ const JWT_ALGORITHM = "HS256" as const;
 const JWT_ISSUER = "spacefly";
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || "spacefly-api";
 
+// AUTHMW: small leeway (seconds) applied to exp/nbf checks so a few seconds of
+// NTP skew between the signing service (auth-service) and any verifying service
+// (product/order, or a multi-host deployment) cannot reject a token in the last
+// moments of its life or one minted on a slightly-fast clock. Standard
+// distributed-JWT practice; 5s is well below any token TTL so it does not
+// meaningfully extend a token's usable window.
+const JWT_CLOCK_TOLERANCE_SECONDS = 5;
+
 const getRequiredEnv = (
   name: "JWT_SECRET" | "JWT_REFRESH_SECRET" | "JWT_PASSWORD_RESET_SECRET" | "JWT_VERIFICATION_SECRET",
 ): string => {
@@ -106,6 +114,7 @@ function verifyToken(token: string, secret: string, expectedUse: TokenUse): Veri
       algorithms: [JWT_ALGORITHM],
       audience: JWT_AUDIENCE,
       issuer: JWT_ISSUER,
+      clockTolerance: JWT_CLOCK_TOLERANCE_SECONDS,
     }) as JwtPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
@@ -171,7 +180,11 @@ export function verifyPasswordResetToken(
     const decoded = jwt.verify(
       token,
       getRequiredEnv("JWT_PASSWORD_RESET_SECRET"),
-      { algorithms: [JWT_ALGORITHM], issuer: JWT_ISSUER },
+      {
+        algorithms: [JWT_ALGORITHM],
+        issuer: JWT_ISSUER,
+        clockTolerance: JWT_CLOCK_TOLERANCE_SECONDS,
+      },
     ) as PasswordResetTokenPayload & { jti?: string };
     if (decoded.purpose !== "password-reset") return null;
     return decoded;
@@ -214,6 +227,7 @@ export function verifyEmailVerificationToken(token: string): PurposeTokenPayload
     const decoded = jwt.verify(token, getVerificationSecret(), {
       algorithms: [JWT_ALGORITHM],
       issuer: JWT_ISSUER,
+      clockTolerance: JWT_CLOCK_TOLERANCE_SECONDS,
     }) as PurposeTokenPayload;
     if (decoded.purpose !== "email-verification") return null;
     return decoded;

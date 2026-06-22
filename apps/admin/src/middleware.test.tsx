@@ -86,7 +86,14 @@ describe("admin edge middleware", () => {
     expect(result.type).toBe("redirect");
   });
 
-  it("redirects when the cookie carries an expired access token", () => {
+  it("lets an expired-but-present access cookie through so the client can self-refresh", () => {
+    // The access cookie now outlives its 15-min JWT. An expired-but-present
+    // cookie means the user had a real session (the refresh cookie is likely
+    // still valid), so we serve the shell and let the client silently refresh
+    // and re-mint a fresh cookie — instead of bouncing a valid 7-day session
+    // to /login every 15 minutes (the "have to log in twice" symptom). Data
+    // requests still 401 until the refresh completes, so nothing privileged
+    // leaks beyond the static shell.
     const expiredToken = buildJwt({
       userId: "u1",
       role: "ADMIN",
@@ -98,7 +105,7 @@ describe("admin edge middleware", () => {
       req as unknown as Parameters<typeof middleware>[0]
     ) as unknown as { type: string };
 
-    expect(result.type).toBe("redirect");
+    expect(result.type).toBe("next");
   });
 
   it("lets the request through when the cookie carries a fresh JWT", () => {

@@ -123,7 +123,10 @@ describe("authStore", () => {
       vi.mocked(auth.getStoredUser).mockReturnValue(adminUser as never);
       vi.mocked(auth.getAccessToken).mockReturnValue(stale);
       vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
-      vi.mocked(auth.refreshAccessToken).mockResolvedValue(refreshed);
+      vi.mocked(auth.refreshAccessToken).mockResolvedValue({
+        accessToken: refreshed,
+        refreshToken: "refresh-2",
+      });
 
       const { default: store } = await import("./authStore");
       await store.getState().initialize();
@@ -131,7 +134,8 @@ describe("authStore", () => {
       const s = store.getState();
       expect(s.isAuthenticated).toBe(true);
       expect(s.token).toBe(refreshed);
-      expect(auth.saveTokens).toHaveBeenCalledWith(refreshed, "refresh-1");
+      // The ROTATED refresh token must be persisted, not the stale one we sent.
+      expect(auth.saveTokens).toHaveBeenCalledWith(refreshed, "refresh-2");
       expect(s.isLoading).toBe(false);
     });
 
@@ -212,13 +216,17 @@ describe("authStore", () => {
       const refreshed = makeJwt(Math.floor(Date.now() / 1000) + 60 * 60);
       vi.mocked(auth.getAccessToken).mockReturnValue(stale);
       vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
-      vi.mocked(auth.refreshAccessToken).mockResolvedValue(refreshed);
+      vi.mocked(auth.refreshAccessToken).mockResolvedValue({
+        accessToken: refreshed,
+        refreshToken: "refresh-2",
+      });
 
       const { default: store } = await import("./authStore");
       const token = await store.getState().getToken();
       expect(token).toBe(refreshed);
       expect(auth.refreshAccessToken).toHaveBeenCalledTimes(1);
-      expect(auth.saveTokens).toHaveBeenCalledWith(refreshed, "refresh-1");
+      // The ROTATED refresh token must be persisted, not the stale one we sent.
+      expect(auth.saveTokens).toHaveBeenCalledWith(refreshed, "refresh-2");
     });
 
     it("shares a single in-flight refresh across concurrent callers", async () => {
@@ -227,10 +235,10 @@ describe("authStore", () => {
       vi.mocked(auth.getAccessToken).mockReturnValue(stale);
       vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
 
-      let resolveRefresh!: (value: string) => void;
+      let resolveRefresh!: (value: { accessToken: string; refreshToken: string }) => void;
       vi.mocked(auth.refreshAccessToken).mockImplementation(
         () =>
-          new Promise<string>((resolve) => {
+          new Promise<{ accessToken: string; refreshToken: string }>((resolve) => {
             resolveRefresh = resolve;
           })
       );
@@ -240,7 +248,7 @@ describe("authStore", () => {
       const p2 = store.getState().getToken();
       const p3 = store.getState().getToken();
 
-      resolveRefresh(refreshed);
+      resolveRefresh({ accessToken: refreshed, refreshToken: "refresh-2" });
       const [t1, t2, t3] = await Promise.all([p1, p2, p3]);
 
       expect(t1).toBe(refreshed);
@@ -300,7 +308,7 @@ describe("authStore", () => {
       vi.mocked(auth.getRefreshToken).mockReturnValue("refresh-1");
       vi.mocked(auth.refreshAccessToken)
         .mockRejectedValueOnce(new Error("transient"))
-        .mockResolvedValueOnce(refreshed);
+        .mockResolvedValueOnce({ accessToken: refreshed, refreshToken: "refresh-2" });
 
       const { default: store } = await import("./authStore");
       await expect(store.getState().getToken()).rejects.toThrow("transient");

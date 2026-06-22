@@ -177,9 +177,13 @@ const useAuthStore = create<AuthState>((set) => ({
     }
 
     try {
-      const newToken = await auth.refreshAccessToken(refreshToken);
-      auth.saveTokens(newToken, refreshToken);
-      set({ token: newToken, isLoading: false });
+      const { accessToken, refreshToken: rotated } =
+        await auth.refreshAccessToken(refreshToken);
+      // Persist the ROTATED refresh token so the next refresh presents the
+      // current child jti, not the already-used parent (which the server
+      // treats as reuse → revokes the chain → forces a second login).
+      auth.saveTokens(accessToken, rotated);
+      set({ token: accessToken, isLoading: false });
     } catch (error) {
       if (error instanceof auth.SessionExpiredError) {
         // Refresh token is dead — clear the session so guards skip their
@@ -336,11 +340,14 @@ const useAuthStore = create<AuthState>((set) => ({
 
       inFlightRefresh = (async () => {
         try {
-          const newToken = await auth.refreshAccessToken(refreshToken);
-          auth.saveTokens(newToken, refreshToken);
-          set({ token: newToken });
+          const { accessToken, refreshToken: rotated } =
+            await auth.refreshAccessToken(refreshToken);
+          // Persist the ROTATED refresh token in lockstep with the cookie so
+          // the next cycle never replays an already-used parent jti.
+          auth.saveTokens(accessToken, rotated);
+          set({ token: accessToken });
           lastRefreshErrorAt = null;
-          return newToken;
+          return accessToken;
         } catch (error) {
           lastRefreshErrorAt = Date.now();
           // Eager clear on rejection so the cool-off path above (not a

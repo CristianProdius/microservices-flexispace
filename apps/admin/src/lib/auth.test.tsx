@@ -52,5 +52,37 @@ describe("admin auth api", () => {
       expect(err).not.toBeInstanceOf(SessionExpiredError);
       expect(localStorage.getItem("admin_refreshToken")).toBe("refresh-1");
     });
+
+    it("returns BOTH the rotated access and refresh tokens from the body", async () => {
+      // The rotating /refresh path issues a NEW refresh token. The client must
+      // surface it so callers can persist it; replaying the old (now-used)
+      // refresh token on the next cycle is what the server treats as reuse and
+      // revokes the whole chain (forcing a spurious second login).
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          jsonResponse(200, { accessToken: "access-2", refreshToken: "refresh-2" })
+        )
+      );
+
+      await expect(refreshAccessToken("refresh-1")).resolves.toEqual({
+        accessToken: "access-2",
+        refreshToken: "refresh-2",
+      });
+    });
+
+    it("falls back to the presented refresh token when the legacy path omits it", async () => {
+      // The legacy (jti-less) refresh path returns only an access token. We must
+      // keep the existing refresh token rather than overwrite it with undefined.
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(jsonResponse(200, { accessToken: "access-2" }))
+      );
+
+      await expect(refreshAccessToken("legacy-refresh")).resolves.toEqual({
+        accessToken: "access-2",
+        refreshToken: "legacy-refresh",
+      });
+    });
   });
 });

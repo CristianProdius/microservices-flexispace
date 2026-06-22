@@ -129,7 +129,12 @@ const REFRESH_RACE_RETRY_DELAY_MS = 250;
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function refreshAccessToken(refreshToken: string): Promise<string> {
+export interface RefreshResult {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export async function refreshAccessToken(refreshToken: string): Promise<RefreshResult> {
   const doRequest = () =>
     fetchAuth("/auth/refresh", {
       method: "POST",
@@ -161,7 +166,16 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
   }
 
   const data = await res.json();
-  return data.accessToken;
+  // Surface the ROTATED refresh token so the caller can persist it. The
+  // rotating /refresh path returns a fresh `refreshToken`; if the client keeps
+  // replaying the old (now-used) one, the server's reuse-detection revokes the
+  // entire chain and forces a spurious second login. The legacy (jti-less)
+  // path returns only an access token, so fall back to the token we presented.
+  return {
+    accessToken: data.accessToken,
+    refreshToken:
+      typeof data.refreshToken === "string" ? data.refreshToken : refreshToken,
+  };
 }
 
 // Token storage helpers.
