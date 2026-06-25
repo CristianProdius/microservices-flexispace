@@ -9,11 +9,14 @@ import useAuthStore from "@/stores/authStore";
 import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
+  BadgeCheck,
   Hotel,
   MapPin,
+  Megaphone,
   MoreVertical,
   Pencil,
   Plus,
+  Star,
   Trash2,
 } from "lucide-react";
 
@@ -33,6 +36,9 @@ interface Venue {
   images: string[];
   city: string;
   country: string;
+  venueVerified: boolean;
+  venueRecommended: boolean;
+  venueSponsored: boolean;
   _count: {
     spaces: number;
   };
@@ -119,6 +125,46 @@ const HostVenuesPage = () => {
   };
 
   const totalSpaces = venues.reduce((sum, v) => sum + (v._count?.spaces ?? 0), 0);
+
+  const renderListingBadges = (venue: Venue) => {
+    const badges = [
+      {
+        visible: venue.venueSponsored,
+        label: "Sponsored",
+        icon: Megaphone,
+        className: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+      },
+      {
+        visible: venue.venueRecommended,
+        label: "Recommended",
+        icon: Star,
+        className: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+      },
+      {
+        visible: venue.venueVerified,
+        label: "Verified",
+        icon: BadgeCheck,
+        className: "bg-blue-500/10 text-blue-700 border-blue-500/30",
+      },
+    ];
+
+    const visibleBadges = badges.filter((badge) => badge.visible);
+    if (visibleBadges.length === 0) return null;
+
+    return (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {visibleBadges.map(({ label, icon: Icon, className }) => (
+          <span
+            key={label}
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}
+          >
+            <Icon className="size-3" />
+            {label}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   if (isAdmin && !actingHostId) {
     return <HostEmptyAdminBanner />;
@@ -280,6 +326,7 @@ const HostVenuesPage = () => {
                             {venue.city}, {venue.country}
                           </span>
                         </div>
+                        {renderListingBadges(venue)}
                       </div>
 
                       <div className="relative">

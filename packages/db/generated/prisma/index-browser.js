@@ -136,6 +136,8 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
+  hostRecommended: 'hostRecommended',
+  hostSponsored: 'hostSponsored',
   hostingSince: 'hostingSince',
   hostApplicationPending: 'hostApplicationPending',
   commissionRate: 'commissionRate'
@@ -218,6 +220,9 @@ exports.Prisma.VenueScalarFieldEnum = {
   latitude: 'latitude',
   longitude: 'longitude',
   currency: 'currency',
+  venueVerified: 'venueVerified',
+  venueRecommended: 'venueRecommended',
+  venueSponsored: 'venueSponsored',
   hostId: 'hostId',
   isActive: 'isActive',
   createdAt: 'createdAt',

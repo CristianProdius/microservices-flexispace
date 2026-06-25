@@ -4,6 +4,7 @@ import {
   createVenue,
   getMyVenues,
   getVenue,
+  getVenuesList,
   getVenueCountsByHost,
   updateVenue,
 } from "./venue.controller.js";
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => {
       findFirst: vi.fn(),
       update: vi.fn(),
       groupBy: vi.fn(),
+      count: vi.fn(),
     },
   };
   return {
@@ -34,6 +36,7 @@ const mocks = vi.hoisted(() => {
     venueFindFirst: prisma.venue.findFirst,
     venueUpdate: prisma.venue.update,
     venueGroupBy: prisma.venue.groupBy,
+    venueCount: prisma.venue.count,
   };
 });
 
@@ -308,6 +311,57 @@ describe("venue controller contract", () => {
     });
   });
 
+  it("lets platform admins update venue listing badges", async () => {
+    mocks.venueFindUnique
+      .mockResolvedValueOnce({ id: 9, hostId: "host-1" })
+      .mockResolvedValueOnce({ id: 9 });
+    mocks.venueUpdate.mockResolvedValue({ id: 9 });
+    const req = {
+      params: { id: "9" },
+      body: {
+        venueVerified: true,
+        venueRecommended: true,
+        venueSponsored: false,
+      },
+      userId: "admin-1",
+      user: { role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(mocks.venueUpdate).toHaveBeenCalledWith({
+      where: { id: 9 },
+      data: expect.objectContaining({
+        venueVerified: true,
+        venueRecommended: true,
+        venueSponsored: false,
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("rejects venue listing badge changes from hosts", async () => {
+    mocks.venueFindUnique.mockResolvedValueOnce({ id: 9, hostId: "host-1" });
+    const req = {
+      params: { id: "9" },
+      body: {
+        venueSponsored: true,
+      },
+      userId: "host-1",
+      user: { role: "HOST" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Only admins can update venue listing badges",
+    });
+    expect(mocks.venueUpdate).not.toHaveBeenCalled();
+  });
+
   // Regression for the prod 500 reported on 2026-06-07: the old updateVenue
   // cascaded location fields onto `prisma.space.updateMany` even though
   // DB-010 had moved `address/city/state/country/postalCode/latitude/longitude`
@@ -340,6 +394,100 @@ describe("venue controller contract", () => {
     expect(mocks.venueUpdate).toHaveBeenCalledTimes(1);
     expect(mocks.spaceUpdateMany).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+});
+
+describe("getVenuesList listing badges", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("orders featured venues by sponsored, recommended, then verified status", async () => {
+    mocks.venueFindMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    mocks.venueCount.mockResolvedValueOnce(0);
+    const req = { query: {} } as unknown as Request;
+    const res = createResponse();
+
+    await getVenuesList(req, res);
+
+    expect(mocks.venueFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { venueSponsored: "desc" },
+          { host: { hostSponsored: "desc" } },
+          { venueRecommended: "desc" },
+          { host: { hostRecommended: "desc" } },
+          { venueVerified: "desc" },
+          { host: { hostVerified: "desc" } },
+          { host: { hostingSince: "asc" } },
+          { createdAt: "desc" },
+        ],
+      })
+    );
+  });
+
+  it("returns venue and host listing badge flags", async () => {
+    mocks.venueFindMany
+      .mockResolvedValueOnce([
+        {
+          id: 10,
+          name: "Venue",
+          shortDescription: "Short",
+          city: "Chisinau",
+          country: "Moldova",
+          images: ["/venue.jpg"],
+          venueVerified: true,
+          venueRecommended: false,
+          venueSponsored: true,
+          host: {
+            id: "host-1",
+            name: "Host",
+            username: "host",
+            image: null,
+            hostingSince: new Date("2024-01-01"),
+            hostVerified: true,
+            hostRecommended: true,
+            hostSponsored: false,
+          },
+          _count: { spaces: 2 },
+        },
+      ])
+      .mockResolvedValueOnce([{ city: "Chisinau" }]);
+    mocks.venueCount.mockResolvedValueOnce(1);
+    const req = { query: {} } as unknown as Request;
+    const res = createResponse();
+
+    await getVenuesList(req, res);
+
+    expect(mocks.venueFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          venueVerified: true,
+          venueRecommended: true,
+          venueSponsored: true,
+          host: {
+            select: expect.objectContaining({
+              hostVerified: true,
+              hostRecommended: true,
+              hostSponsored: true,
+            }),
+          },
+        }),
+      })
+    );
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.venues[0]).toMatchObject({
+      venueVerified: true,
+      venueRecommended: false,
+      venueSponsored: true,
+      host: {
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
+      },
+    });
   });
 });
 

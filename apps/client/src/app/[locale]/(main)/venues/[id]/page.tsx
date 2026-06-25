@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { AlertCircle, MapPin, RefreshCw, Check } from "lucide-react";
+import { AlertCircle, MapPin, RefreshCw, Check, Megaphone, Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
@@ -65,6 +65,43 @@ export default async function VenueDetailPage({ params }: PageProps) {
   const hostingYear = venue.host.hostingSince
     ? new Date(venue.host.hostingSince).getFullYear()
     : null;
+  const venueBadges = [
+    {
+      visible: venue.venueSponsored,
+      label: t("sponsored"),
+      icon: Megaphone,
+      className: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+    },
+    {
+      visible: venue.venueRecommended,
+      label: t("recommended"),
+      icon: Star,
+      className: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+    },
+    {
+      visible: venue.venueVerified,
+      label: t("verifiedVenue"),
+      icon: Check,
+      className: "bg-green-500/10 text-green-700 border-green-500/30",
+    },
+  ];
+  const hostBadges = [
+    {
+      visible: venue.host.hostSponsored,
+      label: t("sponsored"),
+      icon: Megaphone,
+    },
+    {
+      visible: venue.host.hostRecommended,
+      label: t("recommended"),
+      icon: Star,
+    },
+    {
+      visible: venue.host.hostVerified,
+      label: t("verified"),
+      icon: Check,
+    },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
@@ -72,6 +109,21 @@ export default async function VenueDetailPage({ params }: PageProps) {
         <h1 className="text-3xl md:text-4xl font-bold text-foreground text-balance">
           {venue.name}
         </h1>
+        {venueBadges.some((badge) => badge.visible) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {venueBadges.map(({ visible, label, icon: Icon, className }) =>
+              visible ? (
+                <span
+                  key={label}
+                  className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${className}`}
+                >
+                  <Icon className="size-3.5" />
+                  <span className="truncate">{label}</span>
+                </span>
+              ) : null
+            )}
+          </div>
+        )}
         <p className="text-muted mt-2 flex items-center gap-1.5">
           <MapPin className="size-4" />
           {venue.address}, {venue.city}, {venue.country}
@@ -127,11 +179,20 @@ export default async function VenueDetailPage({ params }: PageProps) {
                   {t("hostingSince", { year: hostingYear })}
                 </p>
               )}
-              {venue.host.hostVerified && (
-                <span className="inline-flex items-center gap-1 text-xs text-success mt-1">
-                  <Check className="size-3.5" />
-                  {t("verified")}
-                </span>
+              {hostBadges.some((badge) => badge.visible) && (
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {hostBadges.map(({ visible, label, icon: Icon }) =>
+                    visible ? (
+                      <span
+                        key={label}
+                        className="inline-flex max-w-full items-center gap-1 text-xs text-success"
+                      >
+                        <Icon className="size-3.5" />
+                        <span className="truncate">{label}</span>
+                      </span>
+                    ) : null
+                  )}
+                </div>
               )}
             </div>
           </div>

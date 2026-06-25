@@ -35,6 +35,9 @@ export interface Venue {
   longitude: number | null;
   workingHours?: WorkingHours | null;
   currency?: Currency;
+  venueVerified: boolean;
+  venueRecommended: boolean;
+  venueSponsored: boolean;
   hostId: string;
   isActive: boolean;
   createdAt: string;
@@ -49,6 +52,8 @@ export interface VenueHostSummary {
   bio?: string | null;
   hostingSince?: string | null;
   hostVerified: boolean;
+  hostRecommended: boolean;
+  hostSponsored: boolean;
 }
 
 export interface VenueWithHost extends Venue {
@@ -89,6 +94,8 @@ export interface HostSummary {
   bio: string | null;
   hostingSince: string | null;
   hostVerified: boolean;
+  hostRecommended: boolean;
+  hostSponsored: boolean;
   venueCount: number;
   spaceCount: number;
   cities: string[];
@@ -102,6 +109,9 @@ export interface HostVenueCard {
   country: string;
   images: string[];
   isActive: boolean;
+  venueVerified: boolean;
+  venueRecommended: boolean;
+  venueSponsored: boolean;
   spaces: VenueSpaceSummary[];
   _count?: { spaces: number };
 }

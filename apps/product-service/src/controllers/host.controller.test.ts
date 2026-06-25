@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getHost, getHosts } from "./host.controller.js";
+import { getHost, getHosts, updateHostListingBadges } from "./host.controller.js";
 
 const mocks = vi.hoisted(() => {
   const prisma = {
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => {
       findMany: vi.fn(),
       count: vi.fn(),
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
     venue: {
       findMany: vi.fn(),
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => {
     userFindMany: prisma.user.findMany,
     userCount: prisma.user.count,
     userFindFirst: prisma.user.findFirst,
+    userUpdate: prisma.user.update,
     venueFindMany: prisma.venue.findMany,
   };
 });
@@ -57,6 +59,8 @@ describe("host controller", () => {
         bio: "Bio",
         hostingSince: new Date("2024-01-01"),
         hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
         venues: [
           { city: "Chisinau", _count: { spaces: 3 } },
           { city: "Chisinau", _count: { spaces: 0 } },
@@ -79,7 +83,12 @@ describe("host controller", () => {
           deletedAt: null,
           venues: { some: { isActive: true } },
         }),
-        orderBy: [{ hostVerified: "desc" }, { hostingSince: "asc" }],
+        orderBy: [
+          { hostSponsored: "desc" },
+          { hostRecommended: "desc" },
+          { hostVerified: "desc" },
+          { hostingSince: "asc" },
+        ],
       })
     );
     expect(res.status).toHaveBeenCalledWith(200);
@@ -90,6 +99,8 @@ describe("host controller", () => {
       venueCount: 2,
       spaceCount: 3,
       cities: ["Chisinau"],
+      hostRecommended: true,
+      hostSponsored: false,
     });
     expect(payload.pagination).toMatchObject({ page: 1, total: 1 });
     expect(payload.availableCities).toEqual(["Chisinau", "Bucharest"]);
@@ -115,6 +126,45 @@ describe("host controller", () => {
       ],
     });
     expect(call.orderBy).toEqual({ venues: { _count: "desc" } });
+  });
+
+  it("returns listing badge flags for hosts", async () => {
+    mocks.userFindMany.mockResolvedValue([
+      {
+        id: "u2",
+        name: "Bob",
+        username: "bob",
+        image: null,
+        bio: null,
+        hostingSince: null,
+        hostVerified: true,
+        hostRecommended: false,
+        hostSponsored: true,
+        venues: [{ city: "Bucharest", images: [], _count: { spaces: 1 } }],
+      },
+    ]);
+    mocks.userCount.mockResolvedValue(1);
+    mocks.venueFindMany.mockResolvedValue([]);
+    const req = { query: {} } as unknown as Request;
+    const res = createResponse();
+
+    await getHosts(req, res);
+
+    expect(mocks.userFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          hostVerified: true,
+          hostRecommended: true,
+          hostSponsored: true,
+        }),
+      })
+    );
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.hosts[0]).toMatchObject({
+      hostVerified: true,
+      hostRecommended: false,
+      hostSponsored: true,
+    });
   });
 
   it("maps sort=newest to hostingSince desc", async () => {
@@ -159,14 +209,16 @@ describe("host controller", () => {
       name: "Alice",
       username: "alice",
       image: null,
-      bio: "Bio",
-      hostingSince: new Date("2024-01-01"),
-      hostVerified: true,
-      venues: [
-        {
-          id: 1,
-          name: "Hub",
-          city: "Chisinau",
+        bio: "Bio",
+        hostingSince: new Date("2024-01-01"),
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
+        venues: [
+          {
+            id: 1,
+            name: "Hub",
+            city: "Chisinau",
           country: "Moldova",
           images: ["/v.jpg"],
           isActive: true,
@@ -188,7 +240,70 @@ describe("host controller", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     const payload = res.json.mock.calls[0]![0];
     expect(payload.id).toBe("u1");
+    expect(payload.hostRecommended).toBe(true);
+    expect(payload.hostSponsored).toBe(false);
     expect(payload.venues).toHaveLength(1);
     expect(payload.venues[0].spaces[0].id).toBe(10);
+  });
+
+  it("updates host listing badges for HOST and ADMIN accounts", async () => {
+    mocks.userFindFirst.mockResolvedValueOnce({ id: "u1", role: "HOST" });
+    mocks.userUpdate.mockResolvedValueOnce({
+      id: "u1",
+      role: "HOST",
+      hostVerified: true,
+      hostRecommended: true,
+      hostSponsored: false,
+    });
+    const req = {
+      params: { id: "u1" },
+      body: {
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateHostListingBadges(req, res);
+
+    expect(mocks.userUpdate).toHaveBeenCalledWith({
+      where: { id: "u1" },
+      data: {
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
+      },
+      select: expect.objectContaining({
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: true,
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: false,
+      })
+    );
+  });
+
+  it("rejects host listing badge payloads with non-boolean values", async () => {
+    const req = {
+      params: { id: "u1" },
+      body: { hostSponsored: "true" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateHostListingBadges(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "hostVerified, hostRecommended, and hostSponsored must be booleans",
+    });
+    expect(mocks.userFindFirst).not.toHaveBeenCalled();
+    expect(mocks.userUpdate).not.toHaveBeenCalled();
   });
 });

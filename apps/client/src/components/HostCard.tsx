@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { Check } from "lucide-react";
+import { Check, Megaphone, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { HostSummary } from "@repo/types";
 
@@ -14,6 +14,26 @@ const HostCard = ({ host }: { host: HostSummary }) => {
   const hostingYear = host.hostingSince ? new Date(host.hostingSince).getFullYear() : null;
   const location = host.cities.slice(0, 2).join(", ");
   const heroImage = host.image ?? host.coverImage;
+  const badges = [
+    {
+      visible: host.hostSponsored,
+      label: tVenue("sponsored"),
+      icon: Megaphone,
+      className: "bg-emerald-600/95 text-white",
+    },
+    {
+      visible: host.hostRecommended,
+      label: tVenue("recommended"),
+      icon: Star,
+      className: "bg-amber-500/95 text-white",
+    },
+    {
+      visible: host.hostVerified,
+      label: tVenue("verified"),
+      icon: Check,
+      className: "bg-success/90 text-white",
+    },
+  ];
 
   return (
     <div className="group">
@@ -37,12 +57,19 @@ const HostCard = ({ host }: { host: HostSummary }) => {
               {t("hostingSince", { year: hostingYear })}
             </span>
           )}
-          {host.hostVerified && (
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 bg-success/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-              <Check className="size-3" />
-              {tVenue("verified")}
-            </span>
-          )}
+          <div className="absolute right-3 top-3 flex max-w-[75%] flex-col items-end gap-1">
+            {badges.map(({ visible, label, icon: Icon, className }) =>
+              visible ? (
+                <span
+                  key={label}
+                  className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-xs font-medium shadow-sm backdrop-blur-sm ${className}`}
+                >
+                  <Icon className="size-3" />
+                  <span className="truncate">{label}</span>
+                </span>
+              ) : null
+            )}
+          </div>
         </div>
       </Link>
 

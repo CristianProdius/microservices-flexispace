@@ -99,6 +99,8 @@ model User {
 
   // Host-specific fields
   hostVerified           Boolean   @default(false)
+  hostRecommended        Boolean   @default(false)
+  hostSponsored          Boolean   @default(false)
   hostingSince           DateTime?
   hostApplicationPending Boolean   @default(false)
   // Per-host platform commission as a fraction (0.1 = 10%). Null means use the
@@ -121,6 +123,7 @@ model User {
 
   @@index([role])
   @@index([deletedAt])
+  @@index([hostSponsored, hostRecommended, hostVerified])
 }
 
 model Session {
@@ -250,6 +253,12 @@ model Venue {
   longitude  Float?
   currency   Currency @default(USD) // Default currency for new spaces under this venue
 
+  // Platform-admin listing badges. Sponsored outranks recommended, which
+  // outranks verified in public featured ordering.
+  venueVerified    Boolean @default(false)
+  venueRecommended Boolean @default(false)
+  venueSponsored   Boolean @default(false)
+
   // Owner
   hostId String
   host   User   @relation(fields: [hostId], references: [id])
@@ -265,6 +274,7 @@ model Venue {
   @@index([city])
   @@index([isActive])
   @@index([latitude, longitude])
+  @@index([venueSponsored, venueRecommended, venueVerified])
 }
 
 // ==================== EXCHANGE RATES ====================

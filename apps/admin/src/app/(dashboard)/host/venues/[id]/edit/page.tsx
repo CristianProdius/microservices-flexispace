@@ -19,7 +19,7 @@ import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 const HostEditVenuePage = () => {
   const params = useParams();
   const router = useRouter();
-  const { isLoading: authLoading } = useAuthStore();
+  const { isAdmin, isLoading: authLoading } = useAuthStore();
   const id = params.id as string;
   const [initialValues, setInitialValues] = useState<VenueFormValues | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,6 +120,7 @@ const HostEditVenuePage = () => {
       submitLabel="Update Venue"
       submittingLabel="Saving..."
       onSubmit={handleUpdate}
+      allowListingBadgeControls={isAdmin}
     />
   );
 };

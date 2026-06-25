@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Loader2, Megaphone, Star, Upload, X } from "lucide-react";
 
 const MapPickerDynamic = dynamic(() => import("./map-picker"), { ssr: false });
 
@@ -34,7 +34,29 @@ interface VenueFormProps {
   submittingLabel: string;
   onSubmit: (payload: VenueFormPayload) => Promise<void>;
   hostField?: React.ReactNode;
+  allowListingBadgeControls?: boolean;
 }
+
+const listingBadgeOptions = [
+  {
+    key: "venueVerified",
+    label: "Verified",
+    description: "Marks this venue as checked by the platform.",
+    icon: BadgeCheck,
+  },
+  {
+    key: "venueRecommended",
+    label: "Recommended",
+    description: "Lifts this venue above ordinary verified venues.",
+    icon: Star,
+  },
+  {
+    key: "venueSponsored",
+    label: "Sponsored",
+    description: "Gives this venue the highest listing priority.",
+    icon: Megaphone,
+  },
+] as const;
 
 const VenueForm = ({
   title,
@@ -45,6 +67,7 @@ const VenueForm = ({
   submittingLabel,
   onSubmit,
   hostField,
+  allowListingBadgeControls = false,
 }: VenueFormProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +124,11 @@ const VenueForm = ({
     setError(null);
 
     try {
-      await onSubmit(buildVenuePayload(formData));
+      await onSubmit(
+        buildVenuePayload(formData, {
+          includeListingBadges: allowListingBadgeControls,
+        })
+      );
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "An error occurred"
@@ -250,6 +277,43 @@ const VenueForm = ({
             </div>
           </div>
         </DashboardSection>
+
+        {allowListingBadgeControls && (
+          <DashboardSection
+            title="Listing badges"
+            description="Sponsored venues rank first, then recommended, then verified."
+          >
+            <div className="grid gap-3 md:grid-cols-3">
+              {listingBadgeOptions.map(({ key, label, description, icon: Icon }) => (
+                <label
+                  key={key}
+                  className="flex items-start gap-3 rounded-md border border-border/60 bg-background px-3 py-3"
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData[key]}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        [key]: event.target.checked,
+                      }))
+                    }
+                    className="mt-1"
+                  />
+                  <span className="flex min-w-0 gap-3">
+                    <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0">
+                      <span className="text-sm font-medium">{label}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {description}
+                      </span>
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </DashboardSection>
+        )}
 
         <DashboardSection title="Images" contentClassName="space-y-4">
           <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">

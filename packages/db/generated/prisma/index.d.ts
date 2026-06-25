@@ -3075,6 +3075,8 @@ export namespace Prisma {
     updatedAt: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
+    hostRecommended: boolean | null
+    hostSponsored: boolean | null
     hostingSince: Date | null
     hostApplicationPending: boolean | null
     commissionRate: number | null
@@ -3096,6 +3098,8 @@ export namespace Prisma {
     updatedAt: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
+    hostRecommended: boolean | null
+    hostSponsored: boolean | null
     hostingSince: Date | null
     hostApplicationPending: boolean | null
     commissionRate: number | null
@@ -3117,6 +3121,8 @@ export namespace Prisma {
     updatedAt: number
     deletedAt: number
     hostVerified: number
+    hostRecommended: number
+    hostSponsored: number
     hostingSince: number
     hostApplicationPending: number
     commissionRate: number
@@ -3148,6 +3154,8 @@ export namespace Prisma {
     updatedAt?: true
     deletedAt?: true
     hostVerified?: true
+    hostRecommended?: true
+    hostSponsored?: true
     hostingSince?: true
     hostApplicationPending?: true
     commissionRate?: true
@@ -3169,6 +3177,8 @@ export namespace Prisma {
     updatedAt?: true
     deletedAt?: true
     hostVerified?: true
+    hostRecommended?: true
+    hostSponsored?: true
     hostingSince?: true
     hostApplicationPending?: true
     commissionRate?: true
@@ -3190,6 +3200,8 @@ export namespace Prisma {
     updatedAt?: true
     deletedAt?: true
     hostVerified?: true
+    hostRecommended?: true
+    hostSponsored?: true
     hostingSince?: true
     hostApplicationPending?: true
     commissionRate?: true
@@ -3298,6 +3310,8 @@ export namespace Prisma {
     updatedAt: Date
     deletedAt: Date | null
     hostVerified: boolean
+    hostRecommended: boolean
+    hostSponsored: boolean
     hostingSince: Date | null
     hostApplicationPending: boolean
     commissionRate: number | null
@@ -3338,6 +3352,8 @@ export namespace Prisma {
     updatedAt?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
     commissionRate?: boolean
@@ -3371,6 +3387,8 @@ export namespace Prisma {
     updatedAt?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
     commissionRate?: boolean
@@ -3392,6 +3410,8 @@ export namespace Prisma {
     updatedAt?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
     commissionRate?: boolean
@@ -3413,12 +3433,14 @@ export namespace Prisma {
     updatedAt?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: boolean
     hostApplicationPending?: boolean
     commissionRate?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostRecommended" | "hostSponsored" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
@@ -3467,6 +3489,8 @@ export namespace Prisma {
       updatedAt: Date
       deletedAt: Date | null
       hostVerified: boolean
+      hostRecommended: boolean
+      hostSponsored: boolean
       hostingSince: Date | null
       hostApplicationPending: boolean
       commissionRate: number | null
@@ -3919,6 +3943,8 @@ export namespace Prisma {
     readonly updatedAt: FieldRef<"User", 'DateTime'>
     readonly deletedAt: FieldRef<"User", 'DateTime'>
     readonly hostVerified: FieldRef<"User", 'Boolean'>
+    readonly hostRecommended: FieldRef<"User", 'Boolean'>
+    readonly hostSponsored: FieldRef<"User", 'Boolean'>
     readonly hostingSince: FieldRef<"User", 'DateTime'>
     readonly hostApplicationPending: FieldRef<"User", 'Boolean'>
     readonly commissionRate: FieldRef<"User", 'Float'>
@@ -11041,6 +11067,9 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency | null
+    venueVerified: boolean | null
+    venueRecommended: boolean | null
+    venueSponsored: boolean | null
     hostId: string | null
     isActive: boolean | null
     createdAt: Date | null
@@ -11061,6 +11090,9 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency | null
+    venueVerified: boolean | null
+    venueRecommended: boolean | null
+    venueSponsored: boolean | null
     hostId: string | null
     isActive: boolean | null
     createdAt: Date | null
@@ -11086,6 +11118,9 @@ export namespace Prisma {
     latitude: number
     longitude: number
     currency: number
+    venueVerified: number
+    venueRecommended: number
+    venueSponsored: number
     hostId: number
     isActive: number
     createdAt: number
@@ -11120,6 +11155,9 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
+    venueVerified?: true
+    venueRecommended?: true
+    venueSponsored?: true
     hostId?: true
     isActive?: true
     createdAt?: true
@@ -11140,6 +11178,9 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
+    venueVerified?: true
+    venueRecommended?: true
+    venueSponsored?: true
     hostId?: true
     isActive?: true
     createdAt?: true
@@ -11165,6 +11206,9 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
+    venueVerified?: true
+    venueRecommended?: true
+    venueSponsored?: true
     hostId?: true
     isActive?: true
     createdAt?: true
@@ -11277,6 +11321,9 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency
+    venueVerified: boolean
+    venueRecommended: boolean
+    venueSponsored: boolean
     hostId: string
     isActive: boolean
     createdAt: Date
@@ -11321,6 +11368,9 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -11349,6 +11399,9 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -11375,6 +11428,9 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -11401,13 +11457,16 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "hostId" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
+  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "venueVerified" | "venueRecommended" | "venueSponsored" | "hostId" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
   export type VenueInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     spaces?: boolean | Venue$spacesArgs<ExtArgs>
@@ -11445,6 +11504,9 @@ export namespace Prisma {
       latitude: number | null
       longitude: number | null
       currency: $Enums.Currency
+      venueVerified: boolean
+      venueRecommended: boolean
+      venueSponsored: boolean
       hostId: string
       isActive: boolean
       createdAt: Date
@@ -11892,6 +11954,9 @@ export namespace Prisma {
     readonly latitude: FieldRef<"Venue", 'Float'>
     readonly longitude: FieldRef<"Venue", 'Float'>
     readonly currency: FieldRef<"Venue", 'Currency'>
+    readonly venueVerified: FieldRef<"Venue", 'Boolean'>
+    readonly venueRecommended: FieldRef<"Venue", 'Boolean'>
+    readonly venueSponsored: FieldRef<"Venue", 'Boolean'>
     readonly hostId: FieldRef<"Venue", 'String'>
     readonly isActive: FieldRef<"Venue", 'Boolean'>
     readonly createdAt: FieldRef<"Venue", 'DateTime'>
@@ -26498,6 +26563,8 @@ export namespace Prisma {
     updatedAt: 'updatedAt',
     deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
+    hostRecommended: 'hostRecommended',
+    hostSponsored: 'hostSponsored',
     hostingSince: 'hostingSince',
     hostApplicationPending: 'hostApplicationPending',
     commissionRate: 'commissionRate'
@@ -26601,6 +26668,9 @@ export namespace Prisma {
     latitude: 'latitude',
     longitude: 'longitude',
     currency: 'currency',
+    venueVerified: 'venueVerified',
+    venueRecommended: 'venueRecommended',
+    venueSponsored: 'venueSponsored',
     hostId: 'hostId',
     isActive: 'isActive',
     createdAt: 'createdAt',
@@ -27088,6 +27158,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
+    hostRecommended?: BoolFilter<"User"> | boolean
+    hostSponsored?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolFilter<"User"> | boolean
     commissionRate?: FloatNullableFilter<"User"> | number | null
@@ -27120,6 +27192,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
+    hostRecommended?: SortOrder
+    hostSponsored?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     hostApplicationPending?: SortOrder
     commissionRate?: SortOrderInput | SortOrder
@@ -27155,6 +27229,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
+    hostRecommended?: BoolFilter<"User"> | boolean
+    hostSponsored?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolFilter<"User"> | boolean
     commissionRate?: FloatNullableFilter<"User"> | number | null
@@ -27187,6 +27263,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
+    hostRecommended?: SortOrder
+    hostSponsored?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
     hostApplicationPending?: SortOrder
     commissionRate?: SortOrderInput | SortOrder
@@ -27216,6 +27294,8 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
+    hostRecommended?: BoolWithAggregatesFilter<"User"> | boolean
+    hostSponsored?: BoolWithAggregatesFilter<"User"> | boolean
     hostingSince?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostApplicationPending?: BoolWithAggregatesFilter<"User"> | boolean
     commissionRate?: FloatNullableWithAggregatesFilter<"User"> | number | null
@@ -27620,6 +27700,9 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
+    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueRecommended?: BoolFilter<"Venue"> | boolean
+    venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
@@ -27647,6 +27730,9 @@ export namespace Prisma {
     latitude?: SortOrderInput | SortOrder
     longitude?: SortOrderInput | SortOrder
     currency?: SortOrder
+    venueVerified?: SortOrder
+    venueRecommended?: SortOrder
+    venueSponsored?: SortOrder
     hostId?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -27677,6 +27763,9 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
+    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueRecommended?: BoolFilter<"Venue"> | boolean
+    venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
@@ -27704,6 +27793,9 @@ export namespace Prisma {
     latitude?: SortOrderInput | SortOrder
     longitude?: SortOrderInput | SortOrder
     currency?: SortOrder
+    venueVerified?: SortOrder
+    venueRecommended?: SortOrder
+    venueSponsored?: SortOrder
     hostId?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -27737,6 +27829,9 @@ export namespace Prisma {
     latitude?: FloatNullableWithAggregatesFilter<"Venue"> | number | null
     longitude?: FloatNullableWithAggregatesFilter<"Venue"> | number | null
     currency?: EnumCurrencyWithAggregatesFilter<"Venue"> | $Enums.Currency
+    venueVerified?: BoolWithAggregatesFilter<"Venue"> | boolean
+    venueRecommended?: BoolWithAggregatesFilter<"Venue"> | boolean
+    venueSponsored?: BoolWithAggregatesFilter<"Venue"> | boolean
     hostId?: StringWithAggregatesFilter<"Venue"> | string
     isActive?: BoolWithAggregatesFilter<"Venue"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Venue"> | Date | string
@@ -28759,6 +28854,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -28791,6 +28888,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -28823,6 +28922,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -28855,6 +28956,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -28887,6 +28990,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -28908,6 +29013,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -28929,6 +29036,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -29353,6 +29462,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -29379,6 +29491,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId: string
     isActive?: boolean
     createdAt?: Date | string
@@ -29404,6 +29519,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29430,6 +29548,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29456,6 +29577,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId: string
     isActive?: boolean
     createdAt?: Date | string
@@ -29480,6 +29604,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29504,6 +29631,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30751,6 +30881,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostRecommended?: SortOrder
+    hostSponsored?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
     commissionRate?: SortOrder
@@ -30776,6 +30908,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostRecommended?: SortOrder
+    hostSponsored?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
     commissionRate?: SortOrder
@@ -30797,6 +30931,8 @@ export namespace Prisma {
     updatedAt?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostRecommended?: SortOrder
+    hostSponsored?: SortOrder
     hostingSince?: SortOrder
     hostApplicationPending?: SortOrder
     commissionRate?: SortOrder
@@ -31207,6 +31343,9 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
+    venueVerified?: SortOrder
+    venueRecommended?: SortOrder
+    venueSponsored?: SortOrder
     hostId?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -31233,6 +31372,9 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
+    venueVerified?: SortOrder
+    venueRecommended?: SortOrder
+    venueSponsored?: SortOrder
     hostId?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -31253,6 +31395,9 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
+    venueVerified?: SortOrder
+    venueRecommended?: SortOrder
+    venueSponsored?: SortOrder
     hostId?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -34132,6 +34277,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34157,6 +34305,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34641,6 +34792,9 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
+    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueRecommended?: BoolFilter<"Venue"> | boolean
+    venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
@@ -34872,6 +35026,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -34903,6 +35059,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -34950,6 +35108,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -34981,6 +35141,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35012,6 +35174,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35043,6 +35207,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35090,6 +35256,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35121,6 +35289,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35152,6 +35322,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35183,6 +35355,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35230,6 +35404,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35261,6 +35437,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35292,6 +35470,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35323,6 +35503,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35370,6 +35552,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35401,6 +35585,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35432,6 +35618,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35463,6 +35651,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35510,6 +35700,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35541,6 +35733,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35572,6 +35766,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35603,6 +35799,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35729,6 +35927,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35760,6 +35960,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -35807,6 +36009,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35838,6 +36042,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -35876,6 +36082,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35901,6 +36110,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     hostId: string
     isActive?: boolean
     createdAt?: Date | string
@@ -36152,6 +36364,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -36183,6 +36397,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -36227,6 +36443,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36252,6 +36471,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37334,6 +37556,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -37365,6 +37589,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -37401,6 +37627,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -37432,6 +37660,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -37581,6 +37811,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -37612,6 +37844,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -37654,6 +37888,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -37685,6 +37921,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -37830,6 +38068,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -37861,6 +38101,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -38045,6 +38287,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -38076,6 +38320,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -38256,6 +38502,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -38287,6 +38535,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostRecommended?: boolean
+    hostSponsored?: boolean
     hostingSince?: Date | string | null
     hostApplicationPending?: boolean
     commissionRate?: number | null
@@ -38334,6 +38584,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -38365,6 +38617,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostRecommended?: BoolFieldUpdateOperationsInput | boolean
+    hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostApplicationPending?: BoolFieldUpdateOperationsInput | boolean
     commissionRate?: NullableFloatFieldUpdateOperationsInput | number | null
@@ -38433,6 +38687,9 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
+    venueVerified?: boolean
+    venueRecommended?: boolean
+    venueSponsored?: boolean
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38679,6 +38936,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38704,6 +38964,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38729,6 +38992,9 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueRecommended?: BoolFieldUpdateOperationsInput | boolean
+    venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

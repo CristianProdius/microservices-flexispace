@@ -69,6 +69,9 @@ export interface VenueFormValues {
   videoUrl: string;
   currency: Currency;
   workingHours: WorkingHoursValue;
+  venueVerified: boolean;
+  venueRecommended: boolean;
+  venueSponsored: boolean;
 }
 
 export interface VenueFormPayload {
@@ -89,6 +92,9 @@ export interface VenueFormPayload {
   videoUrl: string | null;
   currency: Currency;
   workingHours: WorkingHoursValue | null;
+  venueVerified?: boolean;
+  venueRecommended?: boolean;
+  venueSponsored?: boolean;
   hostId?: string;
 }
 
@@ -110,23 +116,46 @@ export const createEmptyVenueFormValues = (): VenueFormValues => ({
   videoUrl: "",
   currency: "USD",
   workingHours: createEmptyWorkingHours(),
+  venueVerified: false,
+  venueRecommended: false,
+  venueSponsored: false,
 });
 
 const emptyToNull = (obj: Record<string, string>): Record<string, string> | null =>
   Object.keys(obj).length === 0 ? null : obj;
 
 export const buildVenuePayload = (
-  formData: VenueFormValues
-): VenueFormPayload => ({
-  ...formData,
-  nameTranslations: emptyToNull(formData.nameTranslations),
-  shortDescTranslations: emptyToNull(formData.shortDescTranslations),
-  descriptionTranslations: emptyToNull(formData.descriptionTranslations),
-  videoUrl: formData.videoUrl || null,
-  state: formData.state || null,
-  postalCode: formData.postalCode || null,
-  workingHours: sanitizeWorkingHours(formData.workingHours),
-});
+  formData: VenueFormValues,
+  options: { includeListingBadges?: boolean } = {}
+): VenueFormPayload => {
+  const payload: VenueFormPayload = {
+    name: formData.name,
+    shortDescription: formData.shortDescription,
+    description: formData.description,
+    nameTranslations: emptyToNull(formData.nameTranslations),
+    shortDescTranslations: emptyToNull(formData.shortDescTranslations),
+    descriptionTranslations: emptyToNull(formData.descriptionTranslations),
+    address: formData.address,
+    city: formData.city,
+    state: formData.state || null,
+    country: formData.country,
+    postalCode: formData.postalCode || null,
+    latitude: formData.latitude,
+    longitude: formData.longitude,
+    images: formData.images,
+    videoUrl: formData.videoUrl || null,
+    currency: formData.currency,
+    workingHours: sanitizeWorkingHours(formData.workingHours),
+  };
+
+  if (options.includeListingBadges) {
+    payload.venueVerified = formData.venueVerified;
+    payload.venueRecommended = formData.venueRecommended;
+    payload.venueSponsored = formData.venueSponsored;
+  }
+
+  return payload;
+};
 
 export interface VenueResponse {
   id: number;
@@ -147,6 +176,9 @@ export interface VenueResponse {
   videoUrl?: string | null;
   workingHours?: WorkingHoursValue | null;
   currency: Currency;
+  venueVerified?: boolean;
+  venueRecommended?: boolean;
+  venueSponsored?: boolean;
 }
 
 export const mapVenueToFormValues = (
@@ -169,4 +201,7 @@ export const mapVenueToFormValues = (
   videoUrl: venue.videoUrl ?? "",
   currency: venue.currency ?? "USD",
   workingHours: venue.workingHours ?? createEmptyWorkingHours(),
+  venueVerified: venue.venueVerified ?? false,
+  venueRecommended: venue.venueRecommended ?? false,
+  venueSponsored: venue.venueSponsored ?? false,
 });

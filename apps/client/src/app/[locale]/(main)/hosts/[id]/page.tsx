@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { Check, RefreshCw, AlertCircle } from "lucide-react";
+import { Check, RefreshCw, AlertCircle, Megaphone, Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
@@ -56,6 +56,23 @@ export default async function HostProfilePage({ params }: PageProps) {
   const displayName = host.name ?? host.username;
   const initials = displayName.slice(0, 1).toUpperCase();
   const hostingYear = host.hostingSince ? new Date(host.hostingSince).getFullYear() : null;
+  const hostBadges = [
+    {
+      visible: host.hostSponsored,
+      label: tVenue("sponsored"),
+      icon: Megaphone,
+    },
+    {
+      visible: host.hostRecommended,
+      label: tVenue("recommended"),
+      icon: Star,
+    },
+    {
+      visible: host.hostVerified,
+      label: tVenue("verified"),
+      icon: Check,
+    },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
@@ -81,10 +98,12 @@ export default async function HostProfilePage({ params }: PageProps) {
               {tCard("venues", { count: host.venueCount })} ·{" "}
               {tCard("spaces", { count: host.spaceCount })}
             </span>
-            {host.hostVerified && (
-              <span className="inline-flex items-center gap-1 text-success">
-                <Check className="size-3.5" /> {tVenue("verified")}
-              </span>
+            {hostBadges.map(({ visible, label, icon: Icon }) =>
+              visible ? (
+                <span key={label} className="inline-flex items-center gap-1 text-success">
+                  <Icon className="size-3.5" /> {label}
+                </span>
+              ) : null
             )}
           </div>
           {host.bio && (
@@ -109,6 +128,9 @@ export default async function HostProfilePage({ params }: PageProps) {
                   city: venue.city,
                   country: venue.country,
                   images: venue.images,
+                  venueVerified: venue.venueVerified,
+                  venueRecommended: venue.venueRecommended,
+                  venueSponsored: venue.venueSponsored,
                   spaceCount: venue._count?.spaces ?? 0,
                 }}
               />

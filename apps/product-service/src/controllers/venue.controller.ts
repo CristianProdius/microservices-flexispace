@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "@repo/db";
+import { Prisma, prisma } from "@repo/db";
 import { producer } from "../utils/kafka.js";
 import { resolveTranslations, VENUE_TRANSLATION_FIELDS } from "../lib/translations.js";
 import { parsePositiveIntegerWithDefault } from "../lib/validation.js";
@@ -83,13 +83,17 @@ export const getVenuesList = async (req: Request, res: Response) => {
   const search = searchRaw.length > 0 ? searchRaw : undefined;
   const sort = parseVenueListSort(req.query.sort);
 
-  // Featured = verified hosts first, then by hostingSince (oldest established
-  // hosts surfaced before newcomers). MostVenues (here: most spaces) =
-  // venues with the largest active-space count first. Newest = recently-
-  // created venues first.
+  // Featured = sponsored, recommended, then verified inventory first. Venue
+  // badges are checked before host badges at each tier so admins can promote a
+  // specific venue without lifting every venue from that host.
   const orderBy =
     sort === "featured"
       ? [
+          { venueSponsored: "desc" as const },
+          { host: { hostSponsored: "desc" as const } },
+          { venueRecommended: "desc" as const },
+          { host: { hostRecommended: "desc" as const } },
+          { venueVerified: "desc" as const },
           { host: { hostVerified: "desc" as const } },
           { host: { hostingSince: "asc" as const } },
           { createdAt: "desc" as const },
@@ -101,22 +105,32 @@ export const getVenuesList = async (req: Request, res: Response) => {
           ]
         : [{ createdAt: "desc" as const }];
 
-  const where = {
+  const andFilters: Prisma.VenueWhereInput[] = [];
+  if (verifiedOnly) {
+    andFilters.push({
+      OR: [
+        { venueVerified: true },
+        { host: { hostVerified: true } },
+      ],
+    });
+  }
+  if (search) {
+    andFilters.push({
+      OR: [
+        { name: { contains: search, mode: "insensitive" } },
+        { host: { name: { contains: search, mode: "insensitive" } } },
+        { host: { username: { contains: search, mode: "insensitive" } } },
+      ],
+    });
+  }
+
+  const where: Prisma.VenueWhereInput = {
     isActive: true,
     host: {
       deletedAt: null,
-      ...(verifiedOnly ? { hostVerified: true } : {}),
     },
     ...(city ? { city } : {}),
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" as const } },
-            { host: { name: { contains: search, mode: "insensitive" as const } } },
-            { host: { username: { contains: search, mode: "insensitive" as const } } },
-          ],
-        }
-      : {}),
+    ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
 
   const [rows, total, cityRows] = await Promise.all([
@@ -132,6 +146,9 @@ export const getVenuesList = async (req: Request, res: Response) => {
         city: true,
         country: true,
         images: true,
+        venueVerified: true,
+        venueRecommended: true,
+        venueSponsored: true,
         host: {
           select: {
             id: true,
@@ -140,6 +157,8 @@ export const getVenuesList = async (req: Request, res: Response) => {
             image: true,
             hostingSince: true,
             hostVerified: true,
+            hostRecommended: true,
+            hostSponsored: true,
           },
         },
         _count: { select: { spaces: { where: { isActive: true } } } },
@@ -166,6 +185,9 @@ export const getVenuesList = async (req: Request, res: Response) => {
       city: v.city,
       country: v.country,
       images: Array.isArray(v.images) ? v.images : [],
+      venueVerified: v.venueVerified,
+      venueRecommended: v.venueRecommended,
+      venueSponsored: v.venueSponsored,
       spaceCount: v._count.spaces,
       host: {
         id: v.host.id,
@@ -174,6 +196,8 @@ export const getVenuesList = async (req: Request, res: Response) => {
         image: v.host.image,
         hostingSince: v.host.hostingSince ? v.host.hostingSince.toISOString() : null,
         hostVerified: v.host.hostVerified,
+        hostRecommended: v.host.hostRecommended,
+        hostSponsored: v.host.hostSponsored,
       },
     })),
     pagination: {
@@ -206,6 +230,8 @@ export const getVenue = async (req: Request, res: Response) => {
           bio: true,
           hostingSince: true,
           hostVerified: true,
+          hostRecommended: true,
+          hostSponsored: true,
         },
       },
       spaces: {
@@ -358,7 +384,32 @@ export const updateVenue = async (req: Request, res: Response) => {
     currency,
     isActive,
     workingHours,
+    venueVerified,
+    venueRecommended,
+    venueSponsored,
   } = req.body;
+
+  const hasVenueListingBadgePatch =
+    venueVerified !== undefined ||
+    venueRecommended !== undefined ||
+    venueSponsored !== undefined;
+  const canUpdateVenueListingBadges = userRole === "ADMIN";
+  if (hasVenueListingBadgePatch && !canUpdateVenueListingBadges) {
+    return res.status(403).json({
+      message: "Only admins can update venue listing badges",
+    });
+  }
+  if (
+    hasVenueListingBadgePatch &&
+    ((venueVerified !== undefined && typeof venueVerified !== "boolean") ||
+      (venueRecommended !== undefined && typeof venueRecommended !== "boolean") ||
+      (venueSponsored !== undefined && typeof venueSponsored !== "boolean"))
+  ) {
+    return res.status(400).json({
+      message: "venueVerified, venueRecommended, and venueSponsored must be booleans",
+    });
+  }
+
   const venueData = {
     ...(name !== undefined && { name }),
     ...(shortDescription !== undefined && { shortDescription }),
@@ -378,6 +429,9 @@ export const updateVenue = async (req: Request, res: Response) => {
     ...(currency !== undefined && { currency }),
     ...(isActive !== undefined && { isActive }),
     ...(workingHours !== undefined && { workingHours }),
+    ...(canUpdateVenueListingBadges && venueVerified !== undefined && { venueVerified }),
+    ...(canUpdateVenueListingBadges && venueRecommended !== undefined && { venueRecommended }),
+    ...(canUpdateVenueListingBadges && venueSponsored !== undefined && { venueSponsored }),
   };
 
   // Location lives on the Venue model alone after DB-010 — `Space` no longer

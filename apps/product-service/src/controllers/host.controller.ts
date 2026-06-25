@@ -6,7 +6,12 @@ type HostOrderBy = Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithR
 type HostSortKey = "featured" | "mostVenues" | "newest";
 
 const HOST_SORT_ORDER_BY: Record<HostSortKey, HostOrderBy> = {
-  featured: [{ hostVerified: "desc" }, { hostingSince: "asc" }],
+  featured: [
+    { hostSponsored: "desc" },
+    { hostRecommended: "desc" },
+    { hostVerified: "desc" },
+    { hostingSince: "asc" },
+  ],
   mostVenues: { venues: { _count: "desc" } },
   newest: { hostingSince: "desc" },
 };
@@ -38,6 +43,8 @@ interface HostRow {
   bio: string | null;
   hostingSince: Date | null;
   hostVerified: boolean;
+  hostRecommended: boolean;
+  hostSponsored: boolean;
   venues: HostVenueRow[];
 }
 
@@ -82,6 +89,8 @@ const toHostSummary = (host: HostRow) => {
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
     hostVerified: host.hostVerified,
+    hostRecommended: host.hostRecommended,
+    hostSponsored: host.hostSponsored,
     venueCount,
     spaceCount,
     cities,
@@ -131,6 +140,8 @@ export const getHosts = async (req: Request, res: Response) => {
         bio: true,
         hostingSince: true,
         hostVerified: true,
+        hostRecommended: true,
+        hostSponsored: true,
         venues: {
           where: { isActive: true, ...(city ? { city } : {}) },
           orderBy: { createdAt: "asc" },
@@ -181,6 +192,8 @@ export const getHost = async (req: Request, res: Response) => {
       bio: true,
       hostingSince: true,
       hostVerified: true,
+      hostRecommended: true,
+      hostSponsored: true,
       venues: {
         where: { isActive: true },
         orderBy: { createdAt: "desc" },
@@ -192,6 +205,9 @@ export const getHost = async (req: Request, res: Response) => {
           country: true,
           images: true,
           isActive: true,
+          venueVerified: true,
+          venueRecommended: true,
+          venueSponsored: true,
           spaces: {
             where: { isActive: true },
             select: {
@@ -238,9 +254,61 @@ export const getHost = async (req: Request, res: Response) => {
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
     hostVerified: host.hostVerified,
+    hostRecommended: host.hostRecommended,
+    hostSponsored: host.hostSponsored,
     venueCount,
     spaceCount,
     cities,
     venues: host.venues,
   });
+};
+
+export const updateHostListingBadges = async (req: Request, res: Response) => {
+  const hostId = req.params.id;
+  if (!hostId) return res.status(400).json({ message: "Invalid host id" });
+
+  const { hostVerified, hostRecommended, hostSponsored } = req.body ?? {};
+  if (
+    typeof hostVerified !== "boolean" ||
+    typeof hostRecommended !== "boolean" ||
+    typeof hostSponsored !== "boolean"
+  ) {
+    return res.status(400).json({
+      message: "hostVerified, hostRecommended, and hostSponsored must be booleans",
+    });
+  }
+
+  const existing = await prisma.user.findFirst({
+    where: { id: hostId, deletedAt: null },
+    select: { id: true, role: true },
+  });
+  if (!existing) {
+    return res.status(404).json({ message: "Host not found" });
+  }
+  if (existing.role !== "HOST" && existing.role !== "ADMIN") {
+    return res.status(400).json({
+      message: "Listing badges only apply to HOST or ADMIN accounts",
+    });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: hostId },
+    data: {
+      hostVerified,
+      hostRecommended,
+      hostSponsored,
+    },
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      name: true,
+      role: true,
+      hostVerified: true,
+      hostRecommended: true,
+      hostSponsored: true,
+    },
+  });
+
+  return res.status(200).json(user);
 };

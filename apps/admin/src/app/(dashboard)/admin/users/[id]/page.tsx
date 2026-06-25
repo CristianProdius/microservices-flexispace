@@ -17,7 +17,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Progress } from "@/components/ui/progress";
-import { BadgeCheck, Candy, Citrus, Shield } from "lucide-react";
+import { BadgeCheck, Megaphone, Shield, Star } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/EditUser";
@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
 import { User } from "@repo/types";
 import CommissionRateCard from "./CommissionRateCard";
+import HostListingBadgesCard from "./HostListingBadgesCard";
 
 const SingleUserPage = () => {
   const router = useRouter();
@@ -85,6 +86,30 @@ const SingleUserPage = () => {
     return <div className="">User not found!</div>;
   }
 
+  const listingBadges = [
+    {
+      visible: user.hostVerified,
+      icon: BadgeCheck,
+      title: "Verified host",
+      description: "This host has been verified by the platform.",
+      className: "bg-blue-500/30 border-blue-500/50 text-blue-700",
+    },
+    {
+      visible: user.hostRecommended,
+      icon: Star,
+      title: "Recommended host",
+      description: "This host is recommended and appears above regular verified hosts.",
+      className: "bg-amber-500/30 border-amber-500/50 text-amber-700",
+    },
+    {
+      visible: user.hostSponsored,
+      icon: Megaphone,
+      title: "Sponsored host",
+      description: "This host has the highest public listing priority.",
+      className: "bg-emerald-500/30 border-emerald-500/50 text-emerald-700",
+    },
+  ];
+
   return (
     <div className="">
       <Breadcrumb>
@@ -112,20 +137,6 @@ const SingleUserPage = () => {
           <div className="bg-primary-foreground p-4 rounded-lg">
             <h1 className="text-xl font-semibold">User Badges</h1>
             <div className="flex gap-4 mt-4">
-              <HoverCard>
-                <HoverCardTrigger>
-                  <BadgeCheck
-                    size={36}
-                    className="rounded-full bg-blue-500/30 border-1 border-blue-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Verified User</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been verified by the admin.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
               {user.role === "ADMIN" && (
                 <HoverCard>
                   <HoverCardTrigger>
@@ -143,34 +154,29 @@ const SingleUserPage = () => {
                   </HoverCardContent>
                 </HoverCard>
               )}
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Candy
-                    size={36}
-                    className="rounded-full bg-yellow-500/30 border-1 border-yellow-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Awarded</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been awarded for their contributions.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Citrus
-                    size={36}
-                    className="rounded-full bg-orange-500/30 border-1 border-orange-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Popular</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been popular in the community.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
+              {listingBadges.map(({ visible, icon: Icon, title, description, className }) =>
+                visible ? (
+                  <HoverCard key={title}>
+                    <HoverCardTrigger>
+                      <Icon
+                        size={36}
+                        className={`rounded-full border p-2 ${className}`}
+                      />
+                    </HoverCardTrigger>
+                    <HoverCardContent>
+                      <h1 className="font-bold mb-2">{title}</h1>
+                      <p className="text-sm text-muted-foreground">
+                        {description}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                ) : null
+              )}
+              {user.role !== "ADMIN" && !listingBadges.some((badge) => badge.visible) && (
+                <p className="text-sm text-muted-foreground">
+                  No listing badges assigned.
+                </p>
+              )}
             </div>
           </div>
           {/* USER CARD CONTAINER */}
@@ -277,7 +283,10 @@ const SingleUserPage = () => {
           </div>
           {/* COMMISSION RATE (HOST/ADMIN only) */}
           {(user.role === "HOST" || user.role === "ADMIN") && (
-            <CommissionRateCard user={user} onUpdated={fetchUser} />
+            <>
+              <HostListingBadgesCard user={user} onUpdated={fetchUser} />
+              <CommissionRateCard user={user} onUpdated={fetchUser} />
+            </>
           )}
         </div>
       </div>

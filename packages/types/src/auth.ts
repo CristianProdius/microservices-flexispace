@@ -13,6 +13,8 @@ export interface User {
   bio: string | null;
   emailVerified: boolean;
   hostVerified: boolean;
+  hostRecommended: boolean;
+  hostSponsored: boolean;
   hostingSince: string | null;
   // Per-host platform commission as a fraction (0.1 = 10%). Null means use the
   // platform-wide DEFAULT_COMMISSION_RATE env var. Only meaningful for HOST or
