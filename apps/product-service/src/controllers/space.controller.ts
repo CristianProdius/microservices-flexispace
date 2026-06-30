@@ -57,6 +57,10 @@ const venueInclude = {
   },
 };
 
+// Shared by the deleteSpace booking guard and its P2003 race backstop.
+const SPACE_HAS_BOOKINGS_MESSAGE =
+  "This space has existing bookings and can't be deleted. Deactivate it instead to hide it from listings while preserving booking history.";
+
 const SORT_FIELDS = new Set([
   "createdAt",
   "pricePerHour",
@@ -299,9 +303,12 @@ export const getSpaces = async (req: Request, res: Response) => {
   // the synonym here so it routes into the same raw SQL branch as
   // sort=rating. Don't add it to SORT_FIELDS — Prisma's orderBy can't handle
   // a computed avg(reviews.rating). sortOrder is still honored below.
+  // An explicit sort=featured wins over a co-supplied sortBy=averageRating: the
+  // featured array orderBy below must not be silently swapped for the raw-SQL
+  // rating path, which would drop the badge tiers without any error.
   if (
-    resolvedSortBy === "averageRating" ||
-    resolvedSortBy === "rating"
+    !sortByFeatured &&
+    (resolvedSortBy === "averageRating" || resolvedSortBy === "rating")
   ) {
     sortByRating = true;
     resolvedSortBy = "createdAt"; // fallback for SORT_FIELDS check; the
@@ -486,6 +493,7 @@ export const getSpaces = async (req: Request, res: Response) => {
         { host: { hostRecommended: "desc" } },
         { venue: { venueVerified: "desc" } },
         { host: { hostVerified: "desc" } },
+        { host: { hostingSince: "asc" } },
         { createdAt: "desc" },
       ]
     : { [resolvedSortBy]: resolvedSortOrder };
@@ -1093,15 +1101,26 @@ export const deleteSpace = async (req: Request, res: Response) => {
   // reason instead of letting Prisma throw an opaque FK error.
   const bookingCount = await prisma.booking.count({ where: { spaceId } });
   if (bookingCount > 0) {
-    return res.status(409).json({
-      message:
-        "This space has existing bookings and can't be deleted. Deactivate it instead to hide it from listings while preserving booking history.",
-      code: "SPACE_HAS_BOOKINGS",
-      bookingCount,
-    });
+    return res
+      .status(409)
+      .json({ message: SPACE_HAS_BOOKINGS_MESSAGE, code: "SPACE_HAS_BOOKINGS", bookingCount });
   }
 
-  await prisma.space.delete({ where: { id: spaceId } });
+  try {
+    await prisma.space.delete({ where: { id: spaceId } });
+  } catch (err) {
+    // TOCTOU backstop: the count above and this delete are not atomic, so a
+    // booking can land in the gap (order-service writes to the same DB). The
+    // Booking->Space FK is onDelete: Restrict, so that race surfaces as a
+    // Prisma P2003. Map it to the same friendly 409 the count guard returns
+    // instead of leaking the generic "invalid foreign key" error to the host.
+    if ((err as { code?: string })?.code === "P2003") {
+      return res
+        .status(409)
+        .json({ message: SPACE_HAS_BOOKINGS_MESSAGE, code: "SPACE_HAS_BOOKINGS" });
+    }
+    throw err;
+  }
 
   // TODO(KAFKA-001 follow-up): transactional outbox.
   try {
