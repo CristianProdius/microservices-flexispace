@@ -158,6 +158,14 @@ const HostSpacesPage = () => {
 
       if (res.ok) {
         setSpaces((prev) => prev.filter((space) => space.id !== spaceId));
+      } else if (res.status === 409) {
+        // Space has booking history and can't be hard-deleted — surface the
+        // server's reason so the host knows to deactivate instead.
+        const body = await res.json().catch(() => null);
+        setError(
+          body?.message ??
+            "This space has existing bookings and can't be deleted. Deactivate it instead.",
+        );
       } else {
         throw new Error("Failed to delete space");
       }

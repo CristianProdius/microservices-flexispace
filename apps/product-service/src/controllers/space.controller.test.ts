@@ -28,6 +28,7 @@ vi.mock("@repo/db", async () => {
       count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
     },
     review: {
       groupBy: vi.fn(),
@@ -46,7 +47,7 @@ vi.mock("@repo/db", async () => {
     },
     pricingTier: { createMany: vi.fn(), deleteMany: vi.fn() },
     venue: { findUnique: vi.fn() },
-    booking: { findMany: vi.fn() },
+    booking: { findMany: vi.fn(), count: vi.fn() },
     spaceAmenity: { deleteMany: vi.fn(), createMany: vi.fn() },
     spaceCategory: { findUnique: vi.fn() },
     $transaction: vi.fn(async (input: unknown) => {
@@ -71,6 +72,7 @@ const {
   createSpace,
   updateAvailability,
   validatePricingTiers,
+  deleteSpace,
 } = await import("./space.controller.js");
 
 type AnyMock = Mock;
@@ -190,6 +192,117 @@ describe("getSpaces - PRODSVC-016 amenityIds filter", () => {
     expect(call?.where?.amenities).toEqual({
       some: { amenityId: { in: [1, 3] } },
     });
+  });
+});
+
+describe("getSpaces - PRODSVC-021 sort=featured", () => {
+  it("orders by venue/host listing badges then newest", async () => {
+    const res = buildRes();
+    await getSpaces(buildReq({ query: { sort: "featured" } }), res as never);
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.orderBy).toEqual([
+      { venue: { venueSponsored: "desc" } },
+      { host: { hostSponsored: "desc" } },
+      { venue: { venueRecommended: "desc" } },
+      { host: { hostRecommended: "desc" } },
+      { venue: { venueVerified: "desc" } },
+      { host: { hostVerified: "desc" } },
+      { host: { hostingSince: "asc" } },
+      { createdAt: "desc" },
+    ]);
+  });
+
+  it("featured takes precedence over a co-supplied sortBy=averageRating", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { sort: "featured", sortBy: "averageRating" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    // Must use the badge-tiered array orderBy, NOT the raw-SQL rating path.
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(Array.isArray(call?.orderBy)).toBe(true);
+  });
+});
+
+describe("deleteSpace - PRODSVC-022 hard delete", () => {
+  it("hard-deletes a space with no bookings (not a soft delete)", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 7,
+      hostId: "user-1",
+    });
+    (prisma.booking.count as AnyMock).mockResolvedValueOnce(0);
+
+    await deleteSpace(
+      buildReq({ params: { id: "7" } }) as never,
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(prisma.space.delete).toHaveBeenCalledWith({ where: { id: 7 } });
+    // Must NOT fall back to the old isActive:false soft delete.
+    expect(prisma.space.update).not.toHaveBeenCalled();
+    expect(producer.send).toHaveBeenCalledWith("space.deleted", {
+      value: { id: 7 },
+    });
+  });
+
+  it("returns 409 and does not delete when the space has bookings", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 8,
+      hostId: "user-1",
+    });
+    (prisma.booking.count as AnyMock).mockResolvedValueOnce(3);
+
+    await deleteSpace(
+      buildReq({ params: { id: "8" } }) as never,
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(409);
+    expect((res.body as { code?: string })?.code).toBe("SPACE_HAS_BOOKINGS");
+    expect(prisma.space.delete).not.toHaveBeenCalled();
+  });
+
+  it("maps a P2003 FK race on delete to the same 409 (TOCTOU backstop)", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 9,
+      hostId: "user-1",
+    });
+    // Count says 0, but a booking lands before delete -> FK Restrict throws.
+    (prisma.booking.count as AnyMock).mockResolvedValueOnce(0);
+    (prisma.space.delete as AnyMock).mockRejectedValueOnce(
+      Object.assign(new Error("FK violation"), { code: "P2003" }),
+    );
+
+    await deleteSpace(
+      buildReq({ params: { id: "9" } }) as never,
+      res as never,
+    );
+
+    expect(res.statusCode).toBe(409);
+    expect((res.body as { code?: string })?.code).toBe("SPACE_HAS_BOOKINGS");
+  });
+
+  it("rethrows non-P2003 delete errors to the global handler", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 10,
+      hostId: "user-1",
+    });
+    (prisma.booking.count as AnyMock).mockResolvedValueOnce(0);
+    (prisma.space.delete as AnyMock).mockRejectedValueOnce(
+      Object.assign(new Error("db down"), { code: "P1001" }),
+    );
+
+    await expect(
+      deleteSpace(buildReq({ params: { id: "10" } }) as never, res as never),
+    ).rejects.toThrow("db down");
   });
 });
 

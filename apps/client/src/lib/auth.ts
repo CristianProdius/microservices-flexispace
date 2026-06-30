@@ -4,7 +4,13 @@ const AUTH_SERVICE_UNREACHABLE_MESSAGE =
 
 async function fetchAuth(path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(`${AUTH_SERVICE_URL}${path}`, init);
+    // `credentials: "include"` is what lets the browser STORE the auth-service's
+    // HttpOnly session cookies (spacefly_access / spacefly_refresh) on a
+    // cross-origin login. Those cookies are what the admin app's edge middleware
+    // (apps/admin/src/middleware.ts) reads to gate /host/* — without them,
+    // clicking "Host Dashboard" bounces back to /login even when the user just
+    // logged in on the public client. Mirrors apps/admin/src/lib/auth.ts.
+    return await fetch(`${AUTH_SERVICE_URL}${path}`, { ...init, credentials: "include" });
   } catch (error) {
     if (error instanceof TypeError) {
       throw new Error(AUTH_SERVICE_UNREACHABLE_MESSAGE);

@@ -49,8 +49,17 @@ const venueInclude = {
     currency: true,
     hostId: true,
     isActive: true,
+    // Listing badges — surfaced so the public cards can show a "Recommended"
+    // badge and so the `featured` sort can tier by them (see getSpaces orderBy).
+    venueRecommended: true,
+    venueSponsored: true,
+    venueVerified: true,
   },
 };
+
+// Shared by the deleteSpace booking guard and its P2003 race backstop.
+const SPACE_HAS_BOOKINGS_MESSAGE =
+  "This space has existing bookings and can't be deleted. Deactivate it instead to hide it from listings while preserving booking history.";
 
 const SORT_FIELDS = new Set([
   "createdAt",
@@ -256,12 +265,20 @@ export const getSpaces = async (req: Request, res: Response) => {
   // results so we can swap to a raw SQL pre-query instead of silently
   // falling back to createdAt.
   let sortByRating = false;
+  // PRODSVC-021: `featured` orders by listing badges (sponsored → recommended →
+  // verified) at the venue then host level, falling back to newest. It needs a
+  // multi-key relation orderBy that the scalar SORT_FIELDS path can't express,
+  // so we flag it here and build the array form below.
+  let sortByFeatured = false;
 
   if (sortParam) {
     switch (sortParam) {
       case "newest":
         resolvedSortBy = "createdAt";
         resolvedSortOrder = "desc";
+        break;
+      case "featured":
+        sortByFeatured = true;
         break;
       case "price_asc":
         resolvedSortBy = "pricePerHour";
@@ -286,9 +303,12 @@ export const getSpaces = async (req: Request, res: Response) => {
   // the synonym here so it routes into the same raw SQL branch as
   // sort=rating. Don't add it to SORT_FIELDS — Prisma's orderBy can't handle
   // a computed avg(reviews.rating). sortOrder is still honored below.
+  // An explicit sort=featured wins over a co-supplied sortBy=averageRating: the
+  // featured array orderBy below must not be silently swapped for the raw-SQL
+  // rating path, which would drop the badge tiers without any error.
   if (
-    resolvedSortBy === "averageRating" ||
-    resolvedSortBy === "rating"
+    !sortByFeatured &&
+    (resolvedSortBy === "averageRating" || resolvedSortBy === "rating")
   ) {
     sortByRating = true;
     resolvedSortBy = "createdAt"; // fallback for SORT_FIELDS check; the
@@ -460,9 +480,23 @@ export const getSpaces = async (req: Request, res: Response) => {
     }),
   };
 
-  const orderBy: Prisma.SpaceOrderByWithRelationInput = {
-    [resolvedSortBy]: resolvedSortOrder,
-  };
+  // Featured tiers by venue badges first, then the host's account-level badges,
+  // so an admin can promote one venue without lifting every venue from that
+  // host. Mirrors the ordering used by getVenuesList (venue.controller.ts).
+  const orderBy:
+    | Prisma.SpaceOrderByWithRelationInput
+    | Prisma.SpaceOrderByWithRelationInput[] = sortByFeatured
+    ? [
+        { venue: { venueSponsored: "desc" } },
+        { host: { hostSponsored: "desc" } },
+        { venue: { venueRecommended: "desc" } },
+        { host: { hostRecommended: "desc" } },
+        { venue: { venueVerified: "desc" } },
+        { host: { hostVerified: "desc" } },
+        { host: { hostingSince: "asc" } },
+        { createdAt: "desc" },
+      ]
+    : { [resolvedSortBy]: resolvedSortOrder };
 
   const skip = (pageNum - 1) * limitNum;
 
@@ -1054,11 +1088,39 @@ export const deleteSpace = async (req: Request, res: Response) => {
       .json({ message: "Not authorized to delete this space" });
   }
 
-  // Soft delete - just mark as inactive
-  await prisma.space.update({
-    where: { id: spaceId },
-    data: { isActive: false },
-  });
+  // PRODSVC-022: "Delete" must actually remove the space, not just flip
+  // isActive=false. The old soft delete left the row in place, and getMySpaces
+  // (below) returns every hostId row regardless of isActive, so a "deleted"
+  // space kept reappearing as an inactive listing and could never be removed.
+  //
+  // Hard delete is safe for spaces with no booking history: SpaceAmenity,
+  // PricingTier, Availability, BlockedDate and Review all cascade
+  // (schema.prisma onDelete: Cascade). The Booking relation does NOT cascade
+  // (onDelete defaults to Restrict) so historical bookings are preserved — a
+  // space that has bookings can't be hard-deleted; we return 409 with a clear
+  // reason instead of letting Prisma throw an opaque FK error.
+  const bookingCount = await prisma.booking.count({ where: { spaceId } });
+  if (bookingCount > 0) {
+    return res
+      .status(409)
+      .json({ message: SPACE_HAS_BOOKINGS_MESSAGE, code: "SPACE_HAS_BOOKINGS", bookingCount });
+  }
+
+  try {
+    await prisma.space.delete({ where: { id: spaceId } });
+  } catch (err) {
+    // TOCTOU backstop: the count above and this delete are not atomic, so a
+    // booking can land in the gap (order-service writes to the same DB). The
+    // Booking->Space FK is onDelete: Restrict, so that race surfaces as a
+    // Prisma P2003. Map it to the same friendly 409 the count guard returns
+    // instead of leaking the generic "invalid foreign key" error to the host.
+    if ((err as { code?: string })?.code === "P2003") {
+      return res
+        .status(409)
+        .json({ message: SPACE_HAS_BOOKINGS_MESSAGE, code: "SPACE_HAS_BOOKINGS" });
+    }
+    throw err;
+  }
 
   // TODO(KAFKA-001 follow-up): transactional outbox.
   try {
@@ -1067,7 +1129,7 @@ export const deleteSpace = async (req: Request, res: Response) => {
     console.error(
       "Failed to publish space.deleted event for space",
       spaceId,
-      "- soft-deleted in DB but search/cache will not reflect deletion until reconciled:",
+      "- hard-deleted in DB but search/cache will not reflect deletion until reconciled:",
       err instanceof Error ? err.message : err
     );
   }
