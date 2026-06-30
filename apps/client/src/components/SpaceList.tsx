@@ -175,7 +175,10 @@ const SpaceList = async ({
     maxPrice,
     instantBook,
     type,
-    sort: sort || "newest",
+    // Homepage leads with recommended/sponsored inventory (the "featured" sort)
+    // so admin "Recommended" toggles actually surface spaces at the front.
+    // Browse keeps "newest" as its default (it has its own sort controls).
+    sort: sort || (variant === "homepage" ? "featured" : "newest"),
     limit: variant === "homepage" ? "8" : "20",
     lang: locale,
   }, taxonomy);
