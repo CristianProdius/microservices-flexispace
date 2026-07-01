@@ -134,6 +134,7 @@ exports.Prisma.UserScalarFieldEnum = {
   mustChangePassword: 'mustChangePassword',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  tokensValidAfter: 'tokensValidAfter',
   deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
   hostRecommended: 'hostRecommended',
@@ -224,6 +225,7 @@ exports.Prisma.VenueScalarFieldEnum = {
   venueRecommended: 'venueRecommended',
   venueSponsored: 'venueSponsored',
   hostId: 'hostId',
+  timezone: 'timezone',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -343,6 +345,7 @@ exports.Prisma.BookingScalarFieldEnum = {
   status: 'status',
   guestMessage: 'guestMessage',
   hostMessage: 'hostMessage',
+  holdExpiresAt: 'holdExpiresAt',
   cancelledByRole: 'cancelledByRole',
   cancellationReason: 'cancellationReason',
   createdAt: 'createdAt',

@@ -90,6 +90,11 @@ model User {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  // AUDIT-B8: per-user access-token kill-switch. Any access token issued at or
+  // before this instant is rejected by auth middleware (used on password change,
+  // forced logout-everywhere, role revocation) without needing per-jti rows.
+  tokensValidAfter DateTime?
+
   // Soft-delete / GDPR erasure (see DB-004).
   // We never hard-delete users because cascade rules on Booking/Payout would wipe
   // financial history that the platform must retain for tax/accounting (typically
@@ -262,6 +267,11 @@ model Venue {
   // Owner
   hostId String
   host   User   @relation(fields: [hostId], references: [id])
+
+  // AUDIT-B8: IANA timezone used to interpret local booking times (startTime/
+  // endTime, working hours) for spaces under this venue. Defaults to the
+  // platform's home market; hosts abroad override per venue.
+  timezone String @default("Europe/Chisinau")
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -463,6 +473,11 @@ model Booking {
   status       BookingStatus @default(PENDING)
   guestMessage String?
   hostMessage  String?
+
+  // AUDIT-B8: when a PENDING request-to-book hold auto-expires. Null for
+  // bookings without a hold (e.g. instant-book). A reaper transitions PENDING
+  // rows past this instant to EXPIRED so held inventory is released.
+  holdExpiresAt DateTime?
 
   // Cancellation
   cancelledByRole    BookingActor?

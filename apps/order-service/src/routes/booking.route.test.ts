@@ -655,4 +655,145 @@ describe("booking routes", () => {
     });
     await app.close();
   });
+
+  // AUDIT-B8 (M4): an expired PENDING hold no longer squats the slot, so a new
+  // overlapping booking succeeds instead of 409ing.
+  it("does not let an EXPIRED PENDING hold block a new overlapping booking", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(baseSpace);
+    // Conflicting PENDING request-to-book whose 48h hold elapsed an hour ago.
+    mocks.bookingFindMany.mockResolvedValue([
+      {
+        endDate: new Date(monday),
+        endTime: "11:00",
+        holdExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        isHourly: true,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      },
+    ]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalled();
+    // The freshly created PENDING hold carries a future holdExpiresAt.
+    const createArg = mocks.bookingCreate.mock.calls[0]![0] as {
+      data: { holdExpiresAt: Date | null };
+    };
+    expect(createArg.data.holdExpiresAt).toBeInstanceOf(Date);
+    expect((createArg.data.holdExpiresAt as Date).getTime()).toBeGreaterThan(
+      Date.now(),
+    );
+    await app.close();
+  });
+
+  // AUDIT-B8 (M4): a live (non-expired) PENDING hold still occupies the slot.
+  it("still blocks a new overlapping booking while a PENDING hold is live", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(baseSpace);
+    mocks.bookingFindMany.mockResolvedValue([
+      {
+        endDate: new Date(monday),
+        endTime: "11:00",
+        holdExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        isHourly: true,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      },
+    ]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // AUDIT-B8 (M5): the refund cutoff must interpret startTime in the venue's
+  // timezone. A check-in ~23h out in Europe/Chisinau (UTC+3 in July) is inside
+  // the FLEXIBLE 24h bracket (0% refund); the old setUTCHours bug read it as
+  // ~26h (>24h → 100%). Only fake Date so real timers keep working.
+  it("uses the venue timezone for the refund hoursUntilCheckin bracket", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-07-14T10:00:00.000Z"));
+    try {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          currency: "USD",
+          endDate: new Date("2026-07-15T00:00:00.000Z"),
+          endTime: "13:00",
+          guest: { email: "guest@example.com", name: "Guest" },
+          guestId: "guest-1",
+          host: { email: "host@example.com", name: "Host" },
+          hostId: "host-1",
+          id: "b-tz",
+          isHourly: true,
+          // Local check-in 12:00 Chisinau (UTC+3) == 09:00Z on the 15th, i.e.
+          // exactly 23h after the frozen now (10:00Z on the 14th).
+          space: {
+            cancellationPolicy: "FLEXIBLE",
+            name: "Focused room",
+            venue: { timezone: "Europe/Chisinau" },
+          },
+          spaceId: 42,
+          startDate: new Date("2026-07-15T00:00:00.000Z"),
+          startTime: "12:00",
+          status: "CONFIRMED",
+          totalAmount: 100,
+        })
+        .mockResolvedValueOnce({ id: "b-tz", status: "CANCELLED" });
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.producerSend.mockResolvedValue(undefined);
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: { reason: "Plans changed" },
+        url: "/bookings/b-tz/cancel",
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json() as {
+        refund: { hoursUntilCheckin: number; rate: number };
+      };
+      // Correct tz math: 23h out (not the buggy ~26h).
+      expect(body.refund.hoursUntilCheckin).toBe(23);
+      // 23h < 24h => FLEXIBLE refunds 0% (the buggy >24h read would give 100%).
+      expect(body.refund.rate).toBe(0);
+      await app.close();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

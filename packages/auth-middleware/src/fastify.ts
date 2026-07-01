@@ -84,6 +84,18 @@ async function callerStillActive(
     await reply.status(401).send({ message: "Account no longer active" });
     return false;
   }
+  // AUDIT-B8/M1: per-user access-token kill switch. Reject any access token
+  // minted before the user's tokensValidAfter watermark (bumped on password
+  // reset/change, role downgrade, host de-verification) — same 401 shape as
+  // the per-jti revocation rejection. `iat` is in seconds; compare in ms.
+  if (
+    active.tokensValidAfter &&
+    typeof payload.iat === "number" &&
+    payload.iat * 1000 < active.tokensValidAfter.getTime()
+  ) {
+    await reply.status(401).send({ message: "Token revoked" });
+    return false;
+  }
   return true;
 }
 

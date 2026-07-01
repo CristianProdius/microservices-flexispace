@@ -20,6 +20,42 @@ const CONFLICTING_BOOKING_STATUSES: BookingStatus[] = [
   "CONFIRMED",
 ];
 
+// AUDIT-B8 (M4): request-to-book (instantBook=false) bookings are created
+// PENDING and would otherwise squat the slot forever if the host never acts.
+// We stamp Booking.holdExpiresAt = now + HOLD_WINDOW_MS at create time and the
+// conflict scan treats a PENDING row as free once its hold has elapsed, so a
+// stale hold self-releases without a cron. NOTE(follow-up): add a background
+// sweep to flip elapsed PENDING holds to EXPIRED so they also drop out of
+// listings/analytics, not just the conflict scan.
+const HOLD_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours
+
+// AUDIT-B8 (M4): Prisma `where` fragment for "rows that currently occupy a
+// slot". CONFIRMED always conflicts; a PENDING row only conflicts while its
+// hold is live (holdExpiresAt null == legacy row with no hold, or in the
+// future). Used by the create-time conflict scan so expired holds no longer
+// block new bookings. `now` is captured once by the caller for consistency
+// across a retried serializable transaction.
+const conflictingBookingStatusWhere = (now: Date): Prisma.BookingWhereInput => ({
+  OR: [
+    { status: "CONFIRMED" },
+    {
+      status: "PENDING",
+      OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: now } }],
+    },
+  ],
+});
+
+// AUDIT-B8 (M4): in-memory mirror of the hold-expiry rule for the candidate
+// scan. Defense-in-depth alongside `conflictingBookingStatusWhere` (and keeps
+// the create path correct even if the DB returns a stale hold).
+const isHoldExpired = (
+  candidate: { status: BookingStatus; holdExpiresAt?: Date | string | null },
+  now: Date
+): boolean =>
+  candidate.status === "PENDING" &&
+  candidate.holdExpiresAt != null &&
+  new Date(candidate.holdExpiresAt).getTime() <= now.getTime();
+
 // BOOKSVC-011: Postgres Serializable transactions abort with SQLSTATE 40001
 // (Prisma code P2034) under write contention. Real, non-conflicting bookings
 // would otherwise 500. Retry a small number of times with exponential backoff
@@ -149,6 +185,74 @@ export const getTzPeriodBounds = (
   const monthStart = new Date(todayStart.getTime() - (day - 1) * 86_400_000);
 
   return { todayStart, weekStart, monthStart };
+};
+
+// AUDIT-B8 (M5): platform home-market timezone, used as a fallback when a
+// venue row somehow lacks one. Mirrors Venue.timezone's schema default.
+const DEFAULT_VENUE_TIMEZONE = "Europe/Chisinau";
+
+// AUDIT-B8 (M5): offset (ms) that the given IANA zone's local wall clock is
+// AHEAD of UTC at `utcInstant` (e.g. +3h for Europe/Chisinau in summer).
+// Computed by formatting the instant in the zone and diffing the read-back
+// wall-clock components against the instant. Falls back to 0 (UTC) on an
+// invalid zone rather than throwing.
+const zoneOffsetMs = (utcInstant: Date, tz: string): number => {
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).formatToParts(utcInstant);
+  } catch {
+    return 0;
+  }
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? "0");
+  let hour = pick("hour");
+  if (hour === 24) hour = 0;
+  const asLocalMs = Date.UTC(
+    pick("year"),
+    pick("month") - 1,
+    pick("day"),
+    hour,
+    pick("minute"),
+    pick("second")
+  );
+  return asLocalMs - utcInstant.getTime();
+};
+
+// AUDIT-B8 (M5): convert a LOCAL wall-clock time (calendar Y/M/D + H:M in the
+// venue's IANA zone) to the real UTC instant. The previous cancel-refund code
+// treated the local "HH:MM" as if it were UTC (setUTCHours), so for
+// Europe/Chisinau (UTC+2/+3) hoursUntilCheckin was off by the zone offset and
+// could cross a refund bracket. We build the naive instant from the local
+// components, then subtract the zone's offset at (approximately) that instant.
+// Single-pass offset resolution; see risks re: the ~1h/yr DST-transition edge.
+const localWallClockToUtc = (
+  date: Date,
+  startTime: string | null,
+  tz: string
+): Date => {
+  const [h, m] = startTime
+    ? startTime.split(":").map(Number)
+    : [0, 0];
+  const naiveUtcMs = Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    h ?? 0,
+    m ?? 0,
+    0,
+    0
+  );
+  const offset = zoneOffsetMs(new Date(naiveUtcMs), tz);
+  return new Date(naiveUtcMs - offset);
 };
 
 const BOOKING_STATUSES = new Set<BookingStatus>([
@@ -687,16 +791,17 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         throw err;
       }
 
-      // BOOKSVC-001/002: use the shared CONFLICTING_BOOKING_STATUSES set so
-      // every status that occupies a slot (PENDING/CONFIRMED post-APPROVED-removal)
-      // is treated as a conflict during the serializable transaction.
-      const conflictWhere = {
+      // BOOKSVC-001/002: use the shared conflict-status rule so every status
+      // that occupies a slot is treated as a conflict during the serializable
+      // transaction. AUDIT-B8 (M4): a PENDING row only conflicts while its hold
+      // is live, so an expired request-to-book hold no longer blocks new
+      // bookings. CONFIRMED still always conflicts.
+      const now = new Date();
+      const conflictWhere: Prisma.BookingWhereInput = {
         spaceId,
-        status: {
-          in: CONFLICTING_BOOKING_STATUSES,
-        },
         startDate: { lte: requestedEndDate },
         endDate: { gte: requestedStartDate },
+        ...conflictingBookingStatusWhere(now),
       };
 
       let booking;
@@ -706,6 +811,9 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           prisma.$transaction(async (tx) => {
             const candidateConflicts = await tx.booking.findMany({ where: conflictWhere });
             const conflict = candidateConflicts.find((candidate) =>
+              // AUDIT-B8 (M4): skip PENDING rows whose hold has elapsed — they
+              // no longer occupy the slot even if the DB layer surfaced them.
+              !isHoldExpired(candidate, now) &&
               bookingIntervalsOverlap(
                 {
                   endDate: candidate.endDate,
@@ -736,6 +844,12 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
                 guests: guests || 1,
                 isHourly,
                 status: space.instantBook ? "CONFIRMED" : "PENDING",
+                // AUDIT-B8 (M4): stamp a hold window on request-to-book
+                // (PENDING) rows so an un-actioned hold self-releases; instant
+                // bookings are CONFIRMED and never hold-expire.
+                holdExpiresAt: space.instantBook
+                  ? null
+                  : new Date(now.getTime() + HOLD_WINDOW_MS),
                 subtotal: pricing.subtotal,
                 cleaningFee: pricing.cleaningFee,
                 serviceFee: pricing.serviceFee,
@@ -1250,7 +1364,9 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       const booking = await prisma.booking.findUnique({
         where: { id },
         include: {
-          space: true,
+          // AUDIT-B8 (M5): pull the venue's IANA timezone so the refund cutoff
+          // interprets the booking's local startTime correctly (see below).
+          space: { include: { venue: { select: { timezone: true } } } },
           guest: { select: { email: true, name: true } },
           host: { select: { email: true, name: true } },
         },
@@ -1288,12 +1404,19 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         | "STRICT"
         | "NON_REFUNDABLE";
 
-      let checkinAt = new Date(booking.startDate);
-      if (booking.startTime) {
-        const [h, m] = booking.startTime.split(":").map(Number);
-        checkinAt = new Date(checkinAt);
-        checkinAt.setUTCHours(h ?? 0, m ?? 0, 0, 0);
-      }
+      // AUDIT-B8 (M5): resolve check-in as a REAL UTC instant from the local
+      // wall-clock startDate+startTime in the venue's timezone. The old code
+      // did checkinAt.setUTCHours(h, m), treating a LOCAL "HH:MM" as UTC, so
+      // for Europe/Chisinau (UTC+2/+3) hoursUntilCheckin was off by the zone
+      // offset and could tip a booking across a refund bracket (e.g. a ~23h
+      // check-in mis-read as >24h). Falls back to the platform default zone.
+      const venueTimezone =
+        booking.space.venue?.timezone ?? DEFAULT_VENUE_TIMEZONE;
+      const checkinAt = localWallClockToUtc(
+        booking.startDate,
+        booking.startTime,
+        venueTimezone
+      );
       const hoursUntilCheckin = (checkinAt.getTime() - now.getTime()) / 3_600_000;
 
       let refundRate: number;
