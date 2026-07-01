@@ -25,6 +25,7 @@ vi.mock("@repo/db", async () => {
     space: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -68,6 +69,8 @@ const { prisma } = await import("@repo/db");
 const { producer } = await import("../utils/kafka.js");
 const {
   getSpaces,
+  getSpace,
+  getAvailability,
   checkAvailability,
   createSpace,
   updateSpace,
@@ -362,7 +365,9 @@ describe("checkAvailability - PRODSVC-017 range cap", () => {
 
   it("accepts a window inside the 90 day cap", async () => {
     const res = buildRes();
-    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+    // M11: checkAvailability now resolves the space via findFirst with the
+    // isActive + venue.isActive guard.
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce({
       id: 1,
       availability: [],
       blockedDates: [],
@@ -609,6 +614,8 @@ describe("createSpace - SPACE_WRITE_KEYS whitelist (POST-DB-010)", () => {
     (prisma.venue.findUnique as AnyMock).mockResolvedValue({
       id: 1,
       hostId: "user-1",
+      // M11: createSpace now rejects a soft-deleted (isActive:false) venue.
+      isActive: true,
     });
     (prisma.space.create as AnyMock).mockResolvedValue({
       id: 99,
@@ -698,6 +705,7 @@ describe("createSpace - H2 numeric base-rate validation", () => {
     (prisma.venue.findUnique as AnyMock).mockResolvedValue({
       id: 1,
       hostId: "user-1",
+      isActive: true,
     });
     (prisma.space.create as AnyMock).mockResolvedValue({
       id: 1,
@@ -874,6 +882,7 @@ describe("createSpace - LOW amenityIds validation", () => {
     (prisma.venue.findUnique as AnyMock).mockResolvedValue({
       id: 1,
       hostId: "user-1",
+      isActive: true,
     });
     (prisma.space.create as AnyMock).mockResolvedValue({
       id: 1,
@@ -915,8 +924,9 @@ describe("getSpaces - LOW query-param type guards", () => {
     );
     expect(res.statusCode).toBe(200);
     const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
-    // No venue filter is applied for a non-string city.
-    expect(call?.where?.venue).toBeUndefined();
+    // No city venue filter is applied for a non-string city, but M11 still
+    // requires venue.isActive so soft-deleted venues stay hidden.
+    expect(call?.where?.venue).toEqual({ isActive: true });
   });
 
   it("ignores a categorySlug filter-operator object", async () => {
@@ -953,5 +963,114 @@ describe("getSpaces - LOW query-param type guards", () => {
       contains: "Chișinău",
       mode: "insensitive",
     });
+  });
+});
+
+// M11: public read paths must under no longer under-filter soft-delete state.
+// getSpaces/getSpace/getAvailability/checkAvailability all require the space to
+// be isActive AND to belong to an isActive venue, and createSpace refuses to
+// attach a new space to a soft-deleted venue.
+describe("getSpaces - M11 venue.isActive filter", () => {
+  it("always requires venue.isActive:true in the where clause", async () => {
+    const res = buildRes();
+    await getSpaces(buildReq(), res as never);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.venue).toEqual({ isActive: true });
+  });
+
+  it("merges venue.isActive with a city filter", async () => {
+    const res = buildRes();
+    await getSpaces(buildReq({ query: { city: "Cluj" } }), res as never);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.venue).toEqual({
+      isActive: true,
+      city: { contains: "Cluj", mode: "insensitive" },
+    });
+  });
+
+  it("merges venue.isActive with a bbox filter", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({
+        query: { neLat: "48", neLng: "27", swLat: "46", swLng: "26" },
+      }),
+      res as never,
+    );
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.venue?.isActive).toBe(true);
+    expect(call?.where?.venue?.latitude).toEqual({ gte: 46, lte: 48 });
+  });
+});
+
+describe("getSpace - M11 soft-delete visibility", () => {
+  it("404s (generic) when the space/venue is filtered out by the guard", async () => {
+    const res = buildRes();
+    // An inactive space OR a space whose venue is inactive is excluded by the
+    // where clause, so findFirst returns null for both cases.
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce(null);
+    await getSpace(buildReq({ params: { id: "5" } }), res as never);
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toEqual({ message: "Space not found" });
+  });
+
+  it("applies isActive + venue.isActive + host.deletedAt in the query", async () => {
+    const res = buildRes();
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce(null);
+    await getSpace(buildReq({ params: { id: "5" } }), res as never);
+    const call = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.isActive).toBe(true);
+    expect(call?.where?.venue).toEqual({ isActive: true });
+    expect(call?.where?.host).toEqual({ deletedAt: null });
+  });
+});
+
+describe("getAvailability - M11 soft-delete guard", () => {
+  it("404s a hidden space before returning any schedule", async () => {
+    const res = buildRes();
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce(null);
+    await getAvailability(buildReq({ params: { id: "5" } }), res as never);
+    expect(res.statusCode).toBe(404);
+    expect(prisma.availability.findMany).not.toHaveBeenCalled();
+    const call = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.isActive).toBe(true);
+    expect(call?.where?.venue).toEqual({ isActive: true });
+  });
+});
+
+describe("checkAvailability - M11 soft-delete guard", () => {
+  it("404s a hidden space so it can't be probed/booked", async () => {
+    const res = buildRes();
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce(null);
+    await checkAvailability(
+      buildReq({
+        params: { id: "5" },
+        body: { startDate: "2024-01-01", endDate: "2024-01-10" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(404);
+    const call = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.isActive).toBe(true);
+    expect(call?.where?.venue).toEqual({ isActive: true });
+  });
+});
+
+describe("createSpace - M11 deactivated venue guard", () => {
+  it("400s when the target venue is soft-deleted (isActive:false)", async () => {
+    (prisma.venue.findUnique as AnyMock).mockResolvedValue({
+      id: 1,
+      hostId: "user-1",
+      isActive: false,
+    });
+    const res = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody() }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({
+      message: "Cannot add a space to a deactivated venue",
+    });
+    expect(prisma.space.create).not.toHaveBeenCalled();
   });
 });

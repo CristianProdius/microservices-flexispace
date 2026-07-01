@@ -5,14 +5,17 @@ import { prisma } from "@repo/db";
 type HostOrderBy = Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
 type HostSortKey = "featured" | "mostVenues" | "newest";
 
-const HOST_SORT_ORDER_BY: Record<HostSortKey, HostOrderBy> = {
+// AUDIT-B4-LOW: "mostVenues" is intentionally absent here — a relation _count in
+// orderBy cannot be filtered, so it would rank on ALL venues (incl. soft-deleted)
+// and contradict the isActive-filtered venueCount we display. It is ranked via an
+// active-only groupBy in fetchHostRows instead. Remaining sorts stay declarative.
+const HOST_SORT_ORDER_BY: Record<Exclude<HostSortKey, "mostVenues">, HostOrderBy> = {
   featured: [
     { hostSponsored: "desc" },
     { hostRecommended: "desc" },
     { hostVerified: "desc" },
     { hostingSince: "asc" },
   ],
-  mostVenues: { venues: { _count: "desc" } },
   newest: { hostingSince: "desc" },
 };
 
@@ -97,6 +100,75 @@ const toHostSummary = (host: HostRow) => {
   };
 };
 
+// AUDIT-B4-LOW: fetch a page of host rows honouring the requested sort. For
+// "mostVenues" we cannot orderBy a filtered relation _count, so we rank host ids
+// by their active-only venue count via a groupBy (scoped to the same host filter),
+// then hydrate + re-order those ids so the ranking matches the venueCount we render.
+const fetchHostRows = async (
+  where: Prisma.UserWhereInput,
+  sort: HostSortKey,
+  city: string | undefined,
+  skip: number,
+  limit: number
+): Promise<HostRow[]> => {
+  const select: Prisma.UserSelect = {
+    id: true,
+    name: true,
+    username: true,
+    image: true,
+    bio: true,
+    hostingSince: true,
+    hostVerified: true,
+    hostRecommended: true,
+    hostSponsored: true,
+    venues: {
+      where: { isActive: true, ...(city ? { city } : {}) },
+      orderBy: { createdAt: "asc" },
+      select: {
+        city: true,
+        images: true,
+        _count: { select: { spaces: { where: { isActive: true } } } },
+      },
+    },
+  };
+
+  if (sort === "mostVenues") {
+    const ranked = await prisma.venue.groupBy({
+      by: ["hostId"],
+      where: { isActive: true, ...(city ? { city } : {}), host: where },
+      _count: { _all: true },
+      orderBy: { _count: { hostId: "desc" } },
+      skip,
+      take: limit,
+    });
+    const orderedIds = ranked
+      .map((row) => row.hostId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    if (orderedIds.length === 0) return [];
+
+    // The shared `select` is typed as the widened Prisma.UserSelect, so the
+    // client returns a loosened row type; narrow back to the precise HostRow
+    // shape the select actually produces (venues incl. _count).
+    const unordered = (await prisma.user.findMany({
+      where: { id: { in: orderedIds } },
+      select,
+    })) as unknown as HostRow[];
+    const byId = new Map(unordered.map((host) => [host.id, host]));
+    return orderedIds
+      .map((id) => byId.get(id))
+      .filter((host): host is HostRow => host != null);
+  }
+
+  const rows = await prisma.user.findMany({
+    where,
+    orderBy: HOST_SORT_ORDER_BY[sort],
+    skip,
+    take: limit,
+    select,
+  });
+  return rows as unknown as HostRow[];
+};
+
 export const getHosts = async (req: Request, res: Response) => {
   const { page, limit, skip } = parsePagination(req.query);
   const city = typeof req.query.city === "string" && req.query.city.length > 0
@@ -127,35 +199,13 @@ export const getHosts = async (req: Request, res: Response) => {
   };
 
   const [rows, total, cityRows] = await Promise.all([
-    prisma.user.findMany({
-      where,
-      orderBy: HOST_SORT_ORDER_BY[sort],
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        image: true,
-        bio: true,
-        hostingSince: true,
-        hostVerified: true,
-        hostRecommended: true,
-        hostSponsored: true,
-        venues: {
-          where: { isActive: true, ...(city ? { city } : {}) },
-          orderBy: { createdAt: "asc" },
-          select: {
-            city: true,
-            images: true,
-            _count: { select: { spaces: { where: { isActive: true } } } },
-          },
-        },
-      },
-    }),
+    fetchHostRows(where, sort, city, skip, limit),
     prisma.user.count({ where }),
     prisma.venue.findMany({
-      where: { isActive: true },
+      // AUDIT-B4-LOW: match the getVenuesList facet — exclude venues whose host is
+      // soft-deleted so a deleted host's city can't surface in the public dropdown
+      // while returning zero hosts.
+      where: { isActive: true, host: { deletedAt: null } },
       distinct: ["city"],
       select: { city: true },
       orderBy: { city: "asc" },

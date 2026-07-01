@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
     },
     venue: {
       findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   };
   return {
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => {
     userFindFirst: prisma.user.findFirst,
     userUpdate: prisma.user.update,
     venueFindMany: prisma.venue.findMany,
+    venueGroupBy: prisma.venue.groupBy,
   };
 });
 
@@ -44,6 +46,7 @@ const defaultMocks = () => {
   mocks.userFindMany.mockResolvedValue([]);
   mocks.userCount.mockResolvedValue(0);
   mocks.venueFindMany.mockResolvedValue([]);
+  mocks.venueGroupBy.mockResolvedValue([]);
 };
 
 describe("host controller", () => {
@@ -106,10 +109,10 @@ describe("host controller", () => {
     expect(payload.availableCities).toEqual(["Chisinau", "Bucharest"]);
   });
 
-  it("applies verified, search, and sort filters", async () => {
+  it("applies verified and search filters to the host query", async () => {
     defaultMocks();
     const req = {
-      query: { verified: "true", search: "iHUB", sort: "mostVenues", city: "Chisinau" },
+      query: { verified: "true", search: "iHUB", city: "Chisinau" },
     } as unknown as Request;
     const res = createResponse();
 
@@ -125,7 +128,68 @@ describe("host controller", () => {
         { username: { contains: "iHUB", mode: "insensitive" } },
       ],
     });
-    expect(call.orderBy).toEqual({ venues: { _count: "desc" } });
+  });
+
+  it("ranks sort=mostVenues by active-only venue counts, not the raw relation _count", async () => {
+    // groupBy returns ids already ranked by active venue count (u2 before u1)
+    mocks.venueGroupBy.mockResolvedValue([
+      { hostId: "u2", _count: { _all: 5 } },
+      { hostId: "u1", _count: { _all: 2 } },
+    ]);
+    // findMany(id in) returns them in arbitrary order; controller must re-order
+    mocks.userFindMany.mockResolvedValue([
+      {
+        id: "u1",
+        name: "Alice",
+        username: "alice",
+        image: null,
+        bio: null,
+        hostingSince: null,
+        hostVerified: true,
+        hostRecommended: false,
+        hostSponsored: false,
+        venues: [],
+      },
+      {
+        id: "u2",
+        name: "Bob",
+        username: "bob",
+        image: null,
+        bio: null,
+        hostingSince: null,
+        hostVerified: true,
+        hostRecommended: false,
+        hostSponsored: false,
+        venues: [],
+      },
+    ]);
+    mocks.userCount.mockResolvedValue(2);
+    mocks.venueFindMany.mockResolvedValue([]);
+    const req = {
+      query: { verified: "true", sort: "mostVenues", city: "Chisinau" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getHosts(req, res);
+
+    // ranking is computed over active venues, scoped to the same host filter
+    const groupCall = mocks.venueGroupBy.mock.calls[0]![0];
+    expect(groupCall).toMatchObject({
+      by: ["hostId"],
+      where: {
+        isActive: true,
+        city: "Chisinau",
+        host: expect.objectContaining({ deletedAt: null, hostVerified: true }),
+      },
+      orderBy: { _count: { hostId: "desc" } },
+    });
+    // hosts are hydrated by the ranked ids, never via an unfiltered relation _count
+    const userCall = mocks.userFindMany.mock.calls[0]![0];
+    expect(userCall.where).toEqual({ id: { in: ["u2", "u1"] } });
+    expect(userCall.orderBy).toBeUndefined();
+
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.hosts.map((h: { id: string }) => h.id)).toEqual(["u2", "u1"]);
   });
 
   it("returns listing badge flags for hosts", async () => {
@@ -178,16 +242,18 @@ describe("host controller", () => {
     expect(call.orderBy).toEqual({ hostingSince: "desc" });
   });
 
-  it("availableCities query is not affected by ?city filter", async () => {
+  it("availableCities facet ignores ?city and excludes soft-deleted hosts", async () => {
     defaultMocks();
     const req = { query: { city: "Chisinau" } } as unknown as Request;
     const res = createResponse();
 
     await getHosts(req, res);
 
+    // not scoped by ?city, and (like getVenuesList) skips soft-deleted hosts so a
+    // deleted host's city can't appear in the dropdown yet return zero hosts
     expect(mocks.venueFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { isActive: true },
+        where: { isActive: true, host: { deletedAt: null } },
         distinct: ["city"],
       })
     );
