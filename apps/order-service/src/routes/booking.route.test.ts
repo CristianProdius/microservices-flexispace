@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
   const bookingUpdateMany = vi.fn();
   const bookingGroupBy = vi.fn();
   const payoutGroupBy = vi.fn();
+  const payoutCreate = vi.fn();
   // AUD-005/021: `shouldBe*` middleware now consults `prisma.user.findFirst`
   // via `lookupActiveUser`. Default to "active user with the role the JWT
   // claims" so existing tests don't have to be aware of the active-user check.
@@ -40,6 +41,7 @@ const mocks = vi.hoisted(() => {
     },
     payout: {
       groupBy: payoutGroupBy,
+      create: payoutCreate,
     },
     space: {
       findUnique: vi.fn(),
@@ -58,6 +60,7 @@ const mocks = vi.hoisted(() => {
     bookingUpdateMany,
     exchangeRateFindUnique: prisma.exchangeRate.findUnique,
     payoutGroupBy,
+    payoutCreate,
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
@@ -588,6 +591,46 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // H4: completing a booking creates the host Payout atomically with the flip.
+  it("creates a host Payout when a booking is completed", async () => {
+    const app = await createApp();
+    mocks.bookingFindUnique
+      .mockResolvedValueOnce({
+        guest: { email: "guest@example.com" },
+        hostId: "host-1",
+        id: "b-3",
+        space: { name: "Focused room" },
+        status: "CONFIRMED",
+        totalAmount: 100,
+        serviceFee: 20,
+        currency: "USD",
+      })
+      .mockResolvedValueOnce({ id: "b-3", status: "COMPLETED" });
+    mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.payoutCreate.mockResolvedValue({ id: "payout-1" });
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createHostToken()}` },
+      method: "PUT",
+      payload: {},
+      url: "/bookings/b-3/complete",
+    });
+
+    expect(response.statusCode).toBe(200);
+    // amount = guest total, platformFee = commission, netAmount = host take-home.
+    expect(mocks.payoutCreate).toHaveBeenCalledWith({
+      data: {
+        hostId: "host-1",
+        amount: 100,
+        platformFee: 20,
+        netAmount: 80,
+        currency: "USD",
+        bookingIds: ["b-3"],
+      },
+    });
+    await app.close();
+  });
+
   // M7: a single seeded rate direction must not block non-USD bookings — the
   // inverse (USD->from) row is used via 1/rate when the direct row is absent.
   it("creates a non-USD booking using the inverse exchange-rate row when the direct row is missing", async () => {
@@ -741,5 +784,146 @@ describe("booking routes", () => {
       pendingPayout: [{ amount: 50, currency: "USD" }],
     });
     await app.close();
+  });
+
+  // AUDIT-B8 (M4): an expired PENDING hold no longer squats the slot, so a new
+  // overlapping booking succeeds instead of 409ing.
+  it("does not let an EXPIRED PENDING hold block a new overlapping booking", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(baseSpace);
+    // Conflicting PENDING request-to-book whose 48h hold elapsed an hour ago.
+    mocks.bookingFindMany.mockResolvedValue([
+      {
+        endDate: new Date(monday),
+        endTime: "11:00",
+        holdExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        isHourly: true,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      },
+    ]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalled();
+    // The freshly created PENDING hold carries a future holdExpiresAt.
+    const createArg = mocks.bookingCreate.mock.calls[0]![0] as {
+      data: { holdExpiresAt: Date | null };
+    };
+    expect(createArg.data.holdExpiresAt).toBeInstanceOf(Date);
+    expect((createArg.data.holdExpiresAt as Date).getTime()).toBeGreaterThan(
+      Date.now(),
+    );
+    await app.close();
+  });
+
+  // AUDIT-B8 (M4): a live (non-expired) PENDING hold still occupies the slot.
+  it("still blocks a new overlapping booking while a PENDING hold is live", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(baseSpace);
+    mocks.bookingFindMany.mockResolvedValue([
+      {
+        endDate: new Date(monday),
+        endTime: "11:00",
+        holdExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        isHourly: true,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      },
+    ]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // AUDIT-B8 (M5): the refund cutoff must interpret startTime in the venue's
+  // timezone. A check-in ~23h out in Europe/Chisinau (UTC+3 in July) is inside
+  // the FLEXIBLE 24h bracket (0% refund); the old setUTCHours bug read it as
+  // ~26h (>24h → 100%). Only fake Date so real timers keep working.
+  it("uses the venue timezone for the refund hoursUntilCheckin bracket", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-07-14T10:00:00.000Z"));
+    try {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          currency: "USD",
+          endDate: new Date("2026-07-15T00:00:00.000Z"),
+          endTime: "13:00",
+          guest: { email: "guest@example.com", name: "Guest" },
+          guestId: "guest-1",
+          host: { email: "host@example.com", name: "Host" },
+          hostId: "host-1",
+          id: "b-tz",
+          isHourly: true,
+          // Local check-in 12:00 Chisinau (UTC+3) == 09:00Z on the 15th, i.e.
+          // exactly 23h after the frozen now (10:00Z on the 14th).
+          space: {
+            cancellationPolicy: "FLEXIBLE",
+            name: "Focused room",
+            venue: { timezone: "Europe/Chisinau" },
+          },
+          spaceId: 42,
+          startDate: new Date("2026-07-15T00:00:00.000Z"),
+          startTime: "12:00",
+          status: "CONFIRMED",
+          totalAmount: 100,
+        })
+        .mockResolvedValueOnce({ id: "b-tz", status: "CANCELLED" });
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.producerSend.mockResolvedValue(undefined);
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: { reason: "Plans changed" },
+        url: "/bookings/b-tz/cancel",
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json() as {
+        refund: { hoursUntilCheckin: number; rate: number };
+      };
+      // Correct tz math: 23h out (not the buggy ~26h).
+      expect(body.refund.hoursUntilCheckin).toBe(23);
+      // 23h < 24h => FLEXIBLE refunds 0% (the buggy >24h read would give 100%).
+      expect(body.refund.rate).toBe(0);
+      await app.close();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

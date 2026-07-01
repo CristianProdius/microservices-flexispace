@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
 import { prisma, Role } from "@repo/db";
-import { hashPassword, normalizeEmail } from "@repo/auth-middleware";
+import { hashPassword, normalizeEmail, invalidateUserCache } from "@repo/auth-middleware";
 import { producer } from "../utils/kafka.js";
 import { sendPrismaError } from "../utils/prismaErrors.js";
 import { generateInviteToken, INVITE_TTL_DAYS } from "../utils/inviteToken.js";
@@ -725,19 +725,36 @@ router.put("/:id/verify-host", async (req, res) => {
       return res.status(400).json({ message: "User is not a host" });
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: {
-        hostVerified: verified,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        hostVerified: true,
-      },
+    // AUDIT-B8/M1: de-verifying a host must invalidate outstanding access
+    // tokens — they carry a stale `hostVerified: true` claim that the
+    // middleware trusts for shouldBeHost access. Bump the kill-switch
+    // watermark and drop refresh sessions (mirrors the soft-delete handler)
+    // so the host cannot keep acting as verified until the token expires.
+    // Re-verifying (verified === true) only grants access, so no kill needed.
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id },
+        data: {
+          hostVerified: verified,
+          ...(verified === false && { tokensValidAfter: new Date() }),
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          hostVerified: true,
+        },
+      });
+      if (verified === false) {
+        await tx.session.deleteMany({ where: { userId: id } });
+      }
+      return u;
     });
+
+    if (verified === false) {
+      invalidateUserCache(id);
+    }
 
     return res.status(200).json(updatedUser);
   } catch (error) {
@@ -784,22 +801,40 @@ router.put("/:id/role", async (req, res) => {
       }
     }
 
-    const user = await prisma.user.update({
-      where: { id },
-      data: {
-        role: parsedRole,
-        ...(parsedRole === "HOST" && { hostingSince: new Date() }),
-      },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        role: true,
-        hostVerified: true,
-        hostingSince: true,
-      },
+    // AUDIT-B8/M1: a role change (notably a downgrade ADMIN/HOST -> USER) must
+    // invalidate outstanding access tokens — they carry the stale `role` claim
+    // the middleware trusts for shouldBeAdmin/shouldBeHost. When the role
+    // actually changes we bump the kill-switch watermark and drop refresh
+    // sessions (mirrors the soft-delete handler) so the old privileges cannot
+    // outlive the change until the token expires.
+    const roleChanged = existing.role !== parsedRole;
+    const user = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id },
+        data: {
+          role: parsedRole,
+          ...(parsedRole === "HOST" && { hostingSince: new Date() }),
+          ...(roleChanged && { tokensValidAfter: new Date() }),
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          role: true,
+          hostVerified: true,
+          hostingSince: true,
+        },
+      });
+      if (roleChanged) {
+        await tx.session.deleteMany({ where: { userId: id } });
+      }
+      return u;
     });
+
+    if (roleChanged) {
+      invalidateUserCache(id);
+    }
 
     return res.status(200).json(user);
   } catch (error) {

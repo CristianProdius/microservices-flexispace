@@ -12,7 +12,15 @@
  */
 import { prisma } from "@repo/db";
 
-export type ActiveUserRecord = { id: string; role: string };
+// AUDIT-B8/M1: `tokensValidAfter` carries the per-user access-token kill-switch
+// watermark. The `shouldBe*` guards reject any access token whose `iat`
+// predates it (password reset/change, role downgrade, host de-verification).
+// `null` means no watermark has ever been set, so every token is allowed.
+export type ActiveUserRecord = {
+  id: string;
+  role: string;
+  tokensValidAfter: Date | null;
+};
 
 interface CacheEntry {
   result: ActiveUserRecord | null;
@@ -38,8 +46,9 @@ function pruneIfNeeded(): void {
 }
 
 /**
- * Resolve the user by id, returning `{ id, role }` when the user exists and
- * is not soft-deleted, or `null` otherwise. Results are cached for TTL_MS.
+ * Resolve the user by id, returning `{ id, role, tokensValidAfter }` when the
+ * user exists and is not soft-deleted, or `null` otherwise. Results are cached
+ * for TTL_MS.
  */
 export async function lookupActiveUser(
   userId: string,
@@ -57,10 +66,13 @@ export async function lookupActiveUser(
 
   const row = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { id: true, role: true },
+    // AUDIT-B8/M1: also fetch tokensValidAfter for the kill-switch check.
+    select: { id: true, role: true, tokensValidAfter: true },
   });
 
-  const result: ActiveUserRecord | null = row ? { id: row.id, role: row.role } : null;
+  const result: ActiveUserRecord | null = row
+    ? { id: row.id, role: row.role, tokensValidAfter: row.tokensValidAfter ?? null }
+    : null;
   cache.set(userId, { result, expiresAt: now + TTL_MS });
   pruneIfNeeded();
   return result;

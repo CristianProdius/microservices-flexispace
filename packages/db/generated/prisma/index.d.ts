@@ -3073,6 +3073,7 @@ export namespace Prisma {
     mustChangePassword: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
+    tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
     hostRecommended: boolean | null
@@ -3096,6 +3097,7 @@ export namespace Prisma {
     mustChangePassword: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
+    tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
     hostRecommended: boolean | null
@@ -3119,6 +3121,7 @@ export namespace Prisma {
     mustChangePassword: number
     createdAt: number
     updatedAt: number
+    tokensValidAfter: number
     deletedAt: number
     hostVerified: number
     hostRecommended: number
@@ -3152,6 +3155,7 @@ export namespace Prisma {
     mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
+    tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
     hostRecommended?: true
@@ -3175,6 +3179,7 @@ export namespace Prisma {
     mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
+    tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
     hostRecommended?: true
@@ -3198,6 +3203,7 @@ export namespace Prisma {
     mustChangePassword?: true
     createdAt?: true
     updatedAt?: true
+    tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
     hostRecommended?: true
@@ -3308,6 +3314,7 @@ export namespace Prisma {
     mustChangePassword: boolean
     createdAt: Date
     updatedAt: Date
+    tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean
     hostRecommended: boolean
@@ -3350,6 +3357,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -3385,6 +3393,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -3408,6 +3417,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -3431,6 +3441,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -3440,7 +3451,7 @@ export namespace Prisma {
     commissionRate?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "deletedAt" | "hostVerified" | "hostRecommended" | "hostSponsored" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "tokensValidAfter" | "deletedAt" | "hostVerified" | "hostRecommended" | "hostSponsored" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
@@ -3487,6 +3498,7 @@ export namespace Prisma {
       mustChangePassword: boolean
       createdAt: Date
       updatedAt: Date
+      tokensValidAfter: Date | null
       deletedAt: Date | null
       hostVerified: boolean
       hostRecommended: boolean
@@ -3941,6 +3953,7 @@ export namespace Prisma {
     readonly mustChangePassword: FieldRef<"User", 'Boolean'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
+    readonly tokensValidAfter: FieldRef<"User", 'DateTime'>
     readonly deletedAt: FieldRef<"User", 'DateTime'>
     readonly hostVerified: FieldRef<"User", 'Boolean'>
     readonly hostRecommended: FieldRef<"User", 'Boolean'>
@@ -11071,6 +11084,7 @@ export namespace Prisma {
     venueRecommended: boolean | null
     venueSponsored: boolean | null
     hostId: string | null
+    timezone: string | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -11094,6 +11108,7 @@ export namespace Prisma {
     venueRecommended: boolean | null
     venueSponsored: boolean | null
     hostId: string | null
+    timezone: string | null
     isActive: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -11122,6 +11137,7 @@ export namespace Prisma {
     venueRecommended: number
     venueSponsored: number
     hostId: number
+    timezone: number
     isActive: number
     createdAt: number
     updatedAt: number
@@ -11159,6 +11175,7 @@ export namespace Prisma {
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
+    timezone?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -11182,6 +11199,7 @@ export namespace Prisma {
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
+    timezone?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -11210,6 +11228,7 @@ export namespace Prisma {
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
+    timezone?: true
     isActive?: true
     createdAt?: true
     updatedAt?: true
@@ -11325,6 +11344,7 @@ export namespace Prisma {
     venueRecommended: boolean
     venueSponsored: boolean
     hostId: string
+    timezone: string
     isActive: boolean
     createdAt: Date
     updatedAt: Date
@@ -11372,6 +11392,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
+    timezone?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -11403,6 +11424,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
+    timezone?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -11432,6 +11454,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
+    timezone?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -11461,12 +11484,13 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
+    timezone?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "venueVerified" | "venueRecommended" | "venueSponsored" | "hostId" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
+  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "venueVerified" | "venueRecommended" | "venueSponsored" | "hostId" | "timezone" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
   export type VenueInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     spaces?: boolean | Venue$spacesArgs<ExtArgs>
@@ -11508,6 +11532,7 @@ export namespace Prisma {
       venueRecommended: boolean
       venueSponsored: boolean
       hostId: string
+      timezone: string
       isActive: boolean
       createdAt: Date
       updatedAt: Date
@@ -11958,6 +11983,7 @@ export namespace Prisma {
     readonly venueRecommended: FieldRef<"Venue", 'Boolean'>
     readonly venueSponsored: FieldRef<"Venue", 'Boolean'>
     readonly hostId: FieldRef<"Venue", 'String'>
+    readonly timezone: FieldRef<"Venue", 'String'>
     readonly isActive: FieldRef<"Venue", 'Boolean'>
     readonly createdAt: FieldRef<"Venue", 'DateTime'>
     readonly updatedAt: FieldRef<"Venue", 'DateTime'>
@@ -22802,6 +22828,7 @@ export namespace Prisma {
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
+    holdExpiresAt: Date | null
     cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date | null
@@ -22831,6 +22858,7 @@ export namespace Prisma {
     status: $Enums.BookingStatus | null
     guestMessage: string | null
     hostMessage: string | null
+    holdExpiresAt: Date | null
     cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date | null
@@ -22860,6 +22888,7 @@ export namespace Prisma {
     status: number
     guestMessage: number
     hostMessage: number
+    holdExpiresAt: number
     cancelledByRole: number
     cancellationReason: number
     createdAt: number
@@ -22911,6 +22940,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
+    holdExpiresAt?: true
     cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
@@ -22940,6 +22970,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
+    holdExpiresAt?: true
     cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
@@ -22969,6 +23000,7 @@ export namespace Prisma {
     status?: true
     guestMessage?: true
     hostMessage?: true
+    holdExpiresAt?: true
     cancelledByRole?: true
     cancellationReason?: true
     createdAt?: true
@@ -23085,6 +23117,7 @@ export namespace Prisma {
     status: $Enums.BookingStatus
     guestMessage: string | null
     hostMessage: string | null
+    holdExpiresAt: Date | null
     cancelledByRole: $Enums.BookingActor | null
     cancellationReason: string | null
     createdAt: Date
@@ -23133,6 +23166,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
+    holdExpiresAt?: boolean
     cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
@@ -23166,6 +23200,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
+    holdExpiresAt?: boolean
     cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
@@ -23198,6 +23233,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
+    holdExpiresAt?: boolean
     cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
@@ -23230,6 +23266,7 @@ export namespace Prisma {
     status?: boolean
     guestMessage?: boolean
     hostMessage?: boolean
+    holdExpiresAt?: boolean
     cancelledByRole?: boolean
     cancellationReason?: boolean
     createdAt?: boolean
@@ -23239,7 +23276,7 @@ export namespace Prisma {
     completedAt?: boolean
   }
 
-  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
+  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "holdExpiresAt" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
   export type BookingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
@@ -23285,6 +23322,7 @@ export namespace Prisma {
       status: $Enums.BookingStatus
       guestMessage: string | null
       hostMessage: string | null
+      holdExpiresAt: Date | null
       cancelledByRole: $Enums.BookingActor | null
       cancellationReason: string | null
       createdAt: Date
@@ -23738,6 +23776,7 @@ export namespace Prisma {
     readonly status: FieldRef<"Booking", 'BookingStatus'>
     readonly guestMessage: FieldRef<"Booking", 'String'>
     readonly hostMessage: FieldRef<"Booking", 'String'>
+    readonly holdExpiresAt: FieldRef<"Booking", 'DateTime'>
     readonly cancelledByRole: FieldRef<"Booking", 'BookingActor'>
     readonly cancellationReason: FieldRef<"Booking", 'String'>
     readonly createdAt: FieldRef<"Booking", 'DateTime'>
@@ -26561,6 +26600,7 @@ export namespace Prisma {
     mustChangePassword: 'mustChangePassword',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
+    tokensValidAfter: 'tokensValidAfter',
     deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
     hostRecommended: 'hostRecommended',
@@ -26672,6 +26712,7 @@ export namespace Prisma {
     venueRecommended: 'venueRecommended',
     venueSponsored: 'venueSponsored',
     hostId: 'hostId',
+    timezone: 'timezone',
     isActive: 'isActive',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -26821,6 +26862,7 @@ export namespace Prisma {
     status: 'status',
     guestMessage: 'guestMessage',
     hostMessage: 'hostMessage',
+    holdExpiresAt: 'holdExpiresAt',
     cancelledByRole: 'cancelledByRole',
     cancellationReason: 'cancellationReason',
     createdAt: 'createdAt',
@@ -27156,6 +27198,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    tokensValidAfter?: DateTimeNullableFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostRecommended?: BoolFilter<"User"> | boolean
@@ -27190,6 +27233,7 @@ export namespace Prisma {
     mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    tokensValidAfter?: SortOrderInput | SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostRecommended?: SortOrder
@@ -27227,6 +27271,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
+    tokensValidAfter?: DateTimeNullableFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
     hostRecommended?: BoolFilter<"User"> | boolean
@@ -27261,6 +27306,7 @@ export namespace Prisma {
     mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    tokensValidAfter?: SortOrderInput | SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
     hostRecommended?: SortOrder
@@ -27292,6 +27338,7 @@ export namespace Prisma {
     mustChangePassword?: BoolWithAggregatesFilter<"User"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+    tokensValidAfter?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
     hostRecommended?: BoolWithAggregatesFilter<"User"> | boolean
@@ -27704,6 +27751,7 @@ export namespace Prisma {
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
+    timezone?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
     updatedAt?: DateTimeFilter<"Venue"> | Date | string
@@ -27734,6 +27782,7 @@ export namespace Prisma {
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
+    timezone?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -27767,6 +27816,7 @@ export namespace Prisma {
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
+    timezone?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
     updatedAt?: DateTimeFilter<"Venue"> | Date | string
@@ -27797,6 +27847,7 @@ export namespace Prisma {
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
+    timezone?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -27833,6 +27884,7 @@ export namespace Prisma {
     venueRecommended?: BoolWithAggregatesFilter<"Venue"> | boolean
     venueSponsored?: BoolWithAggregatesFilter<"Venue"> | boolean
     hostId?: StringWithAggregatesFilter<"Venue"> | string
+    timezone?: StringWithAggregatesFilter<"Venue"> | string
     isActive?: BoolWithAggregatesFilter<"Venue"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Venue"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Venue"> | Date | string
@@ -28515,6 +28567,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
+    holdExpiresAt?: DateTimeNullableFilter<"Booking"> | Date | string | null
     cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
@@ -28548,6 +28601,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
+    holdExpiresAt?: SortOrderInput | SortOrder
     cancelledByRole?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -28584,6 +28638,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
+    holdExpiresAt?: DateTimeNullableFilter<"Booking"> | Date | string | null
     cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
@@ -28617,6 +28672,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrderInput | SortOrder
     hostMessage?: SortOrderInput | SortOrder
+    holdExpiresAt?: SortOrderInput | SortOrder
     cancelledByRole?: SortOrderInput | SortOrder
     cancellationReason?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -28654,6 +28710,7 @@ export namespace Prisma {
     status?: EnumBookingStatusWithAggregatesFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     hostMessage?: StringNullableWithAggregatesFilter<"Booking"> | string | null
+    holdExpiresAt?: DateTimeNullableWithAggregatesFilter<"Booking"> | Date | string | null
     cancelledByRole?: EnumBookingActorNullableWithAggregatesFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
@@ -28852,6 +28909,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -28886,6 +28944,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -28920,6 +28979,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -28954,6 +29014,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -28988,6 +29049,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -29011,6 +29073,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -29034,6 +29097,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -29465,6 +29529,7 @@ export namespace Prisma {
     venueVerified?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -29495,6 +29560,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -29522,6 +29588,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29552,6 +29619,7 @@ export namespace Prisma {
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29581,6 +29649,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -29607,6 +29676,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -29635,6 +29705,7 @@ export namespace Prisma {
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30316,6 +30387,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -30349,6 +30421,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -30376,6 +30449,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30409,6 +30483,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30439,6 +30514,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -30465,6 +30541,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30494,6 +30571,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -30879,6 +30957,7 @@ export namespace Prisma {
     mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostRecommended?: SortOrder
@@ -30906,6 +30985,7 @@ export namespace Prisma {
     mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostRecommended?: SortOrder
@@ -30929,6 +31009,7 @@ export namespace Prisma {
     mustChangePassword?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
     hostRecommended?: SortOrder
@@ -31347,6 +31428,7 @@ export namespace Prisma {
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
+    timezone?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -31376,6 +31458,7 @@ export namespace Prisma {
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
+    timezone?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -31399,6 +31482,7 @@ export namespace Prisma {
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
+    timezone?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -32116,6 +32200,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
+    holdExpiresAt?: SortOrder
     cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
@@ -32155,6 +32240,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
+    holdExpiresAt?: SortOrder
     cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
@@ -32184,6 +32270,7 @@ export namespace Prisma {
     status?: SortOrder
     guestMessage?: SortOrder
     hostMessage?: SortOrder
+    holdExpiresAt?: SortOrder
     cancelledByRole?: SortOrder
     cancellationReason?: SortOrder
     createdAt?: SortOrder
@@ -34280,6 +34367,7 @@ export namespace Prisma {
     venueVerified?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34308,6 +34396,7 @@ export namespace Prisma {
     venueVerified?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -34420,6 +34509,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -34451,6 +34541,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -34488,6 +34579,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -34519,6 +34611,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -34796,6 +34889,7 @@ export namespace Prisma {
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
+    timezone?: StringFilter<"Venue"> | string
     isActive?: BoolFilter<"Venue"> | boolean
     createdAt?: DateTimeFilter<"Venue"> | Date | string
     updatedAt?: DateTimeFilter<"Venue"> | Date | string
@@ -34889,6 +34983,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFilter<"Booking"> | $Enums.BookingStatus
     guestMessage?: StringNullableFilter<"Booking"> | string | null
     hostMessage?: StringNullableFilter<"Booking"> | string | null
+    holdExpiresAt?: DateTimeNullableFilter<"Booking"> | Date | string | null
     cancelledByRole?: EnumBookingActorNullableFilter<"Booking"> | $Enums.BookingActor | null
     cancellationReason?: StringNullableFilter<"Booking"> | string | null
     createdAt?: DateTimeFilter<"Booking"> | Date | string
@@ -35024,6 +35119,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35057,6 +35153,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35106,6 +35203,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35139,6 +35237,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35172,6 +35271,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35205,6 +35305,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35254,6 +35355,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35287,6 +35389,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35320,6 +35423,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35353,6 +35457,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35402,6 +35507,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35435,6 +35541,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35468,6 +35575,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35501,6 +35609,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35550,6 +35659,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35583,6 +35693,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35616,6 +35727,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35649,6 +35761,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35698,6 +35811,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35731,6 +35845,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35764,6 +35879,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35797,6 +35913,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -35925,6 +36042,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -35958,6 +36076,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -36007,6 +36126,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -36040,6 +36160,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -36085,6 +36206,7 @@ export namespace Prisma {
     venueVerified?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36114,6 +36236,7 @@ export namespace Prisma {
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36253,6 +36376,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -36284,6 +36408,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -36362,6 +36487,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -36395,6 +36521,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -36446,6 +36573,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36475,6 +36603,7 @@ export namespace Prisma {
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37554,6 +37683,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -37587,6 +37717,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -37625,6 +37756,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -37658,6 +37790,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -37809,6 +37942,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -37842,6 +37976,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -37886,6 +38021,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -37919,6 +38055,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -38066,6 +38203,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -38099,6 +38237,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -38214,6 +38353,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -38246,6 +38386,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -38285,6 +38426,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -38318,6 +38460,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -38445,6 +38588,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38477,6 +38621,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38500,6 +38645,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -38533,6 +38679,7 @@ export namespace Prisma {
     mustChangePassword?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
     hostRecommended?: boolean
@@ -38582,6 +38729,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -38615,6 +38763,7 @@ export namespace Prisma {
     mustChangePassword?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
@@ -38690,6 +38839,7 @@ export namespace Prisma {
     venueVerified?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
+    timezone?: string
     isActive?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38743,6 +38893,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -38771,6 +38922,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -38939,6 +39091,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38967,6 +39120,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38995,6 +39149,7 @@ export namespace Prisma {
     venueVerified?: BoolFieldUpdateOperationsInput | boolean
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
+    timezone?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39115,6 +39270,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39146,6 +39302,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39175,6 +39332,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39201,6 +39359,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39232,6 +39391,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39261,6 +39421,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39549,6 +39710,7 @@ export namespace Prisma {
     status?: $Enums.BookingStatus
     guestMessage?: string | null
     hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
     cancelledByRole?: $Enums.BookingActor | null
     cancellationReason?: string | null
     createdAt?: Date | string
@@ -39661,6 +39823,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39692,6 +39855,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39721,6 +39885,7 @@ export namespace Prisma {
     status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
     guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
     hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
     cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

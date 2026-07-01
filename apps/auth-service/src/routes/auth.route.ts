@@ -15,6 +15,7 @@ import {
   verifyAccessToken,
   extractTokenFromHeader,
   normalizeEmail,
+  invalidateUserCache,
 } from "@repo/auth-middleware";
 import { shouldBeUser } from "@repo/auth-middleware/express";
 import { producer } from "../utils/kafka.js";
@@ -965,7 +966,10 @@ router.post("/change-password", shouldBeUser, async (req, res) => {
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: user.id },
-        data: { password: newHash },
+        // AUDIT-B8/M1: bump the kill-switch watermark so EVERY outstanding
+        // access token for this user (not just the caller's jti) is rejected
+        // by the middleware, closing the multi-device gap of jti-only revocation.
+        data: { password: newHash, tokensValidAfter: new Date() },
       });
 
       await tx.session.deleteMany({ where: { userId: user.id } });
@@ -987,6 +991,10 @@ router.post("/change-password", shouldBeUser, async (req, res) => {
         });
       }
     });
+
+    // AUDIT-B8/M1: drop the cached ActiveUserRecord so the new watermark is
+    // seen on the very next request instead of waiting out the userCache TTL.
+    invalidateUserCache(user.id);
 
     return res.status(200).json({
       message: "Password updated. Please log in again with your new password.",
@@ -1303,7 +1311,10 @@ router.post("/reset-password", resetPasswordLimiter, async (req, res) => {
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: user.id },
-        data: { password: newHash },
+        // AUDIT-B8/M1: bump the kill-switch watermark so any outstanding access
+        // token (possibly stolen) is rejected by the middleware immediately —
+        // refresh-token revocation below only covers the refresh chain.
+        data: { password: newHash, tokensValidAfter: new Date() },
       });
       await tx.passwordResetUse.create({
         data: { jti: payload.jti!, userId: user.id },
@@ -1316,6 +1327,10 @@ router.post("/reset-password", resetPasswordLimiter, async (req, res) => {
       });
       await tx.session.deleteMany({ where: { userId: user.id } });
     });
+
+    // AUDIT-B8/M1: evict the cached ActiveUserRecord so the bumped watermark
+    // takes effect on the next request rather than after the userCache TTL.
+    invalidateUserCache(user.id);
 
     clearAuthCookies(res);
     return res.status(204).send();
