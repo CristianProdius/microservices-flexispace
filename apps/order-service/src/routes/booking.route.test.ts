@@ -267,6 +267,136 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // H1: hourly-only space + isHourly=false + no times must NOT become a free,
+  // fully-blocking full-day reservation. Server derives isHourly=false (no
+  // times), pricing finds no applicable candidate, and the route returns 400.
+  it("rejects an hourly-only space booked full-day with no times (no free hold)", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      // Drop the max-hours cap so the full-day request reaches the pricing path
+      // rather than being rejected by the duration rule first.
+      maxBookingHours: null,
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        guests: 1,
+        isHourly: false,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: "This space has no applicable price for the requested booking",
+    });
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // H1: BOTH space + 1h window + isHourly=false must price AND block only that
+  // hour (derived isHourly=true). If the client value were trusted the booking
+  // would block the whole day (409 against the adjacent 09:00-10:00 booking)
+  // while only paying for 1h. Getting 201 proves the blocked window == priced
+  // window.
+  it("derives isHourly server-side so the blocked window equals the priced window (BOTH space, 1h)", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      pricePerDay: 100,
+      pricePerHour: 25,
+      pricingType: "BOTH",
+    });
+    // An adjacent hourly booking 09:00-10:00. If the incoming booking were
+    // (wrongly) treated as a full day it would overlap this and 409.
+    mocks.bookingFindMany.mockResolvedValue([
+      {
+        endDate: new Date(monday),
+        endTime: "10:00",
+        isHourly: true,
+        startDate: new Date(monday),
+        startTime: "09:00",
+      },
+    ]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: false, // client lie — must be ignored
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    // Persisted with the server-derived isHourly (true) and priced for 1 hour.
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: true,
+          startTime: "10:00",
+          endTime: "11:00",
+          subtotal: 25, // 1h * $25 (cheaper than the $100 daily rate)
+        }),
+      }),
+    );
+    await app.close();
+  });
+
+  // H1: a normal daily booking still succeeds with the full-day interval and
+  // the correct daily total.
+  it("still creates a normal daily booking with the correct total", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      maxBookingHours: null,
+      pricePerDay: 100,
+      pricePerHour: null,
+      pricingType: "DAILY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        guests: 1,
+        isHourly: false,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: false, // DAILY space -> full-day interval
+          subtotal: 100,
+          totalAmount: 100,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {

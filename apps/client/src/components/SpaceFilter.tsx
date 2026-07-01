@@ -50,12 +50,12 @@ const bookingOptions = [
   { value: "false", key: "requestToBook" as const },
 ];
 
-const sortOptions = [
-  { value: "newest", key: "newestFirst" as const },
-  { value: "price_asc", key: "priceLowToHigh" as const },
-  { value: "price_desc", key: "priceHighToLow" as const },
-  { value: "rating", key: "highestRated" as const },
-];
+// AUD-B1: "featured" (venue/host sponsored → recommended → verified → newest)
+// is the browse default, mirroring the homepage and HostFilter. Its label reuses
+// the existing `venue.recommended` message (see sortOptions built inside the
+// component, which needs the translators). Selecting it writes NO `sort` URL
+// param (featured is the no-param default), like the other filter defaults.
+const FEATURED_SORT = "featured";
 
 /* ── Component ─────────────────────────────────────────────── */
 
@@ -64,14 +64,28 @@ const SpaceFilter = () => {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("filters");
+  // AUD-B1: reuse the existing `venue.recommended` label for the featured sort
+  // (no dedicated `filters.recommended`/`filters.featured` key exists yet).
+  const tVenue = useTranslations("venue");
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // AUD-B1: featured is the FIRST option and the default. Built inside the
+  // component so the featured label can come from the `venue` namespace while
+  // the rest stay in `filters`.
+  const sortOptions = [
+    { value: FEATURED_SORT, label: tVenue("recommended") },
+    { value: "newest", label: t("newestFirst") },
+    { value: "price_asc", label: t("priceLowToHigh") },
+    { value: "price_desc", label: t("priceHighToLow") },
+    { value: "rating", label: t("highestRated") },
+  ];
 
   /* Drawer-local state (applied on "Show results") */
   const [draftCapacity, setDraftCapacity] = useState("");
   const [draftMinPrice, setDraftMinPrice] = useState("");
   const [draftMaxPrice, setDraftMaxPrice] = useState("");
   const [draftInstantBook, setDraftInstantBook] = useState("");
-  const [draftSort, setDraftSort] = useState("newest");
+  const [draftSort, setDraftSort] = useState(FEATURED_SORT);
 
   /* Price debounce ref */
   const priceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,7 +103,9 @@ const SpaceFilter = () => {
   const activeMinPrice = searchParams.get("minPrice");
   const activeMaxPrice = searchParams.get("maxPrice");
   const activeInstantBook = searchParams.get("instantBook");
-  const activeSort = searchParams.get("sort") || "newest";
+  // AUD-B1: default to featured (matches SpaceList's browse SSR default) when no
+  // explicit sort is in the URL.
+  const activeSort = searchParams.get("sort") || FEATURED_SORT;
 
   const activeFilterCount = [
     activeCity,
@@ -163,7 +179,8 @@ const SpaceFilter = () => {
       minPrice: draftMinPrice || null,
       maxPrice: draftMaxPrice || null,
       instantBook: draftInstantBook || null,
-      sort: draftSort === "newest" ? null : draftSort,
+      // AUD-B1: featured is the no-param default (mirrors HostFilter).
+      sort: draftSort === FEATURED_SORT ? null : draftSort,
     });
     setDrawerOpen(false);
   };
@@ -173,7 +190,7 @@ const SpaceFilter = () => {
     setDraftMinPrice("");
     setDraftMaxPrice("");
     setDraftInstantBook("");
-    setDraftSort("newest");
+    setDraftSort(FEATURED_SORT);
   };
 
   /* ── Label helpers ─────────────────────────────────────── */
@@ -191,7 +208,7 @@ const SpaceFilter = () => {
     ? bookingOptions.find((o) => o.value === activeInstantBook)?.key
     : null;
 
-  const sortLabel = sortOptions.find((o) => o.value === activeSort)?.key;
+  const sortLabel = sortOptions.find((o) => o.value === activeSort)?.label;
 
   /* ── Active filter chips data ──────────────────────────── */
 
@@ -353,11 +370,12 @@ const SpaceFilter = () => {
             aria-label={t("sort")}
             className={cn(
               pillBase,
-              activeSort !== "newest" ? pillActive : pillInactive
+              // AUD-B1: pill reads "active" only when a non-default (non-featured) sort is chosen.
+              activeSort !== FEATURED_SORT ? pillActive : pillInactive
             )}
           >
             <ArrowUpDown className="size-4" />
-            <span>{sortLabel ? t(sortLabel) : t("sort")}</span>
+            <span>{sortLabel ?? t("sort")}</span>
             <ChevronDown className="size-3.5" />
           </Popover.Trigger>
           <Popover.Portal>
@@ -369,7 +387,8 @@ const SpaceFilter = () => {
                     onClick={() =>
                       updateParams(
                         "sort",
-                        opt.value === "newest" ? null : opt.value
+                        // AUD-B1: featured is the no-param default.
+                        opt.value === FEATURED_SORT ? null : opt.value
                       )
                     }
                     className={cn(
@@ -377,7 +396,7 @@ const SpaceFilter = () => {
                       activeSort === opt.value ? optionActive : optionInactive
                     )}
                   >
-                    {t(opt.key)}
+                    {opt.label}
                   </button>
                 ))}
               </Popover.Popup>
@@ -538,7 +557,7 @@ const SpaceFilter = () => {
                             : "border-border text-muted hover:bg-subtle"
                         )}
                       >
-                        {t(opt.key)}
+                        {opt.label}
                       </button>
                     ))}
                   </div>

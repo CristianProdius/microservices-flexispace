@@ -70,8 +70,10 @@ const {
   getSpaces,
   checkAvailability,
   createSpace,
+  updateSpace,
   updateAvailability,
   validatePricingTiers,
+  validateAmenityIds,
   deleteSpace,
 } = await import("./space.controller.js");
 
@@ -550,6 +552,19 @@ describe("validatePricingTiers - AUD-008", () => {
     ).toBe(false);
   });
 
+  // M6 (product side): a zero-price tier zeroes the Math.min subtotal
+  // downstream, so a "first hour free" tier bills only the cleaning fee for
+  // any duration. Reject price <= 0, not just < 0.
+  it("rejects a zero price (M6)", () => {
+    const result = validatePricingTiers([
+      { minutes: 30, label: "free", price: 0 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("0.01");
+    }
+  });
+
   it("rejects negative or non-finite price", () => {
     expect(
       validatePricingTiers([{ minutes: 30, label: "ok", price: -1 }]).ok,
@@ -656,5 +671,287 @@ describe("createSpace - SPACE_WRITE_KEYS whitelist (POST-DB-010)", () => {
     // hostId is set from `req.userId`, not from the body — mass-assignment
     // protection.
     expect(callArgs.data.hostId).toBe("user-1");
+  });
+});
+
+// H2: createSpace/updateSpace must validate the whitelisted numeric base rates
+// before they reach Prisma, so a host can't persist a negative pricePerHour (→
+// negative booking total) or a zero/negative capacity / inverted booking-hour
+// bounds. The unconstrained Float? columns give no DB-level protection.
+const fullWeek = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+  dayOfWeek,
+  startTime: "09:00",
+  endTime: "18:00",
+  isOpen: dayOfWeek < 5,
+}));
+
+const buildCreateBody = (overrides: Record<string, unknown> = {}) => ({
+  name: "Test space",
+  pricingType: "HOURLY",
+  venueId: 1,
+  availability: fullWeek,
+  ...overrides,
+});
+
+describe("createSpace - H2 numeric base-rate validation", () => {
+  beforeEach(() => {
+    (prisma.venue.findUnique as AnyMock).mockResolvedValue({
+      id: 1,
+      hostId: "user-1",
+    });
+    (prisma.space.create as AnyMock).mockResolvedValue({
+      id: 1,
+      category: null,
+      amenities: [],
+    });
+  });
+
+  it("rejects a negative pricePerHour with 400", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ pricePerHour: -100 }) }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a zero base rate with 400 (a rate must be positive)", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ pricePerHour: 0 }) }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts a null blank rate (regression: DAILY-only space with pricePerHour:null)", async () => {
+    // The admin form always posts the unused rate as `null`. A null clears the
+    // nullable column and must NOT be rejected, or normal single-rate spaces
+    // become unsaveable.
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "DAILY",
+          pricePerDay: 100,
+          pricePerHour: null,
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
+  });
+
+  it("rejects a negative cleaningFee but accepts zero", async () => {
+    const negRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ cleaningFee: -1 }) }),
+      negRes as never,
+    );
+    expect(negRes.statusCode).toBe(400);
+
+    const zeroRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ cleaningFee: 0 }) }),
+      zeroRes as never,
+    );
+    expect(zeroRes.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a zero or negative capacity with 400", async () => {
+    const zeroRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ capacity: 0 }) }),
+      zeroRes as never,
+    );
+    expect(zeroRes.statusCode).toBe(400);
+
+    const negRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ capacity: -4 }) }),
+      negRes as never,
+    );
+    expect(negRes.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects minBookingHours > maxBookingHours with 400", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({ minBookingHours: 5, maxBookingHours: 2 }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts well-ordered booking-hour bounds", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({ minBookingHours: 1, maxBookingHours: 8 }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+  });
+});
+
+describe("updateSpace - H2 numeric base-rate validation", () => {
+  it("rejects a negative pricePerDay with 400", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 5,
+      hostId: "user-1",
+      venueId: 1,
+    });
+    await updateSpace(
+      buildReq({ params: { id: "5" }, body: { pricePerDay: -50 } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a partial update whose new min exceeds the STORED max", async () => {
+    // Stored max=4; a PATCH sending only minBookingHours:8 must be rejected
+    // using the effective (merged) bounds, not just the fields in this body.
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 6,
+      hostId: "user-1",
+      venueId: 1,
+      minBookingHours: 1,
+      maxBookingHours: 4,
+    });
+    await updateSpace(
+      buildReq({ params: { id: "6" }, body: { minBookingHours: 8 } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.update).not.toHaveBeenCalled();
+  });
+});
+
+// LOW: amenityIds is trusted from the body and `.map()`'d unconditionally into
+// join rows. validateAmenityIds enforces an array of distinct positive ints
+// (capped) so a malformed payload can't 500 Prisma or fan out thousands of rows.
+describe("validateAmenityIds - LOW", () => {
+  it("accepts an array of distinct positive integers", () => {
+    expect(validateAmenityIds([1, 2, 3])).toEqual({
+      ok: true,
+      value: [1, 2, 3],
+    });
+  });
+
+  it("rejects a non-array", () => {
+    expect(validateAmenityIds("1,2,3").ok).toBe(false);
+    expect(validateAmenityIds(42).ok).toBe(false);
+  });
+
+  it("rejects negative / zero / non-integer ids", () => {
+    expect(validateAmenityIds([-1]).ok).toBe(false);
+    expect(validateAmenityIds([0]).ok).toBe(false);
+    expect(validateAmenityIds([1.5]).ok).toBe(false);
+  });
+
+  it("rejects duplicates and oversized arrays", () => {
+    expect(validateAmenityIds([1, 1]).ok).toBe(false);
+    expect(
+      validateAmenityIds(Array.from({ length: 51 }, (_, i) => i + 1)).ok,
+    ).toBe(false);
+  });
+});
+
+describe("createSpace - LOW amenityIds validation", () => {
+  beforeEach(() => {
+    (prisma.venue.findUnique as AnyMock).mockResolvedValue({
+      id: 1,
+      hostId: "user-1",
+    });
+    (prisma.space.create as AnyMock).mockResolvedValue({
+      id: 1,
+      category: null,
+      amenities: [],
+    });
+  });
+
+  it("rejects a non-array amenityIds with 400", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ amenityIds: "1,2" }) }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects negative amenityIds with 400", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ amenityIds: [-3] }) }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+});
+
+// LOW: getSpaces string-only query-param guards. Express parses ?city=a&city=b
+// into an array (→ Prisma 500 when it reaches `contains`) and ?categorySlug[not]
+// =x into a nested object (→ filter-operator injection). Both must be skipped.
+describe("getSpaces - LOW query-param type guards", () => {
+  it("ignores an array city param instead of 500ing", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { city: ["a", "b"] } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    // No venue filter is applied for a non-string city.
+    expect(call?.where?.venue).toBeUndefined();
+  });
+
+  it("ignores a categorySlug filter-operator object", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { categorySlug: { not: "foo" } } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.categorySlug).toBeUndefined();
+  });
+
+  it("ignores an array groupSlug param", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { groupSlug: ["a", "b"] } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.category).toBeUndefined();
+  });
+
+  it("still applies a well-formed string city filter", async () => {
+    const res = buildRes();
+    await getSpaces(
+      buildReq({ query: { city: "Chișinău" } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    const call = (prisma.space.findMany as AnyMock).mock.calls[0]?.[0];
+    expect(call?.where?.venue?.city).toEqual({
+      contains: "Chișinău",
+      mode: "insensitive",
+    });
   });
 });

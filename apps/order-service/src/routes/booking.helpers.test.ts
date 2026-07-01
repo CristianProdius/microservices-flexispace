@@ -27,12 +27,14 @@ vi.mock("../utils/kafka.js", () => ({
 
 const {
   InvalidParameterError,
+  NoApplicablePriceError,
   bookingHours,
   bookingIntervalsOverlap,
   calculateBookingPrice,
   computeBookingHours,
   dateRangesOverlap,
   parsePositiveInteger,
+  spaceSupportsHourly,
 } = await import("./booking.js");
 
 const date = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -441,6 +443,172 @@ describe("calculateBookingPrice commission model (PRICE-002)", () => {
     );
     expect(result.subtotal).toBe(100);
     expect(result.serviceFee).toBe(100); // clamped to 1.0 -> 100% of subtotal
+  });
+});
+
+describe("spaceSupportsHourly (H1)", () => {
+  it("is true for HOURLY/BOTH only when a positive per-hour rate exists", () => {
+    expect(
+      spaceSupportsHourly({ pricingType: "HOURLY", pricePerHour: 25 })
+    ).toBe(true);
+    expect(
+      spaceSupportsHourly({ pricingType: "BOTH", pricePerHour: 25 })
+    ).toBe(true);
+  });
+
+  it("is false for HOURLY/BOTH with no usable hourly price (null / <=0)", () => {
+    // A BOTH space priced only per-day (pricePerHour null) is NOT hourly-
+    // capable: treating it as hourly would block a sub-window while pricing a
+    // full day (block != price).
+    expect(spaceSupportsHourly({ pricingType: "BOTH" })).toBe(false);
+    expect(
+      spaceSupportsHourly({ pricingType: "HOURLY", pricePerHour: null })
+    ).toBe(false);
+    expect(
+      spaceSupportsHourly({ pricingType: "BOTH", pricePerHour: 0 })
+    ).toBe(false);
+  });
+
+  it("is false for DAILY with no positive-priced tiers", () => {
+    expect(spaceSupportsHourly({ pricingType: "DAILY" })).toBe(false);
+    expect(spaceSupportsHourly({ pricingType: "DAILY", pricingTiers: [] })).toBe(false);
+    // A zero-priced tier does not count (it is skipped when pricing).
+    expect(
+      spaceSupportsHourly({
+        pricingType: "DAILY",
+        pricingTiers: [{ minutes: 60, price: 0 }],
+      })
+    ).toBe(false);
+  });
+
+  it("is true for DAILY when a positive-priced per-minute tier exists", () => {
+    expect(
+      spaceSupportsHourly({
+        pricingType: "DAILY",
+        pricingTiers: [{ minutes: 60, price: 25 }],
+      })
+    ).toBe(true);
+  });
+});
+
+describe("calculateBookingPrice zero-candidate rejection (H1)", () => {
+  const openAllDay = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    endTime: "23:59",
+    isOpen: true,
+    startTime: "00:00",
+  }));
+
+  it("throws NoApplicablePriceError instead of pricing 0 for an hourly-only space booked as a full day", () => {
+    // Hourly-only space (no daily rate, no tiers) asked for a full day (no
+    // times). The old code produced candidates=[] -> subtotal=0 -> a free,
+    // fully-blocking reservation. Now it throws so the route returns 400.
+    expect(() =>
+      calculateBookingPrice(
+        {
+          availability: openAllDay,
+          cleaningFee: 0,
+          currency: "USD",
+          pricePerDay: null,
+          pricePerHour: 25,
+          pricingType: "HOURLY",
+        },
+        date("2026-05-18"),
+        date("2026-05-18"),
+        null,
+        null
+      )
+    ).toThrow(NoApplicablePriceError);
+  });
+});
+
+describe("calculateBookingPrice zero-price tier guard (M6)", () => {
+  const openAllDay = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    endTime: "23:59",
+    isOpen: true,
+    startTime: "00:00",
+  }));
+
+  it("skips a zero-price tier so it can't zero an unrelated duration", () => {
+    // A "first hour free" tier (60min @ 0) would win Math.min for a 12h booking
+    // (12 * 0 = 0) and make the whole booking free. It must be skipped so the
+    // real 4h tier prices the booking.
+    const result = calculateBookingPrice(
+      {
+        availability: openAllDay,
+        cleaningFee: 0,
+        currency: "MDL",
+        pricePerDay: null,
+        pricePerHour: null,
+        pricingTiers: [
+          { minutes: 60, price: 0 },
+          { minutes: 240, price: 4500 },
+        ],
+        pricingType: "HOURLY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      "08:00",
+      "20:00",
+      0
+    );
+    // 12h / 4h = 3 blocks * 4500 = 13500 (the zero tier is ignored).
+    expect(result.subtotal).toBe(13500);
+  });
+});
+
+describe("calculateBookingPrice fails closed on a non-positive base rate (H1/H2)", () => {
+  it("rejects a negative daily rate (no candidate) instead of pricing a free hold", () => {
+    // A negative rate is not truthy-gated into a candidate: it contributes
+    // nothing, so with no other price path the candidate set is empty and we
+    // throw (400) rather than flooring a negative to a free, slot-blocking $0.
+    expect(() =>
+      calculateBookingPrice(
+        {
+          availability: [],
+          cleaningFee: 0,
+          currency: "USD",
+          pricePerDay: -100,
+          pricePerHour: null,
+          pricingType: "DAILY",
+        },
+        date("2026-05-18"),
+        date("2026-05-18"),
+        null,
+        null,
+        0
+      )
+    ).toThrow(NoApplicablePriceError);
+  });
+
+  it("ignores a negative rate but still prices via a valid positive tier", () => {
+    // BOTH space with a bogus negative pricePerHour but a valid $10/hr tier:
+    // the negative is dropped, the tier prices the booking (no free hold).
+    const openAllDay = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+      dayOfWeek,
+      endTime: "23:59",
+      isOpen: true,
+      startTime: "00:00",
+    }));
+    const result = calculateBookingPrice(
+      {
+        availability: openAllDay,
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: null,
+        pricePerHour: -5,
+        pricingTiers: [{ minutes: 60, price: 10 }],
+        pricingType: "BOTH",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      "09:00",
+      "10:00",
+      0
+    );
+    expect(result.subtotal).toBe(10);
+    expect(result.total).toBe(10);
   });
 });
 

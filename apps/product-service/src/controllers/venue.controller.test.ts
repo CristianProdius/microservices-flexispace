@@ -40,9 +40,13 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@repo/db", () => ({
-  prisma: mocks.prisma,
-}));
+vi.mock("@repo/db", async () => {
+  // Re-export the real generated enums (Currency) so venue.controller's
+  // module-level `new Set(Object.values(Currency))` resolves, while still
+  // swapping in the mocked prisma client.
+  const actual = await vi.importActual<typeof import("@repo/db")>("@repo/db");
+  return { ...actual, prisma: mocks.prisma };
+});
 
 vi.mock("../utils/kafka.js", () => ({
   producer: {
@@ -250,6 +254,139 @@ describe("venue controller contract", () => {
       }),
       where: { id: 12 },
     });
+  });
+
+  // PRODSVC-021: latitude/longitude (Float?) and currency (enum) are written
+  // straight to Prisma. Without a type/range guard, `latitude:"abc"` or
+  // `currency:"XXX"` throws a PrismaClientValidationError -> 500 where a 400 is
+  // intended. These cases lock in the 400 + no-write behavior.
+  it("rejects an out-of-range latitude on create with 400 and no write", async () => {
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        latitude: 120,
+        longitude: 28.8,
+      },
+      userId: "host-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "latitude must be a number between -90 and 90",
+    });
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-numeric latitude on create with 400 and no write", async () => {
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        latitude: "abc",
+      },
+      userId: "host-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "latitude must be a number between -90 and 90",
+    });
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown currency on create with 400 and no write", async () => {
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        currency: "XXX",
+      },
+      userId: "host-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid currency" });
+    expect(mocks.venueCreate).not.toHaveBeenCalled();
+  });
+
+  it("accepts valid coordinates and currency on create", async () => {
+    mocks.venueCreate.mockResolvedValue({ id: 30 });
+    const req = {
+      body: {
+        name: "Venue",
+        address: "Str. 1",
+        city: "Chisinau",
+        country: "Moldova",
+        latitude: 47.0188,
+        longitude: 28.8705,
+        currency: "EUR",
+      },
+      userId: "host-1",
+    } as unknown as Request;
+    const res = createResponse();
+
+    await createVenue(req, res);
+
+    expect(mocks.venueCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        latitude: 47.0188,
+        longitude: 28.8705,
+        currency: "EUR",
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it("rejects an out-of-range longitude on update with 400 and no write", async () => {
+    mocks.venueFindUnique.mockResolvedValueOnce({ id: 15, hostId: "host-1" });
+    const req = {
+      params: { id: "15" },
+      body: { longitude: -200 },
+      userId: "host-1",
+      user: { role: "HOST" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "longitude must be a number between -180 and 180",
+    });
+    expect(mocks.venueUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown currency on update with 400 and no write", async () => {
+    mocks.venueFindUnique.mockResolvedValueOnce({ id: 15, hostId: "host-1" });
+    const req = {
+      params: { id: "15" },
+      body: { currency: "XXX" },
+      userId: "host-1",
+      user: { role: "HOST" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid currency" });
+    expect(mocks.venueUpdate).not.toHaveBeenCalled();
   });
 
   it("persists workingHours when creating venues", async () => {

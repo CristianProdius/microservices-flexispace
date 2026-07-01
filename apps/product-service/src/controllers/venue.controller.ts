@@ -1,9 +1,67 @@
 import { Request, Response } from "express";
-import { Prisma, prisma } from "@repo/db";
+import { Currency, Prisma, prisma } from "@repo/db";
 import { producer } from "../utils/kafka.js";
 import { resolveTranslations, VENUE_TRANSLATION_FIELDS } from "../lib/translations.js";
-import { parsePositiveIntegerWithDefault } from "../lib/validation.js";
+import {
+  isValidYouTubeUrl,
+  parsePositiveIntegerWithDefault,
+} from "../lib/validation.js";
 import { lookupActiveUser } from "@repo/auth-middleware";
+
+// PRODSVC-021: valid Currency enum members, mirroring the space controller's
+// `CURRENCIES` set. Used to reject unknown currency codes (e.g. "XXX") with a
+// 400 before they hit Prisma as an invalid enum value.
+const CURRENCIES = new Set<Currency>(Object.values(Currency));
+
+// PRODSVC-021: type/range-validate the scalar venue inputs that are written
+// straight to Prisma (latitude/longitude Float?, currency enum, videoUrl). An
+// untyped `latitude: "abc"` or `currency: "XXX"` otherwise flows into
+// `prisma.venue.{create,update}` and throws PrismaClientValidationError ->
+// unhandled 500 where a 400 is intended. Mirrors the bodyHostId type-guard in
+// createVenue. `null`/`undefined` mean "not provided" and are left to the
+// existing optional-field handling. Returns an error message string on the
+// first invalid field, or null when everything checks out.
+const validateVenueScalarInputs = (input: {
+  latitude?: unknown;
+  longitude?: unknown;
+  currency?: unknown;
+  videoUrl?: unknown;
+}): string | null => {
+  const { latitude, longitude, currency, videoUrl } = input;
+  if (
+    latitude !== undefined &&
+    latitude !== null &&
+    (typeof latitude !== "number" ||
+      !Number.isFinite(latitude) ||
+      latitude < -90 ||
+      latitude > 90)
+  ) {
+    return "latitude must be a number between -90 and 90";
+  }
+  if (
+    longitude !== undefined &&
+    longitude !== null &&
+    (typeof longitude !== "number" ||
+      !Number.isFinite(longitude) ||
+      longitude < -180 ||
+      longitude > 180)
+  ) {
+    return "longitude must be a number between -180 and 180";
+  }
+  if (
+    currency !== undefined &&
+    currency !== null &&
+    !(typeof currency === "string" && CURRENCIES.has(currency as Currency))
+  ) {
+    return "Invalid currency";
+  }
+  // PRODSVC-010 parity with space.videoUrl: URL-parser + host allowlist. The
+  // helper treats null/undefined/"" as valid so optional videoUrl short-circuits.
+  if (!isValidYouTubeUrl(videoUrl)) {
+    return "videoUrl must be a valid YouTube URL";
+  }
+  return null;
+};
 
 // PRODSVC-012: cap host-scoped lists so a host with thousands of venues can't
 // blow up memory/CPU or generate huge payloads. Allow client-provided paging.
@@ -311,6 +369,17 @@ export const createVenue = async (req: Request, res: Response) => {
       .status(400)
       .json({ message: "Name, address, city, and country are required" });
   }
+  // PRODSVC-021: validate geo/currency/video scalars before the Prisma write so
+  // malformed inputs return 400 instead of a Prisma 500.
+  const scalarError = validateVenueScalarInputs({
+    latitude,
+    longitude,
+    currency,
+    videoUrl,
+  });
+  if (scalarError) {
+    return res.status(400).json({ message: scalarError });
+  }
   const venue = await prisma.venue.create({
     data: {
       name,
@@ -408,6 +477,18 @@ export const updateVenue = async (req: Request, res: Response) => {
     return res.status(400).json({
       message: "venueVerified, venueRecommended, and venueSponsored must be booleans",
     });
+  }
+
+  // PRODSVC-021: validate geo/currency/video scalars before the Prisma write so
+  // malformed inputs return 400 instead of a Prisma 500.
+  const scalarError = validateVenueScalarInputs({
+    latitude,
+    longitude,
+    currency,
+    videoUrl,
+  });
+  if (scalarError) {
+    return res.status(400).json({ message: scalarError });
   }
 
   const venueData = {

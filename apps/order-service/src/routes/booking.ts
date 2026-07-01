@@ -80,6 +80,18 @@ export class MissingExchangeRateError extends Error {
   }
 }
 
+// H1: thrown when NO pricing candidate applies to the requested booking (e.g.
+// an hourly-only space asked for a full-day hold with no times, or a window
+// that intersects no open day). Callers MUST surface a 400 instead of silently
+// pricing 0 — a zero subtotal would be a FREE reservation that still blocks the
+// whole slot for everyone else.
+export class NoApplicablePriceError extends Error {
+  constructor() {
+    super("This space has no applicable price for the requested booking");
+    this.name = "NoApplicablePriceError";
+  }
+}
+
 // BOOKSVC-004: refund-rate matrix applied at cancel time.
 // FLEXIBLE      : 100% if >24h, else 0%
 // MODERATE      : 100% if >5d (120h), 50% if 24h–5d, else 0%
@@ -451,6 +463,29 @@ export const resolveCommissionRate = (hostCommissionRate: number | null | undefi
   return Number.isFinite(fromEnv) && fromEnv >= 0 ? clamp(fromEnv) : 0;
 };
 
+// H1: whether a space can be priced by the hour. The client-supplied `isHourly`
+// is NOT trusted — the priced window and the blocked window must be derived from
+// the same server-side signal (times present AND the space supports hourly
+// pricing) so a caller can never block more than they pay for. A space supports
+// hourly pricing when its pricingType is HOURLY or BOTH, or it has any
+// per-minute pricing tier configured.
+export const spaceSupportsHourly = (space: {
+  pricingType: string;
+  pricePerHour?: number | null;
+  pricingTiers?: Array<{ minutes: number; price: number }>;
+}): boolean => {
+  // "Supports hourly" must mean an actual usable positive hourly price exists,
+  // not just that pricingType is HOURLY/BOTH. Otherwise a BOTH space with only
+  // pricePerDay (pricePerHour null) would be treated as hourly — blocking just
+  // the requested window while pricing a full day (block != price). Mirror the
+  // price gates in calculateBookingPrice: a positive per-hour rate OR a
+  // positive-priced tier. (A zero-priced tier is skipped there too.)
+  const hasPositiveHourlyRate =
+    typeof space.pricePerHour === "number" && space.pricePerHour > 0;
+  const hasPositiveTier = (space.pricingTiers ?? []).some((t) => t.price > 0);
+  return hasPositiveHourlyRate || hasPositiveTier;
+};
+
 // Calculate booking price based on space pricing and duration.
 //
 // Pricing model:
@@ -500,6 +535,11 @@ export const calculateBookingPrice = (
   // For tiers larger than the booked duration that yields 1 unit, which means
   // "the bigger tier price IS the floor" — exactly the cap behavior we want.
   for (const tier of space.pricingTiers ?? []) {
+    // M6: skip a zero/negative-priced tier the same way the zero-hour hourly
+    // candidate is guarded below. A "first hour free" (price <= 0) tier would
+    // otherwise win Math.min for an unrelated 30-day booking and zero the
+    // subtotal, billing only the cleaning fee.
+    if (tier.price <= 0) continue;
     const units = Math.ceil(totalMinutes / tier.minutes);
     candidates.push(roundCurrency(units * tier.price));
   }
@@ -507,13 +547,19 @@ export const calculateBookingPrice = (
   // Raw per-hour / per-day rates also compete. Adding BOTH for type=BOTH
   // means an hourly extrapolation can also be capped by the daily rate, not
   // just by a configured tier.
+  // Gate on a strictly POSITIVE rate, not mere truthiness: a negative
+  // pricePerHour/pricePerDay (possible on legacy rows / importer writes that
+  // bypass the product-service H2 validation) is truthy and would otherwise
+  // push a negative candidate that Math.min selects and the subtotal floor
+  // masks to a free, slot-blocking booking. A non-positive rate contributes no
+  // candidate, so the space fails closed (zero-candidate -> 400) instead.
   const wantsHourly = Boolean(startTime && endTime);
   const allowsHourly =
     wantsHourly &&
-    space.pricePerHour &&
+    (space.pricePerHour ?? 0) > 0 &&
     (space.pricingType === "HOURLY" || space.pricingType === "BOTH");
   const allowsDaily =
-    space.pricePerDay &&
+    (space.pricePerDay ?? 0) > 0 &&
     (space.pricingType === "DAILY" || space.pricingType === "BOTH");
 
   if (allowsHourly) {
@@ -539,14 +585,25 @@ export const calculateBookingPrice = (
     candidates.push(roundCurrency(space.pricePerDay! * days));
   }
 
-  const subtotal = candidates.length > 0 ? Math.min(...candidates) : 0;
+  // H1: never silently price 0 when nothing applies. A zero subtotal from an
+  // empty candidate set is a free booking that still blocks the whole slot —
+  // reject it so the caller returns 400 instead of persisting the hold.
+  if (candidates.length === 0) {
+    throw new NoApplicablePriceError();
+  }
+  // H1/H2: floor at >= 0 as defense-in-depth. A negative host rate (see H2)
+  // must never produce a negative subtotal that credits the guest.
+  const subtotal = Math.max(0, Math.min(...candidates));
 
-  const cleaningFee = roundCurrency(space.cleaningFee);
+  // Clamp the cleaning fee to >= 0 too (a legacy/importer negative would
+  // otherwise leave the returned components inconsistent with the floored
+  // total, and understate the charge).
+  const cleaningFee = Math.max(0, roundCurrency(space.cleaningFee));
   const commissionRate = resolveCommissionRate(hostCommissionRate);
   // Commission applies to the price paid for the space itself, not to the
   // pass-through cleaning fee (cleaning is the host's cost of doing business).
   const serviceFee = roundCurrency(subtotal * commissionRate);
-  const total = roundCurrency(subtotal + cleaningFee);
+  const total = Math.max(0, roundCurrency(subtotal + cleaningFee));
 
   return { subtotal, cleaningFee, serviceFee, total };
 };
@@ -589,7 +646,10 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
-      const { spaceId, startDate, endDate, startTime, endTime, guests, isHourly, message } = result.data;
+      // H1: the client `isHourly` is intentionally NOT destructured/used here.
+      // It is derived server-side below so the blocked window equals the priced
+      // window (see `isHourly` derivation after the space is loaded).
+      const { spaceId, startDate, endDate, startTime, endTime, guests, message } = result.data;
       const requestedStartDate = dateFromInput(startDate);
       const requestedEndDate = dateFromInput(endDate);
 
@@ -630,15 +690,41 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(400).send({ message: availabilityError });
       }
 
+      // H1: derive isHourly server-side. Never trust the client value for either
+      // occupancy (bookingInstantRange) or persistence. A booking is hourly iff
+      // a time window was supplied AND the space actually supports hourly
+      // pricing (a positive per-hour rate or tier); otherwise it is a full-day
+      // booking (blocks and prices the whole day). This closes both exploits:
+      // (a) hourly-only space + isHourly=false + no times -> full-day interval +
+      // zero candidates -> 400 below; (b) BOTH space + 1h window + isHourly=false
+      // -> priced 1h AND blocks only 1h.
+      // KNOWN FOLLOW-UP: for a SINGLE-day hourly booking the blocked window
+      // equals the priced window; for a MULTI-day hourly booking
+      // bookingInstantRange still blocks one contiguous span across overnights
+      // while pricing sums only the per-day availability intersection, so the
+      // block window can exceed the priced window (phantom blocking, not
+      // underpricing). Tracked in docs/bug-audit-2026-07.md follow-ups.
+      const isHourly = Boolean(startTime && endTime) && spaceSupportsHourly(space);
+
       // Calculate pricing
-      const pricing = calculateBookingPrice(
-        space,
-        requestedStartDate,
-        requestedEndDate,
-        startTime || null,
-        endTime || null,
-        space.host?.commissionRate ?? null
-      );
+      let pricing: ReturnType<typeof calculateBookingPrice>;
+      try {
+        pricing = calculateBookingPrice(
+          space,
+          requestedStartDate,
+          requestedEndDate,
+          startTime || null,
+          endTime || null,
+          space.host?.commissionRate ?? null
+        );
+      } catch (err) {
+        // H1: no applicable price for the requested window (e.g. an hourly-only
+        // space booked as a free full day). Reject rather than pricing 0.
+        if (err instanceof NoApplicablePriceError) {
+          return reply.status(400).send({ message: err.message });
+        }
+        throw err;
+      }
 
       let exchangeRate: number;
       try {
