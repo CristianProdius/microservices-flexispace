@@ -616,18 +616,53 @@ async function getExchangeRate(
   toCurrency: string = "USD"
 ): Promise<number> {
   if (fromCurrency === toCurrency) return 1.0;
-  const rate = await prisma.exchangeRate.findUnique({
-    where: {
-      fromCurrency_toCurrency: {
-        fromCurrency: fromCurrency as any,
-        toCurrency: toCurrency as any,
+
+  // M7: a single seeded direction (e.g. USD->MDL but not MDL->USD) must not
+  // hard-block all non-USD bookings. Resolve a leg via the direct row, or fall
+  // back to the inverse row and use 1/rate; only throw MissingExchangeRateError
+  // when neither direction exists. (product-service/src/lib/currency.ts does
+  // direct + USD-chain but no inverse fallback; those helpers are currently
+  // unused, but they should gain the same inverse fallback if they go live.)
+  const resolveLeg = async (
+    from: string,
+    to: string
+  ): Promise<number | null> => {
+    if (from === to) return 1.0;
+    const direct = await prisma.exchangeRate.findUnique({
+      where: {
+        fromCurrency_toCurrency: {
+          fromCurrency: from as any,
+          toCurrency: to as any,
+        },
       },
-    },
-  });
-  if (!rate) {
-    throw new MissingExchangeRateError(fromCurrency, toCurrency);
+    });
+    // Guard against a bogus 0 rate (placeholder seed) the same as the inverse
+    // branch — a 0 must fall through to MissingExchangeRateError, not be used
+    // as a real rate (which would silently value the booking's revenue at $0).
+    if (direct && Number(direct.rate) !== 0) return Number(direct.rate); // Prisma.Decimal
+    const inverse = await prisma.exchangeRate.findUnique({
+      where: {
+        fromCurrency_toCurrency: {
+          fromCurrency: to as any,
+          toCurrency: from as any,
+        },
+      },
+    });
+    if (inverse && Number(inverse.rate) !== 0) return 1 / Number(inverse.rate);
+    return null;
+  };
+
+  const direct = await resolveLeg(fromCurrency, toCurrency);
+  if (direct !== null) return direct;
+
+  // Cross-currency fallback: chain through USD (from -> USD -> to).
+  if (fromCurrency !== "USD" && toCurrency !== "USD") {
+    const fromUsd = await resolveLeg(fromCurrency, "USD");
+    const usdTo = await resolveLeg("USD", toCurrency);
+    if (fromUsd !== null && usdTo !== null) return fromUsd * usdTo;
   }
-  return Number(rate.rate); // rate.rate is Prisma.Decimal
+
+  throw new MissingExchangeRateError(fromCurrency, toCurrency);
 }
 
 export const bookingRoute = async (fastify: FastifyInstance) => {
@@ -1151,14 +1186,62 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       // Fire rejection events for every PENDING auto-rejected as a side effect
       // of this approval so downstream consumers (email, notifications) react.
-      for (const rejectedId of result.rejected) {
-        producer.send("booking.rejected", {
-          value: {
-            bookingId: rejectedId,
-            reason: "Automatically rejected: slot was awarded to another booking",
-            spaceName: booking.space.name,
-          },
+      // M9: the email-service consumer gates the whole send on `guestEmail`, so
+      // fetch each race-loser's guest email/name and include them in the payload
+      // so the consumer's guestEmail guard passes — otherwise those guests are
+      // never notified their booking lost the slot.
+      // M8/M9: this is a POST-COMMIT side effect (the approve + auto-reject are
+      // already durable). Wrap the whole notify block in a log-and-continue
+      // try/catch (KAFKA-001 pattern) so a transient DB error on the email
+      // lookup, or a broker outage, can't 500 an approval that already
+      // succeeded (which would also strand the reject notifications and make a
+      // host retry hit the CAS with a contradictory 409).
+      try {
+        const rejectedBookings =
+          result.rejected.length > 0
+            ? await prisma.booking.findMany({
+                where: { id: { in: result.rejected } },
+                select: {
+                  id: true,
+                  guest: { select: { email: true, name: true } },
+                },
+              })
+            : [];
+
+        // Await each publish inside Promise.allSettled so one broker failure
+        // doesn't reject the whole batch or crash the worker with an unhandled
+        // rejection; log each failure and carry on.
+        const rejectionPublishResults = await Promise.allSettled(
+          rejectedBookings.map((rejected) =>
+            producer.send("booking.rejected", {
+              value: {
+                bookingId: rejected.id,
+                guestEmail: rejected.guest.email,
+                guestName: rejected.guest.name,
+                spaceName: booking.space.name,
+                reason:
+                  "Automatically rejected: slot was awarded to another booking",
+              },
+            })
+          )
+        );
+        rejectionPublishResults.forEach((outcome, idx) => {
+          if (outcome.status === "rejected") {
+            request.log.error(
+              {
+                err: outcome.reason,
+                bookingId: rejectedBookings[idx]?.id,
+                topic: "booking.rejected",
+              },
+              "Failed to publish auto-reject booking.rejected event; guest will not be notified"
+            );
+          }
         });
+      } catch (err) {
+        request.log.error(
+          { err, topic: "booking.rejected" },
+          "Failed to notify auto-rejected guests after a committed approval; booking state is durable, notifications skipped"
+        );
       }
 
       return reply.send(updatedBooking);
@@ -1667,14 +1750,19 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
             serviceFee: true,
           },
         }),
-        prisma.payout.aggregate({
+        // M10: group payouts by currency (like completedByCurrency above) so
+        // we emit per-currency arrays instead of a scalar that silently sums
+        // across currencies (e.g. MDL + USD).
+        prisma.payout.groupBy({
+          by: ["currency"],
           where: {
             hostId,
             status: { in: ["PENDING", "PROCESSING"] },
           },
           _sum: { netAmount: true },
         }),
-        prisma.payout.aggregate({
+        prisma.payout.groupBy({
+          by: ["currency"],
           where: {
             hostId,
             status: "COMPLETED",
@@ -1696,10 +1784,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       return reply.send({
         earningsByCurrency,
-        // Payouts are denominated in a single currency (USD per Payout model);
-        // surface them separately rather than mixing with multi-currency totals.
-        pendingPayout: round2(pendingPayouts._sum.netAmount || 0),
-        completedPayouts: round2(earnings._sum.netAmount || 0),
+        // M10: per-currency payout arrays mirroring earningsByCurrency's shape,
+        // so mixed-currency payouts are never collapsed into a single scalar.
+        pendingPayout: pendingPayouts.map((row) => ({
+          currency: row.currency,
+          amount: round2(row._sum.netAmount ?? 0),
+        })),
+        completedPayouts: earnings.map((row) => ({
+          currency: row.currency,
+          amount: round2(row._sum.netAmount ?? 0),
+        })),
       });
     }
   );
