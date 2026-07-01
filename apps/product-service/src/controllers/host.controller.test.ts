@@ -310,6 +310,14 @@ describe("host controller", () => {
     expect(payload.hostSponsored).toBe(false);
     expect(payload.venues).toHaveLength(1);
     expect(payload.venues[0].spaces[0].id).toBe(10);
+    // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+    // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+    // live on the parent Venue (DB-010), not on Space — so each nested space must
+    // carry the parent venue's city/country or the card prints a bare ", ".
+    expect(payload.venues[0].spaces[0]).toMatchObject({
+      city: "Chisinau",
+      country: "Moldova",
+    });
   });
 
   it("updates host listing badges for HOST and ADMIN accounts", async () => {

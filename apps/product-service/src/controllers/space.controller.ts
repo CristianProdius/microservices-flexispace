@@ -746,7 +746,10 @@ export const getSpaces = async (req: Request, res: Response) => {
     return flattenVenue({
       ...space,
       averageRating: rating.avg,
-      reviewCount: rating.count,
+      // AUD-B6: emit under `totalReviews` (the @repo/types Space key every
+      // frontend reads); the old `reviewCount` key was silently ignored so
+      // counts always rendered 0.
+      totalReviews: rating.count,
     });
   });
 
@@ -852,7 +855,9 @@ export const getSpace = async (req: Request, res: Response) => {
   const spaceWithRating = flattenVenue({
     ...space,
     averageRating: avgRating._avg.rating || 0,
-    reviewCount,
+    // AUD-B6: emit under `totalReviews` to match the @repo/types Space key the
+    // frontends read; `reviewCount` was ignored and rendered 0.
+    totalReviews: reviewCount,
   });
 
   res
@@ -1361,7 +1366,34 @@ export const getMySpaces = async (req: Request, res: Response) => {
     skip: (page - 1) * limit,
   });
 
-  res.status(200).json(spaces.map(flattenVenue));
+  // AUD-B6: the admin host Spaces page renders each space's averageRating and a
+  // review count, but this endpoint previously returned neither. Aggregate
+  // ratings the same way getSpaces does (batch groupBy to avoid N+1) and attach
+  // averageRating + totalReviews so the admin cards stop showing 0/blank.
+  const spaceIds = spaces.map((s) => s.id);
+  const ratings = await prisma.review.groupBy({
+    by: ["spaceId"],
+    where: { spaceId: { in: spaceIds } },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+  const ratingMap = new Map(
+    ratings.map((r) => [
+      r.spaceId,
+      { avg: r._avg.rating || 0, count: r._count.rating },
+    ]),
+  );
+
+  const spacesWithRating = spaces.map((space) => {
+    const rating = ratingMap.get(space.id) || { avg: 0, count: 0 };
+    return flattenVenue({
+      ...space,
+      averageRating: rating.avg,
+      totalReviews: rating.count,
+    });
+  });
+
+  res.status(200).json(spacesWithRating);
 };
 
 // Get/Update space availability

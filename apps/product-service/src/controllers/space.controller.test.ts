@@ -78,6 +78,7 @@ const {
   validatePricingTiers,
   validateAmenityIds,
   deleteSpace,
+  getMySpaces,
 } = await import("./space.controller.js");
 
 type AnyMock = Mock;
@@ -1052,6 +1053,100 @@ describe("checkAvailability - M11 soft-delete guard", () => {
     const call = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
     expect(call?.where?.isActive).toBe(true);
     expect(call?.where?.venue).toEqual({ isActive: true });
+  });
+});
+
+// AUD-B6: the per-space review count must be emitted under `totalReviews` (the
+// @repo/types Space key every frontend reads), not the old `reviewCount` key
+// which was silently dropped so counts always rendered 0. getMySpaces must also
+// compute averageRating + totalReviews for the admin host Spaces page.
+describe("getSpaces - AUD-B6 totalReviews key", () => {
+  it("emits totalReviews (not reviewCount) with the aggregated count", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock).mockResolvedValueOnce([
+      { id: 1, venue: null },
+      { id: 2, venue: null },
+    ]);
+    (prisma.review.groupBy as AnyMock).mockResolvedValueOnce([
+      { spaceId: 1, _avg: { rating: 4.5 }, _count: { rating: 3 } },
+    ]);
+
+    await getSpaces(buildReq(), res as never);
+
+    expect(res.statusCode).toBe(200);
+    const spaces = (
+      res.body as {
+        spaces: Array<{
+          id: number;
+          averageRating: number;
+          totalReviews?: number;
+          reviewCount?: number;
+        }>;
+      }
+    ).spaces;
+    const rated = spaces.find((s) => s.id === 1)!;
+    expect(rated.totalReviews).toBe(3);
+    expect(rated.averageRating).toBe(4.5);
+    expect(rated).not.toHaveProperty("reviewCount");
+    // A space with no reviews still reports a zero count under the new key.
+    const unrated = spaces.find((s) => s.id === 2)!;
+    expect(unrated.totalReviews).toBe(0);
+    expect(unrated).not.toHaveProperty("reviewCount");
+  });
+});
+
+describe("getSpace - AUD-B6 totalReviews key", () => {
+  it("emits totalReviews (not reviewCount) with the review count", async () => {
+    const res = buildRes();
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce({
+      id: 5,
+      venue: null,
+    });
+    (prisma.review.aggregate as AnyMock).mockResolvedValueOnce({
+      _avg: { rating: 4 },
+    });
+    (prisma.review.count as AnyMock).mockResolvedValueOnce(7);
+
+    await getSpace(buildReq({ params: { id: "5" } }), res as never);
+
+    expect(res.statusCode).toBe(200);
+    const body = res.body as {
+      averageRating: number;
+      totalReviews?: number;
+      reviewCount?: number;
+    };
+    expect(body.totalReviews).toBe(7);
+    expect(body.averageRating).toBe(4);
+    expect(body).not.toHaveProperty("reviewCount");
+  });
+});
+
+describe("getMySpaces - AUD-B6 attaches ratings", () => {
+  it("computes averageRating + totalReviews for each returned space", async () => {
+    const res = buildRes();
+    (prisma.space.findMany as AnyMock).mockResolvedValueOnce([
+      { id: 10, venue: null, _count: { bookings: 2, reviews: 3 } },
+      { id: 20, venue: null, _count: { bookings: 0, reviews: 0 } },
+    ]);
+    (prisma.review.groupBy as AnyMock).mockResolvedValueOnce([
+      { spaceId: 10, _avg: { rating: 4.5 }, _count: { rating: 3 } },
+    ]);
+
+    await getMySpaces(buildReq(), res as never);
+
+    expect(res.statusCode).toBe(200);
+    const body = res.body as Array<{
+      id: number;
+      averageRating: number;
+      totalReviews: number;
+    }>;
+    const rated = body.find((s) => s.id === 10)!;
+    expect(rated.averageRating).toBe(4.5);
+    expect(rated.totalReviews).toBe(3);
+    // A space with no reviews still reports zeros (not undefined).
+    const unrated = body.find((s) => s.id === 20)!;
+    expect(unrated.averageRating).toBe(0);
+    expect(unrated.totalReviews).toBe(0);
   });
 });
 

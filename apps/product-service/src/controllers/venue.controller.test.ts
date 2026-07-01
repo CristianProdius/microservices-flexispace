@@ -766,6 +766,40 @@ describe("getVenue host PII filter (AUD-006)", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+  // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+  // live on the parent Venue (DB-010), not on Space — so nested spaces came back
+  // without them and cards printed a bare ", ". Each returned space must carry
+  // the parent venue's city/country.
+  it("maps the parent venue's city/country onto each returned space", async () => {
+    mocks.venueFindFirst.mockResolvedValueOnce({
+      id: 5,
+      isActive: true,
+      name: "ok",
+      city: "Chisinau",
+      country: "Moldova",
+      host: { id: "host-1", name: "Host" },
+      spaces: [
+        { id: 1, name: "Desk A", instantBook: true },
+        { id: 2, name: "Room B", instantBook: false },
+      ],
+    });
+    const req = {
+      params: { id: "5" },
+      query: {},
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getVenue(req, res);
+
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.spaces).toHaveLength(2);
+    for (const space of payload.spaces) {
+      expect(space).toMatchObject({ city: "Chisinau", country: "Moldova" });
+    }
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it("returns the same 404 message when the host has been soft-deleted", async () => {
     // findFirst returns null because the relation filter excludes the row.
     mocks.venueFindFirst.mockResolvedValueOnce(null);

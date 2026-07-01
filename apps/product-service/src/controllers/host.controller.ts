@@ -271,7 +271,8 @@ export const getHost = async (req: Request, res: Response) => {
               currency: true,
               images: true,
               isActive: true,
-              // city/country removed (DB-010); the parent Venue already carries them.
+              // city/country live on the parent Venue (DB-010), not on Space, so
+              // they can't be selected here — they're mapped on from the venue below.
               instantBook: true,
             },
             orderBy: { createdAt: "asc" },
@@ -295,6 +296,20 @@ export const getHost = async (req: Request, res: Response) => {
     0
   );
 
+  // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+  // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+  // live on the parent Venue (DB-010), not on Space — so each nested space came
+  // back without them and the card printed a bare ", ". Copy each venue's
+  // city/country onto its spaces; the response shape is otherwise unchanged.
+  const venues = host.venues.map((venue) => ({
+    ...venue,
+    spaces: venue.spaces.map((space) => ({
+      ...space,
+      city: venue.city,
+      country: venue.country,
+    })),
+  }));
+
   res.status(200).json({
     id: host.id,
     name: host.name,
@@ -309,7 +324,7 @@ export const getHost = async (req: Request, res: Response) => {
     venueCount,
     spaceCount,
     cities,
-    venues: host.venues,
+    venues,
   });
 };
 

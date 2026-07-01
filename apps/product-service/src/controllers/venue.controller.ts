@@ -347,7 +347,8 @@ export const getVenue = async (req: Request, res: Response) => {
           currency: true,
           images: true,
           isActive: true,
-          // city/country live on the parent Venue (DB-010) and are already in the response.
+          // city/country live on the parent Venue (DB-010), not on Space, so they
+          // can't be selected here — they're mapped onto each space below.
           instantBook: true,
         },
         orderBy: { createdAt: "asc" },
@@ -361,8 +362,22 @@ export const getVenue = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Venue not found" });
   }
 
+  // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+  // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+  // live on the parent Venue (DB-010), not on Space — so each nested space came
+  // back without them and the card printed a bare ", ". Copy the venue's
+  // city/country onto every space; the response shape is otherwise unchanged.
+  const shapedVenue = {
+    ...venue,
+    spaces: venue.spaces.map((space) => ({
+      ...space,
+      city: venue.city,
+      country: venue.country,
+    })),
+  };
+
   const lang = req.query.lang as string | undefined;
-  res.status(200).json(resolveTranslations(venue, lang, VENUE_TRANSLATION_FIELDS));
+  res.status(200).json(resolveTranslations(shapedVenue, lang, VENUE_TRANSLATION_FIELDS));
 };
 
 export const createVenue = async (req: Request, res: Response) => {
