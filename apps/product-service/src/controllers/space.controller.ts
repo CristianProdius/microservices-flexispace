@@ -136,14 +136,19 @@ export const validatePricingTiers = (
         message: "pricingTiers.minutes must be a positive integer",
       };
     }
+    // M6 (product side): reject price <= 0, not just < 0. A zero-price tier
+    // poisons the downstream Math.min subtotal (order-service) so a "first hour
+    // free" tier bills only the cleaning fee for any duration. A tier must cost
+    // something positive; hosts wanting a free space should not publish a tier.
+    // Floor at 0.01 so a sub-cent price can't round to a $0.00 booking charge.
     if (
       typeof price !== "number" ||
       !Number.isFinite(price) ||
-      price < 0
+      price < 0.01
     ) {
       return {
         ok: false,
-        message: "pricingTiers.price must be a finite number >= 0",
+        message: "pricingTiers.price must be a finite number >= 0.01",
       };
     }
     if (typeof label !== "string") {
@@ -169,6 +174,119 @@ export const validatePricingTiers = (
     });
   }
   return { ok: true, value };
+};
+
+// H2: validate the numeric base-rate fields before they reach Prisma. The DB
+// columns are unconstrained `Float?`, so without this a host could persist a
+// negative pricePerHour/pricePerDay/cleaningFee and drive a booking total
+// negative (platform credits the guest), or a zero/negative capacity /
+// non-ordered booking-hour bounds. Only the money/count fields copied out of
+// SPACE_WRITE_KEYS are checked here; non-numeric fields are left untouched.
+// `spaceData` is the already-whitelisted object (create) or `allowed` (update),
+// so we only ever see fields the caller is permitted to write.
+const validateSpaceNumericFields = (
+  data: Record<string, unknown>,
+  // On a partial update, the stored row's current min/max so the cross-field
+  // check uses the effective post-update values, not just the ones in this body.
+  existing?: { minBookingHours?: number | null; maxBookingHours?: number | null },
+): { message: string } | null => {
+  // A `null` clears a nullable column (blank hourly/daily rate, cleared cap) —
+  // treat it like "not provided" and skip, same as `undefined`. Only a wrong
+  // TYPE or a non-positive/out-of-range value is an error. (Regression guard:
+  // the admin form always posts pricePerHour/pricePerDay as `number | null`.)
+  const isAbsent = (v: unknown) => v === undefined || v === null;
+
+  // pricePerHour / pricePerDay: a base rate, when present, must be a finite
+  // number > 0 — a booking can never be priced on a zero/negative base rate
+  // (order-service rejects a zero-candidate set), so 0 is not a valid rate. A
+  // space priced only via pricingTiers simply leaves both null.
+  for (const key of ["pricePerHour", "pricePerDay"] as const) {
+    const raw = data[key];
+    if (isAbsent(raw)) continue;
+    if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
+      return { message: `${key} must be a finite number > 0` };
+    }
+  }
+
+  // cleaningFee: finite number >= 0 (0 is a legitimate "no cleaning fee").
+  if (!isAbsent(data.cleaningFee)) {
+    const fee = data.cleaningFee;
+    if (typeof fee !== "number" || !Number.isFinite(fee) || fee < 0) {
+      return { message: "cleaningFee must be a finite number >= 0" };
+    }
+  }
+
+  // capacity: positive integer when present.
+  if (!isAbsent(data.capacity)) {
+    const capacity = data.capacity;
+    if (
+      typeof capacity !== "number" ||
+      !Number.isInteger(capacity) ||
+      capacity <= 0
+    ) {
+      return { message: "capacity must be a positive integer" };
+    }
+  }
+
+  // minBookingHours / maxBookingHours: positive integers when present, and the
+  // effective min must not exceed the effective max (merging in the stored
+  // values so a partial update that sets only one side is still validated).
+  for (const key of ["minBookingHours", "maxBookingHours"] as const) {
+    const raw = data[key];
+    if (isAbsent(raw)) continue;
+    if (typeof raw !== "number" || !Number.isInteger(raw) || raw <= 0) {
+      return { message: `${key} must be a positive integer` };
+    }
+  }
+  const effMin = !isAbsent(data.minBookingHours)
+    ? (data.minBookingHours as number)
+    : existing?.minBookingHours;
+  const effMax = !isAbsent(data.maxBookingHours)
+    ? (data.maxBookingHours as number)
+    : existing?.maxBookingHours;
+  if (
+    typeof effMin === "number" &&
+    typeof effMax === "number" &&
+    effMin > effMax
+  ) {
+    return { message: "minBookingHours must be <= maxBookingHours" };
+  }
+
+  return null;
+};
+
+// LOW: amenityIds arrives untrusted from the body and is `.map()`'d
+// unconditionally into SpaceAmenity rows. Require an array of distinct positive
+// integers (capped) so a malformed/oversized payload can't 500 Prisma or fan
+// out thousands of join rows. Mirrors validatePricingTiers' shape.
+const AMENITY_IDS_MAX_COUNT = 50;
+
+export const validateAmenityIds = (
+  amenityIds: unknown,
+): { ok: true; value: number[] } | { ok: false; message: string } => {
+  if (!Array.isArray(amenityIds)) {
+    return { ok: false, message: "amenityIds must be an array" };
+  }
+  if (amenityIds.length > AMENITY_IDS_MAX_COUNT) {
+    return {
+      ok: false,
+      message: `amenityIds must contain at most ${AMENITY_IDS_MAX_COUNT} entries`,
+    };
+  }
+  const seen = new Set<number>();
+  for (const raw of amenityIds) {
+    if (typeof raw !== "number" || !Number.isInteger(raw) || raw <= 0) {
+      return {
+        ok: false,
+        message: "amenityIds must be positive integers",
+      };
+    }
+    if (seen.has(raw)) {
+      return { ok: false, message: "amenityIds must be distinct" };
+    }
+    seen.add(raw);
+  }
+  return { ok: true, value: Array.from(seen) };
 };
 
 const normalizeAvailability = (
@@ -341,6 +459,16 @@ export const getSpaces = async (req: Request, res: Response) => {
     limit = "20",
   } = req.query;
 
+  // LOW: guard string-only query params. Express parses ?city=a&city=b into an
+  // array and ?categorySlug[not]=x into a nested object; casting either `as
+  // string` previously 500'd Prisma (array reaches `contains`) or injected a
+  // filter operator (object reshuffles the public listing). Accept a plain
+  // string only, else skip the filter — mirrors the spaceType/currency guards.
+  const cityFilter = typeof city === "string" ? city : undefined;
+  const categorySlugFilter =
+    typeof categorySlug === "string" ? categorySlug : undefined;
+  const groupSlugFilter = typeof groupSlug === "string" ? groupSlug : undefined;
+
   const minCapacity = minCapacityParam || capacityParam;
   const minCapacityNum = parseNumberFilter(minCapacity);
   const minPriceNum = parseNumberFilter(minPrice);
@@ -431,10 +559,10 @@ export const getSpaces = async (req: Request, res: Response) => {
     ...(hasValidBbox
       ? {
           venue: {
-            ...(city
+            ...(cityFilter
               ? {
                   city: {
-                    contains: city as string,
+                    contains: cityFilter,
                     mode: "insensitive" as const,
                   },
                 }
@@ -443,16 +571,18 @@ export const getSpaces = async (req: Request, res: Response) => {
             longitude: { gte: bbox.swLng, lte: bbox.neLng },
           },
         }
-      : city
+      : cityFilter
         ? {
             venue: {
-              city: { contains: city as string, mode: "insensitive" as const },
+              city: { contains: cityFilter, mode: "insensitive" as const },
             },
           }
         : {}),
     ...(resolvedSpaceType && { spaceType: resolvedSpaceType }),
-    ...(categorySlug && { categorySlug: categorySlug as string }),
-    ...(groupSlug && { category: { is: { groupSlug: groupSlug as string } } }),
+    ...(categorySlugFilter && { categorySlug: categorySlugFilter }),
+    ...(groupSlugFilter && {
+      category: { is: { groupSlug: groupSlugFilter } },
+    }),
     ...(minCapacityNum !== undefined && { capacity: { gte: minCapacityNum } }),
     ...(instantBook !== undefined && { instantBook: instantBook === "true" }),
     ...(resolvedCurrency && { currency: resolvedCurrency }),
@@ -768,6 +898,23 @@ export const createSpace = async (req: Request, res: Response) => {
     return res.status(400).json({ message: availabilityResult.message });
   }
 
+  // H2: validate the whitelisted numeric base rates before they reach Prisma.
+  const numericError = validateSpaceNumericFields(spaceData);
+  if (numericError) {
+    return res.status(400).json({ message: numericError.message });
+  }
+
+  // LOW: validate amenityIds (untrusted array from the body) before it's
+  // `.map()`'d into join rows in the transaction below.
+  let normalizedAmenityIds: number[] | null = null;
+  if (amenityIds !== undefined) {
+    const amenityResult = validateAmenityIds(amenityIds);
+    if (!amenityResult.ok) {
+      return res.status(400).json({ message: amenityResult.message });
+    }
+    normalizedAmenityIds = amenityResult.value;
+  }
+
   // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
   if (!isValidYouTubeUrl(spaceData.videoUrl)) {
     return res
@@ -835,9 +982,9 @@ export const createSpace = async (req: Request, res: Response) => {
         ...buildCategoryPayload(spaceData),
         hostId,
         venueId,
-        amenities: amenityIds
+        amenities: normalizedAmenityIds
           ? {
-              create: amenityIds.map((amenityId: number) => ({ amenityId })),
+              create: normalizedAmenityIds.map((amenityId) => ({ amenityId })),
             }
           : undefined,
         availability: {
@@ -930,11 +1077,33 @@ export const updateSpace = async (req: Request, res: Response) => {
     normalizedPricingTiers = tierResult.value;
   }
 
+  // LOW: validate amenityIds (untrusted array from the body) before the
+  // deleteMany/createMany rewrite in the transaction below.
+  let normalizedAmenityIds: number[] | null = null;
+  if (amenityIds !== undefined) {
+    const amenityResult = validateAmenityIds(amenityIds);
+    if (!amenityResult.ok) {
+      return res.status(400).json({ message: amenityResult.message });
+    }
+    normalizedAmenityIds = amenityResult.value;
+  }
+
   // Whitelist allowed update fields to prevent mass assignment. Shared with
   // createSpace via SPACE_WRITE_KEYS so the two paths can't drift.
   const allowed: Record<string, unknown> = {};
   for (const key of SPACE_WRITE_KEYS) {
     if (body[key] !== undefined) allowed[key] = body[key];
+  }
+
+  // H2: validate the whitelisted numeric base rates before they reach Prisma.
+  // Pass the stored min/max so a partial update setting only one side can't
+  // persist an inconsistent min > max window.
+  const numericError = validateSpaceNumericFields(allowed, {
+    minBookingHours: existingSpace.minBookingHours,
+    maxBookingHours: existingSpace.maxBookingHours,
+  });
+  if (numericError) {
+    return res.status(400).json({ message: numericError.message });
   }
 
   // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
@@ -999,11 +1168,11 @@ export const updateSpace = async (req: Request, res: Response) => {
       data: allowed,
     });
 
-    if (amenityIds !== undefined) {
+    if (normalizedAmenityIds !== null) {
       await tx.spaceAmenity.deleteMany({ where: { spaceId } });
-      if (amenityIds.length > 0) {
+      if (normalizedAmenityIds.length > 0) {
         await tx.spaceAmenity.createMany({
-          data: amenityIds.map((amenityId: number) => ({
+          data: normalizedAmenityIds.map((amenityId) => ({
             spaceId,
             amenityId,
           })),

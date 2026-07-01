@@ -175,10 +175,12 @@ const SpaceList = async ({
     maxPrice,
     instantBook,
     type,
-    // Homepage leads with recommended/sponsored inventory (the "featured" sort)
-    // so admin "Recommended" toggles actually surface spaces at the front.
-    // Browse keeps "newest" as its default (it has its own sort controls).
-    sort: sort || (variant === "homepage" ? "featured" : "newest"),
+    // AUD-B1: both homepage and browse lead with recommended/sponsored inventory
+    // (the "featured" sort: venue/host sponsored → recommended → verified → newest)
+    // so admin "Recommended" toggles surface spaces at the front. Browse's
+    // SpaceFilter offers "featured" as its default (no-param) sort option, so the
+    // SSR initial fetch here must default to "featured" too for the two to agree.
+    sort: sort || "featured",
     limit: variant === "homepage" ? "8" : "20",
     lang: locale,
   }, taxonomy);

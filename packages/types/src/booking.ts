@@ -101,7 +101,13 @@ export const CreateBookingSchema = z.object({
   startTime: timeSchema.optional(),
   endTime: timeSchema.optional(),
   guests: z.number().min(1).default(1),
-  isHourly: z.boolean(),
+  // H1: `isHourly` is no longer trusted from the client. The order-service
+  // derives it server-side from whether a time window is present AND the space
+  // supports hourly pricing, so the blocked window always equals the priced
+  // window. Kept optional for backward compatibility with clients that still
+  // send it (the value is ignored server-side; the superRefine below only uses
+  // it to give an earlier validation hint when present).
+  isHourly: z.boolean().optional(),
   message: z.string().optional(),
 }).superRefine((value, ctx) => {
   const startDate = new Date(`${value.startDate}T00:00:00.000Z`);
