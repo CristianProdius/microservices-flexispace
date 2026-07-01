@@ -21,6 +21,18 @@ const DEFAULT_CORS_ORIGINS = [
 ];
 
 const configuredCorsOrigins = parseCorsOrigins(process.env.CORS_ORIGINS);
+
+// M14: fail closed in production. Previously this service silently fell back to
+// DEFAULT_CORS_ORIGINS (localhost) with credentials:true when CORS_ORIGINS was
+// missing/invalid — unlike auth-service and order-service (BOOKSVC-015), which
+// throw at boot. A misconfigured prod deploy could otherwise let a compromised
+// dev machine talk to prod with cookies via DNS rebinding or local XSS.
+if (process.env.NODE_ENV === "production" && !configuredCorsOrigins.length) {
+  throw new Error(
+    "CORS_ORIGINS must be set in production; refusing to fall back to localhost defaults"
+  );
+}
+
 const corsOrigins = configuredCorsOrigins.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
 
 const app = express();
