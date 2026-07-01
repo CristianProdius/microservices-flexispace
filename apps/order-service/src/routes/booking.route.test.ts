@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
   const bookingUpdateMany = vi.fn();
   const bookingGroupBy = vi.fn();
   const payoutGroupBy = vi.fn();
+  const payoutCreate = vi.fn();
   // AUD-005/021: `shouldBe*` middleware now consults `prisma.user.findFirst`
   // via `lookupActiveUser`. Default to "active user with the role the JWT
   // claims" so existing tests don't have to be aware of the active-user check.
@@ -40,6 +41,7 @@ const mocks = vi.hoisted(() => {
     },
     payout: {
       groupBy: payoutGroupBy,
+      create: payoutCreate,
     },
     space: {
       findUnique: vi.fn(),
@@ -58,6 +60,7 @@ const mocks = vi.hoisted(() => {
     bookingUpdateMany,
     exchangeRateFindUnique: prisma.exchangeRate.findUnique,
     payoutGroupBy,
+    payoutCreate,
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
@@ -455,6 +458,46 @@ describe("booking routes", () => {
       where: { id: "b-2", status: "CONFIRMED" },
     });
     expect(mocks.producerSend).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // H4: completing a booking creates the host Payout atomically with the flip.
+  it("creates a host Payout when a booking is completed", async () => {
+    const app = await createApp();
+    mocks.bookingFindUnique
+      .mockResolvedValueOnce({
+        guest: { email: "guest@example.com" },
+        hostId: "host-1",
+        id: "b-3",
+        space: { name: "Focused room" },
+        status: "CONFIRMED",
+        totalAmount: 100,
+        serviceFee: 20,
+        currency: "USD",
+      })
+      .mockResolvedValueOnce({ id: "b-3", status: "COMPLETED" });
+    mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.payoutCreate.mockResolvedValue({ id: "payout-1" });
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createHostToken()}` },
+      method: "PUT",
+      payload: {},
+      url: "/bookings/b-3/complete",
+    });
+
+    expect(response.statusCode).toBe(200);
+    // amount = guest total, platformFee = commission, netAmount = host take-home.
+    expect(mocks.payoutCreate).toHaveBeenCalledWith({
+      data: {
+        hostId: "host-1",
+        amount: 100,
+        platformFee: 20,
+        netAmount: 80,
+        currency: "USD",
+        bookingIds: ["b-3"],
+      },
+    });
     await app.close();
   });
 

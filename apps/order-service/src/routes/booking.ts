@@ -1398,14 +1398,41 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
       // BOOKSVC-012: compare-and-swap so a concurrent cancel can't be silently
       // overwritten by completion.
-      const cas = await prisma.booking.updateMany({
-        where: { id, status: "CONFIRMED" },
-        data: {
-          status: "COMPLETED",
-          completedAt: new Date(),
-        },
+      // H4: create the host Payout in the SAME transaction as the CONFIRMED->
+      // COMPLETED flip. The CAS makes the whole block run exactly once per
+      // booking (a retry or a concurrent complete sees status!=CONFIRMED and
+      // 409s), so the payout is created exactly once and atomically with
+      // completion — no lost-event window, and no dependency on a downstream
+      // consumer that never existed. amount = what the guest paid; platformFee =
+      // the commission the platform keeps; netAmount = the host's take-home.
+      const casCount = await prisma.$transaction(async (tx) => {
+        const cas = await tx.booking.updateMany({
+          where: { id, status: "CONFIRMED" },
+          data: {
+            status: "COMPLETED",
+            completedAt: new Date(),
+          },
+        });
+        if (cas.count === 0) return 0;
+
+        const amount = roundCurrency(booking.totalAmount);
+        const platformFee = roundCurrency(booking.serviceFee);
+        await tx.payout.create({
+          data: {
+            hostId: booking.hostId,
+            amount,
+            platformFee,
+            netAmount: roundCurrency(amount - platformFee),
+            currency: booking.currency,
+            // status defaults to PENDING; a real disbursement flow flips it to
+            // PROCESSING/COMPLETED later. Until then it feeds the host earnings
+            // endpoint's pendingPayout (per-currency).
+            bookingIds: [id],
+          },
+        });
+        return cas.count;
       });
-      if (cas.count === 0) {
+      if (casCount === 0) {
         const refreshed = await prisma.booking.findUnique({
           where: { id },
           select: { status: true },
@@ -1418,9 +1445,9 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         where: { id },
       });
 
-      // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
-      // committed; payout reconciliation downstream consumes this event and
-      // can be replayed manually if publish fails.
+      // TODO(KAFKA-001 follow-up): transactional outbox. The payout + completion
+      // are already committed atomically above; this event only drives the
+      // guest completion email and can be replayed manually if publish fails.
       try {
         await producer.send("booking.completed", {
           value: {
@@ -1434,7 +1461,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       } catch (err) {
         request.log.error(
           { err, bookingId: id, topic: "booking.completed" },
-          "Failed to publish booking.completed event; downstream payout/notification will require manual reconciliation"
+          "Failed to publish booking.completed event; the payout is already committed, only the guest completion email is affected and can be replayed"
         );
       }
 
