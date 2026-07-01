@@ -6,12 +6,14 @@ x-api-env: &api-env
   JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
   JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
   JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
-  # AUTHSVC-004: email verification (helper falls back to NODE_ENV check; pass through explicitly).
-  JWT_VERIFICATION_SECRET: ${JWT_VERIFICATION_SECRET:-}
+  # M15: email verification secret is required at boot (matches JWT_SECRET/JWT_REFRESH_SECRET).
+  # The old empty-string default let auth-service boot green while email-verification 500'd in prod.
+  JWT_VERIFICATION_SECRET: ${JWT_VERIFICATION_SECRET:?JWT_VERIFICATION_SECRET is required}
   EMAIL_VERIFICATION_EXPIRES_IN: ${EMAIL_VERIFICATION_EXPIRES_IN:-24h}
   ENFORCE_EMAIL_VERIFICATION: ${ENFORCE_EMAIL_VERIFICATION:-}
-  # AUTHSVC-010: password-reset token signing.
-  JWT_PASSWORD_RESET_SECRET: ${JWT_PASSWORD_RESET_SECRET:-}
+  # M15: password-reset token signing secret is required at boot (matches JWT_SECRET/JWT_REFRESH_SECRET).
+  # The old empty-string default let auth-service boot green while password-reset 500'd in prod.
+  JWT_PASSWORD_RESET_SECRET: ${JWT_PASSWORD_RESET_SECRET:?JWT_PASSWORD_RESET_SECRET is required}
   JWT_PASSWORD_RESET_EXPIRES_IN: ${JWT_PASSWORD_RESET_EXPIRES_IN:-30m}
   # Parent-domain scope for the session cookie when api/admin run on different
   # subdomains (set to .spacefly.ai in prod). Empty = host-only cookie.

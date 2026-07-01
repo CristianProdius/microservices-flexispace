@@ -1,5 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+// M13: Fastify-5 rate limiter (default export). Guards booking endpoints
+// against abuse and keys on the real client IP behind the proxy.
+import rateLimit from "@fastify/rate-limit";
 import { shouldBeUser } from "@repo/auth-middleware/fastify";
 import { bookingRoute } from "./routes/booking.js";
 import { consumer, producer } from "./utils/kafka.js";
@@ -28,11 +31,39 @@ if (process.env.NODE_ENV === "production" && !configuredCorsOrigins?.length) {
 
 const corsOrigins = configuredCorsOrigins?.length ? configuredCorsOrigins : DEFAULT_CORS_ORIGINS;
 
-const fastify = Fastify();
+// M13: trustProxy so rate-limit + request logging key on the real client IP
+// (X-Forwarded-For) behind the nginx/caddy reverse proxy, not the proxy's IP.
+const fastify = Fastify({ trustProxy: true });
+
+// M13: don't leak internal error details on 5xx. Log the real error
+// server-side, but only echo route-intended 4xx status/messages to clients.
+// Registered before routes so it covers every handler below.
+fastify.setErrorHandler((err, request, reply) => {
+  request.log.error(err);
+
+  // Fastify validation errors carry `.validation` and default to 400.
+  const statusCode =
+    err.statusCode ?? (err.validation ? 400 : 500);
+
+  if (statusCode >= 500) {
+    return reply.status(500).send({ message: "Internal Server Error" });
+  }
+
+  // Preserve intentional 4xx status + message set by routes/validation.
+  return reply.status(statusCode).send({ message: err.message });
+});
 
 fastify.register(cors, {
   origin: corsOrigins,
   credentials: true,
+});
+
+// M13: sane global rate limit (100 req / minute). Keyed on the authenticated
+// userId when present, otherwise the (trust-proxy-resolved) client IP.
+fastify.register(rateLimit, {
+  max: 100,
+  timeWindow: "1 minute",
+  keyGenerator: (request) => request.userId ?? request.ip,
 });
 
 fastify.get("/health", (request, reply) => {
