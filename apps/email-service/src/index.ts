@@ -2,7 +2,7 @@ import { createKafkaClient, isKafkaEnabled } from "@repo/kafka";
 import type { Producer } from "kafkajs";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
-import sendMail from "./utils/mailer.js";
+import sendMail, { InvalidRecipientError } from "./utils/mailer.js";
 
 const PORT = Number(process.env.PORT || 8004);
 const SERVICE_NAME = "email-service";
@@ -21,8 +21,10 @@ const kafka = createKafkaClient("email-service");
 // helper subscribes + runs in one step and swallows handler errors, which is
 // exactly the EMAIL-001 bug we are fixing. We need to: (a) re-throw transient
 // errors so kafkajs retries the partition, (b) track per-message attempts and
-// route to a DLQ, and (c) coordinate shutdown with a DLQ producer. We do mirror
-// the shared helper's `fromBeginning: true` policy so the two stay aligned.
+// route to a DLQ, and (c) coordinate shutdown with a DLQ producer. AUD-B7-EMAIL-04:
+// unlike the shared helper we subscribe with `fromBeginning: false` (see the
+// subscribe call) so an offset loss can't silently replay-from-zero and
+// mass-resend historical email past Resend's 24h dedup window.
 const consumer = kafka.consumer({
   groupId: "email-service",
   // kafkajs retries the eachMessage handler with exponential backoff when it
@@ -60,7 +62,16 @@ let consumerRecoveryPromise: Promise<void> | null = null;
 // count onto the original record; an in-process map is sufficient because
 // kafkajs redelivers in-process on throw. On rebalance the new owner restarts
 // the count from zero, which is the correct semantic (someone else gets a
-// fresh shot) and is bounded by MAX_RETRIES per consumer instance.
+// fresh shot).
+//
+// AUD-B7-EMAIL-02: the map is NOT self-bounding. Entries are only removed on
+// success or after DLQ routing; a message that keeps redelivering leaves its
+// entry, and — more importantly — partitions revoked from THIS consumer during
+// a group rebalance leave their entries behind forever, so the map grew
+// unbounded across rebalances. We now (a) prune entries for revoked partitions
+// on every GROUP_JOIN (see the handler below), and (b) enforce a hard size cap
+// as a backstop against pathological churn. The previous "bounded by
+// MAX_RETRIES per consumer instance" claim was inaccurate.
 //
 // AUD-023: a rebalance-induced redelivery from a different partition owner
 // CAN still cause `sendMail` to be invoked a second time. The durable safeguard
@@ -71,6 +82,95 @@ let consumerRecoveryPromise: Promise<void> | null = null;
 const attemptCounts = new Map<string, number>();
 const attemptKey = (topic: string, partition: number, offset: string) =>
   `${topic}:${partition}:${offset}`;
+
+// AUD-B7-EMAIL-02: hard backstop so a burst of never-succeeding offsets can't
+// grow the map without limit between rebalances. Map preserves insertion
+// order, so evicting from the front drops the oldest (most stale) entries.
+const MAX_ATTEMPT_ENTRIES = 10_000;
+const capAttemptCounts = (): void => {
+  while (attemptCounts.size > MAX_ATTEMPT_ENTRIES) {
+    const oldest = attemptCounts.keys().next().value;
+    if (oldest === undefined) return;
+    attemptCounts.delete(oldest);
+  }
+};
+
+// AUD-B7-EMAIL-02: drop attempt counters for `topic:partition` pairs no longer
+// owned by this consumer after a rebalance. `assignment` is kafkajs'
+// GROUP_JOIN memberAssignment shape: `{ [topic]: partitionNumber[] }`. Exported
+// (and map-parameterised) so it can be unit-tested without a live consumer.
+export const pruneAttemptCountsForAssignment = (
+  counts: Map<string, number>,
+  assignment: Record<string, number[]> | undefined,
+): void => {
+  const owned = new Set<string>();
+  for (const [topic, partitions] of Object.entries(assignment ?? {})) {
+    for (const partition of partitions ?? []) {
+      owned.add(`${topic}:${partition}`);
+    }
+  }
+
+  for (const key of counts.keys()) {
+    // key === `${topic}:${partition}:${offset}`; strip the trailing offset to
+    // recover the `${topic}:${partition}` pair (topics can't contain ':').
+    const lastColon = key.lastIndexOf(":");
+    const topicPartition = lastColon === -1 ? key : key.slice(0, lastColon);
+    if (!owned.has(topicPartition)) {
+      counts.delete(key);
+    }
+  }
+};
+
+// AUD-B7-EMAIL-01: classify permanent failures so the consumer parks them in
+// the DLQ immediately instead of retrying. InvalidRecipientError is the first
+// such case; the `retryable === false` duck-type keeps this open for future
+// non-retryable errors without an import cycle.
+export const isNonRetryableError = (error: unknown): boolean =>
+  error instanceof InvalidRecipientError ||
+  (typeof error === "object" &&
+    error !== null &&
+    (error as { retryable?: unknown }).retryable === false);
+
+// AUD-B7-EMAIL-05: user-supplied free-text (space name, decline reason, guest
+// name) is interpolated into trusted Spacefly-branded transactional emails. A
+// malicious host could otherwise embed a convincing "reconfirm payment at
+// evil.example" line into an authenticated email. We strip control characters
+// (incl. CR/LF used for header/line injection) and defang URL/scheme-like
+// sequences; callers additionally wrap the result in a quoted block so it reads
+// as clearly attacker-controlled. Returns "" for empty/nullish input.
+export const sanitizeFreeText = (value: string | null | undefined): string => {
+  if (value == null) return "";
+  return value
+    // Strip C0/C1 control chars (includes CR, LF, TAB) -> space.
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+    // Defang explicit web URLs so they're not clickable / convincing.
+    .replace(/https?:\/\//gi, "hxxp-")
+    // Neutralise any remaining scheme://... (mailto:, javascript:, data:, ...).
+    .replace(/\b([a-z][a-z0-9+.-]*):\/\//gi, "$1[:]")
+    // Defang bare "www." leaders too.
+    .replace(/\bwww\./gi, "www[.]")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+// AUD-B7-EMAIL-05: wrap sanitized free-text in a clearly-delimited quoted block
+// so an interpolated value can't masquerade as trusted template copy.
+const quoteFreeText = (value: string): string => `"${value}"`;
+
+// AUD-B7-EMAIL-03: always derive a deterministic idempotency key for booking
+// emails. Previously the key was `bookingId ? ... : undefined`, and an absent
+// bookingId meant Resend couldn't dedupe — so a retry of a multi-recipient
+// handler (guest then host) re-sent the guest email. When bookingId is missing
+// we fall back to a stable hash of the distinguishing fields so each logical
+// per-recipient email keeps a durable identity.
+export const bookingIdemKey = (
+  prefix: string,
+  bookingId: string | undefined,
+  fallbackParts: (string | number | null | undefined)[],
+): string =>
+  bookingId
+    ? `${prefix}:${bookingId}`
+    : `${prefix}:h:${shortHash(fallbackParts.map((part) => String(part ?? "")).join("|"))}`;
 
 // AUD-003: link-base envs are required for verification + password reset
 // templates. If either is missing the service refuses readiness rather than
@@ -252,16 +352,26 @@ const subscriptions = [
     topicHandler: async (message: EmailEventMessage) => {
       const { guestEmail, hostEmail, spaceName, status, bookingId } = message.value || {};
 
+      // AUD-B7-EMAIL-05: quote+sanitize the host-supplied space name.
+      const safeSpace = sanitizeFreeText(spaceName);
+      const spaceClause = safeSpace ? ` for ${quoteFreeText(safeSpace)}` : "";
+
       // AUD-013: dedupe per-booking so a redelivery doesn't double-send to
       // either party. We send the guest and host emails under distinct keys
       // because Resend dedupes per `idempotencyKey`, and they're distinct
-      // logical messages.
+      // logical messages. AUD-B7-EMAIL-03: keys are always defined now (stable
+      // hash fallback when bookingId is absent) so a host-send retry can't
+      // re-send an already-succeeded guest email.
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking request was created",
-          text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} has been created${status ? ` and is currently ${status.toLowerCase()}` : ""}.`,
-          idempotencyKey: bookingId ? `booking-created:guest:${bookingId}` : undefined,
+          text: `Your booking request${spaceClause} has been created${status ? ` and is currently ${status.toLowerCase()}` : ""}.`,
+          idempotencyKey: bookingIdemKey("booking-created:guest", bookingId, [
+            guestEmail,
+            spaceName,
+            status,
+          ]),
         });
       }
 
@@ -269,8 +379,12 @@ const subscriptions = [
         await sendMail({
           email: hostEmail,
           subject: "New Spacefly.ai booking request",
-          text: `You have a new booking request${spaceName ? ` for ${spaceName}` : ""}.`,
-          idempotencyKey: bookingId ? `booking-created:host:${bookingId}` : undefined,
+          text: `You have a new booking request${spaceClause}.`,
+          idempotencyKey: bookingIdemKey("booking-created:host", bookingId, [
+            hostEmail,
+            spaceName,
+            status,
+          ]),
         });
       }
     },
@@ -282,14 +396,25 @@ const subscriptions = [
     topicHandler: async (message: EmailEventMessage) => {
       const { guestEmail, guestName, spaceName, bookingId } = message.value || {};
 
+      // AUD-B7-EMAIL-05: sanitize+quote host/guest-supplied free-text.
+      const safeSpace = sanitizeFreeText(spaceName);
+      const spaceClause = safeSpace ? ` for ${quoteFreeText(safeSpace)}` : "";
+      const safeGuestName = sanitizeFreeText(guestName);
+      const nameClause = safeGuestName ? ` ${quoteFreeText(safeGuestName)}` : "";
+
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking was confirmed",
-          text: `Hello${guestName ? ` ${guestName}` : ""}. Your booking${spaceName ? ` for ${spaceName}` : ""} has been confirmed.`,
+          text: `Hello${nameClause}. Your booking${spaceClause} has been confirmed.`,
           // AUD-013: one key per (status, bookingId) so a later
           // cancelled/completed transition still sends its own email.
-          idempotencyKey: bookingId ? `booking-confirmed:${bookingId}` : undefined,
+          // AUD-B7-EMAIL-03: stable-hash fallback when bookingId is absent.
+          idempotencyKey: bookingIdemKey("booking-confirmed", bookingId, [
+            guestEmail,
+            spaceName,
+            guestName,
+          ]),
         });
       }
     },
@@ -299,12 +424,25 @@ const subscriptions = [
     topicHandler: async (message: EmailEventMessage) => {
       const { guestEmail, spaceName, reason, bookingId } = message.value || {};
 
+      // AUD-B7-EMAIL-05: the decline reason is host free-text — sanitize+quote
+      // it so a host can't inject a fake "reconfirm payment at evil.example"
+      // line into this authenticated transactional email.
+      const safeSpace = sanitizeFreeText(spaceName);
+      const spaceClause = safeSpace ? ` for ${quoteFreeText(safeSpace)}` : "";
+      const safeReason = sanitizeFreeText(reason);
+      const reasonClause = safeReason ? ` Reason: ${quoteFreeText(safeReason)}` : "";
+
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking was declined",
-          text: `Your booking request${spaceName ? ` for ${spaceName}` : ""} was declined.${reason ? ` Reason: ${reason}` : ""}`,
-          idempotencyKey: bookingId ? `booking-rejected:${bookingId}` : undefined,
+          text: `Your booking request${spaceClause} was declined.${reasonClause}`,
+          // AUD-B7-EMAIL-03: stable-hash fallback when bookingId is absent.
+          idempotencyKey: bookingIdemKey("booking-rejected", bookingId, [
+            guestEmail,
+            spaceName,
+            reason,
+          ]),
         });
       }
     },
@@ -313,14 +451,25 @@ const subscriptions = [
     topicName: "booking.cancelled",
     topicHandler: async (message: EmailEventMessage) => {
       const { guestEmail, hostEmail, spaceName, cancelledByRole, bookingId } = message.value || {};
-      const text = `A Spacefly.ai booking${spaceName ? ` for ${spaceName}` : ""} was cancelled${cancelledByRole ? ` by ${cancelledByRole.toLowerCase()}` : ""}.`;
 
+      // AUD-B7-EMAIL-05: sanitize+quote the host-supplied space name.
+      const safeSpace = sanitizeFreeText(spaceName);
+      const spaceClause = safeSpace ? ` for ${quoteFreeText(safeSpace)}` : "";
+      const text = `A Spacefly.ai booking${spaceClause} was cancelled${cancelledByRole ? ` by ${cancelledByRole.toLowerCase()}` : ""}.`;
+
+      // AUD-B7-EMAIL-03: keys are always defined now (stable hash fallback when
+      // bookingId is absent) so a host-send retry can't re-send an
+      // already-succeeded guest email.
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking was cancelled",
           text,
-          idempotencyKey: bookingId ? `booking-cancelled:guest:${bookingId}` : undefined,
+          idempotencyKey: bookingIdemKey("booking-cancelled:guest", bookingId, [
+            guestEmail,
+            spaceName,
+            cancelledByRole,
+          ]),
         });
       }
 
@@ -329,7 +478,11 @@ const subscriptions = [
           email: hostEmail,
           subject: "A Spacefly.ai booking was cancelled",
           text,
-          idempotencyKey: bookingId ? `booking-cancelled:host:${bookingId}` : undefined,
+          idempotencyKey: bookingIdemKey("booking-cancelled:host", bookingId, [
+            hostEmail,
+            spaceName,
+            cancelledByRole,
+          ]),
         });
       }
     },
@@ -340,12 +493,21 @@ const subscriptions = [
       const { guestEmail, spaceName, totalAmount, bookingId } = message.value || {};
       const formattedTotal = formatCurrency(totalAmount);
 
+      // AUD-B7-EMAIL-05: sanitize+quote the host-supplied space name.
+      const safeSpace = sanitizeFreeText(spaceName);
+      const spaceClause = safeSpace ? ` for ${quoteFreeText(safeSpace)}` : "";
+
       if (guestEmail) {
         await sendMail({
           email: guestEmail,
           subject: "Your Spacefly.ai booking is complete",
-          text: `Your booking${spaceName ? ` for ${spaceName}` : ""} is complete.${formattedTotal ? ` Total: ${formattedTotal}.` : ""}`,
-          idempotencyKey: bookingId ? `booking-completed:${bookingId}` : undefined,
+          text: `Your booking${spaceClause} is complete.${formattedTotal ? ` Total: ${formattedTotal}.` : ""}`,
+          // AUD-B7-EMAIL-03: stable-hash fallback when bookingId is absent.
+          idempotencyKey: bookingIdemKey("booking-completed", bookingId, [
+            guestEmail,
+            spaceName,
+            totalAmount,
+          ]),
         });
       }
     },
@@ -383,7 +545,7 @@ const publishToDlq = async (params: {
   originalValue: Buffer | null;
   originalHeaders: Record<string, Buffer | string | (Buffer | string)[] | undefined> | undefined;
   attempts: number;
-  reason: "parse_error" | "max_retries_exceeded";
+  reason: "parse_error" | "max_retries_exceeded" | "invalid_recipient";
   error: unknown;
 }) => {
   const errorMessage = params.error instanceof Error ? params.error.message : String(params.error);
@@ -496,6 +658,7 @@ const buildEachMessageHandler =
     const key = attemptKey(topic, partition, message.offset);
     const attempts = (attemptCounts.get(key) ?? 0) + 1;
     attemptCounts.set(key, attempts);
+    capAttemptCounts();
 
     try {
       await subscription.topicHandler(
@@ -503,6 +666,37 @@ const buildEachMessageHandler =
       );
       attemptCounts.delete(key);
     } catch (handlerError) {
+      // AUD-B7-EMAIL-01: a non-retryable failure (e.g. a malformed recipient)
+      // will never succeed on redelivery. Park it in the DLQ immediately rather
+      // than burning the whole MAX_RETRIES budget on doomed sends. If DLQ
+      // routing itself fails we fall through to the transient-retry path below.
+      if (isNonRetryableError(handlerError)) {
+        try {
+          await publishToDlq({
+            sourceTopic: topic,
+            partition,
+            offset: message.offset,
+            originalValue: rawValue ?? null,
+            originalHeaders: message.headers,
+            attempts,
+            reason: "invalid_recipient",
+            error: handlerError,
+          });
+          console.warn(
+            `[email-service] Parked non-retryable ${topic} message (invalid recipient) to DLQ after ${attempts} attempt(s).`,
+            handlerError instanceof Error ? handlerError.message : handlerError,
+          );
+          attemptCounts.delete(key);
+          return;
+        } catch (dlqError) {
+          console.error(
+            `[email-service] Could not park non-retryable ${topic} message in DLQ; will retry handler. dlqError:`,
+            dlqError,
+          );
+          throw handlerError;
+        }
+      }
+
       if (attempts >= MAX_RETRIES) {
         try {
           await publishToDlq({
@@ -550,10 +744,19 @@ const setupConsumer = async (): Promise<void> => {
     consumerConnected = true;
     await consumer.subscribe({
       topics: subscriptions.map((subscription) => subscription.topicName),
-      // Match @repo/kafka createConsumer's default. New consumer groups start
-      // at the earliest offset so we don't lose pre-existing booking events
-      // during a cold deploy. For an already-committed group this is a no-op.
-      fromBeginning: true,
+      // AUD-B7-EMAIL-04: fromBeginning:false. This is an already-bootstrapped,
+      // committed consumer group; for it fromBeginning is a no-op in the happy
+      // path, but on OFFSET LOSS / group reset `fromBeginning:true` would replay
+      // from offset 0 and mass-resend every email older than Resend's 24h dedup
+      // window (our idempotency keys only protect within that window). Replaying
+      // from zero must therefore be an explicit operator action (reset the group
+      // offsets deliberately), not the silent default.
+      //
+      // FOLLOW-UP (durable-idempotency gap): the real fix is a persisted
+      // "already-sent" ledger keyed by idempotencyKey, so replays of any age are
+      // suppressed regardless of Resend's 24h window. Until that exists, avoid
+      // replay-from-zero on this group. Tracked as email-service follow-up.
+      fromBeginning: false,
     });
     await consumer.run({ eachMessage: buildEachMessageHandler() });
 
@@ -571,6 +774,24 @@ consumer.on(consumer.events.DISCONNECT, () => {
   ready = false;
   readinessDetails = ["Kafka consumer disconnected (kafkajs will attempt to reconnect)"];
   console.warn("[email-service] Consumer disconnected");
+});
+
+// AUD-B7-EMAIL-02: on every (re)join the group assignment is (re)computed.
+// Prune attemptCounts entries for partitions this member no longer owns so the
+// map can't grow unbounded across rebalances. GROUP_JOIN's memberAssignment is
+// the authoritative "what do I own now" snapshot.
+consumer.on(consumer.events.GROUP_JOIN, ({ payload }) => {
+  try {
+    pruneAttemptCountsForAssignment(
+      attemptCounts,
+      payload?.memberAssignment as Record<string, number[]> | undefined,
+    );
+  } catch (err) {
+    console.warn(
+      "[email-service] Failed to prune attemptCounts on GROUP_JOIN:",
+      err instanceof Error ? err.message : err,
+    );
+  }
 });
 
 consumer.on(consumer.events.CRASH, ({ payload }) => {
@@ -628,8 +849,6 @@ const start = async () => {
     console.error("Email service is not ready:", error);
   }
 };
-
-start();
 
 const shutdown = async (signal: NodeJS.Signals) => {
   // EMAIL-008: flip readiness immediately so /health reports 503 and the
@@ -691,5 +910,11 @@ const shutdown = async (signal: NodeJS.Signals) => {
   process.exit(exitCode);
 };
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+// AUD-B7-EMAIL: skip auto-start and signal binding under test so the exported
+// pure helpers can be imported without spinning up the HTTP server, Kafka
+// client, or process signal handlers. Vitest sets NODE_ENV=test.
+if (process.env.NODE_ENV !== "test") {
+  start();
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
