@@ -101,11 +101,13 @@ type AvailabilityInput = {
 // so a buggy/abusive client can't fan out a thousand tiers per space.
 const PRICING_TIER_MAX_COUNT = 20;
 const PRICING_TIER_LABEL_MAX_LENGTH = 80;
+const PRICING_TIER_COMMENT_MAX_LENGTH = 300;
 
 export type PricingTierInput = {
   minutes: number;
   label: string;
   price: number;
+  comment?: string;
 };
 
 export const validatePricingTiers = (
@@ -167,10 +169,32 @@ export const validatePricingTiers = (
         message: `pricingTiers.label must be at most ${PRICING_TIER_LABEL_MAX_LENGTH} characters`,
       };
     }
+    // Optional free-text comment. When present it must be a string capped at
+    // 300 chars; empty/whitespace-only is treated as absent (undefined) so an
+    // empty box in the form doesn't persist a blank comment.
+    const commentRaw = (raw as { comment?: unknown }).comment;
+    let comment: string | undefined;
+    if (commentRaw !== undefined && commentRaw !== null) {
+      if (typeof commentRaw !== "string") {
+        return {
+          ok: false,
+          message: "pricingTiers.comment must be a string",
+        };
+      }
+      if (commentRaw.length > PRICING_TIER_COMMENT_MAX_LENGTH) {
+        return {
+          ok: false,
+          message: `pricingTiers.comment must be at most ${PRICING_TIER_COMMENT_MAX_LENGTH} characters`,
+        };
+      }
+      const trimmedComment = commentRaw.trim();
+      comment = trimmedComment.length > 0 ? trimmedComment : undefined;
+    }
     value.push({
       minutes: minutes as number,
       label: trimmedLabel,
       price,
+      comment,
     });
   }
   return { ok: true, value };
@@ -1031,6 +1055,7 @@ export const createSpace = async (req: Request, res: Response) => {
           minutes: tier.minutes,
           label: tier.label,
           price: tier.price,
+          comment: tier.comment,
         })),
       });
     }
@@ -1214,6 +1239,7 @@ export const updateSpace = async (req: Request, res: Response) => {
             minutes: t.minutes,
             label: t.label,
             price: t.price,
+            comment: t.comment,
           })),
         });
       }

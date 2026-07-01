@@ -15,6 +15,7 @@ export interface PricingTier {
   minutes: number;
   label: string;
   price: number;
+  comment?: string;
 }
 
 export const CURRENCIES: readonly Currency[] = ["USD", "EUR", "MDL"] as const;

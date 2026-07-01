@@ -274,12 +274,19 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
                 {(space as any).pricingTiers.map((tier: any) => (
                   <div
                     key={tier.id}
-                    className="flex justify-between py-2 border-b border-border last:border-0"
+                    className="py-2 border-b border-border last:border-0"
                   >
-                    <span className="text-muted">{tier.label}</span>
-                    <span className="font-medium text-foreground">
-                      {formatPrice(tier.price, (space as any).currency)}
-                    </span>
+                    <div className="flex justify-between">
+                      <span className="text-muted">{tier.label}</span>
+                      <span className="font-medium text-foreground">
+                        {formatPrice(tier.price, (space as any).currency)}
+                      </span>
+                    </div>
+                    {tier.comment && (
+                      <p className="text-sm text-muted mt-1 text-pretty">
+                        {tier.comment}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

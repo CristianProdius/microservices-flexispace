@@ -306,7 +306,8 @@ exports.Prisma.PricingTierScalarFieldEnum = {
   spaceId: 'spaceId',
   minutes: 'minutes',
   label: 'label',
-  price: 'price'
+  price: 'price',
+  comment: 'comment'
 };
 
 exports.Prisma.AvailabilityScalarFieldEnum = {

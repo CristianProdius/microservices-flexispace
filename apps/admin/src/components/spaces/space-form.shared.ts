@@ -82,7 +82,12 @@ export interface SpaceFormValues {
   images: string[];
   videoUrl: string;
   currency: Currency;
-  pricingTiers: Array<{ minutes: number; label: string; price: string }>;
+  pricingTiers: Array<{
+    minutes: number;
+    label: string;
+    price: string;
+    comment?: string;
+  }>;
   availability: AvailabilityFormValue[];
 }
 
@@ -107,7 +112,12 @@ export interface SpaceFormPayload {
   images: string[];
   videoUrl: string | null;
   currency: Currency;
-  pricingTiers: Array<{ minutes: number; label: string; price: number }>;
+  pricingTiers: Array<{
+    minutes: number;
+    label: string;
+    price: number;
+    comment?: string;
+  }>;
   availability: AvailabilityFormValue[];
 }
 
@@ -170,11 +180,15 @@ export const buildSpacePayload = (
   currency: formData.currency,
   pricingTiers: formData.pricingTiers
     .filter((t) => t.price !== "")
-    .map((t) => ({
-      minutes: t.minutes,
-      label: t.label,
-      price: parseFloat(t.price) || 0,
-    })),
+    .map((t) => {
+      const comment = t.comment?.trim();
+      return {
+        minutes: t.minutes,
+        label: t.label,
+        price: parseFloat(t.price) || 0,
+        ...(comment ? { comment } : {}),
+      };
+    }),
   availability: formData.availability
     .map(({ dayOfWeek, startTime, endTime, isOpen }) => ({
       dayOfWeek,
@@ -263,6 +277,7 @@ export const mapSpaceToFormValues = (
     minutes: t.minutes,
     label: t.label,
     price: t.price.toString(),
+    comment: t.comment ?? "",
   })),
   availability: mapAvailabilityToFormValues(space.availability),
 });
