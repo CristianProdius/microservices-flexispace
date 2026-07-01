@@ -20,6 +20,32 @@ export const validateFromEmail = (value: string | undefined): string => {
   return value;
 };
 
+// AUD-B7-EMAIL-01: a malformed recipient is a permanent (non-retryable)
+// failure — retrying it just burns MAX_RETRIES doomed `resend.emails.send`
+// calls and eventually parks the message anyway. We mark it explicitly so the
+// consumer can route it straight to the DLQ instead of into the retry loop.
+export class InvalidRecipientError extends Error {
+  readonly retryable = false;
+
+  constructor(value: unknown) {
+    super(
+      `recipient must be a bare email address (got: ${JSON.stringify(value)})`
+    );
+    this.name = "InvalidRecipientError";
+  }
+}
+
+// AUD-B7-EMAIL-01: apply the same bare-email rigor to the `to` address that
+// `validateFromEmail` applies to `from`. Handlers previously only gated on
+// truthiness, so a garbage recipient reached Resend and failed transiently.
+export const validateToEmail = (value: string | undefined): string => {
+  if (!value || !BARE_EMAIL_REGEX.test(value)) {
+    throw new InvalidRecipientError(value);
+  }
+
+  return value;
+};
+
 let cachedClient: Resend | null = null;
 let cachedApiKey: string | null = null;
 
@@ -47,6 +73,11 @@ const sendMail = async ({
   if (!process.env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is required to send email");
   }
+
+  // AUD-B7-EMAIL-01: validate the recipient BEFORE touching Resend. Throwing
+  // InvalidRecipientError (retryable=false) lets the consumer DLQ the message
+  // immediately instead of retrying a doomed send MAX_RETRIES times.
+  validateToEmail(email);
 
   const fromEmail = validateFromEmail(process.env.RESEND_FROM_EMAIL);
 
