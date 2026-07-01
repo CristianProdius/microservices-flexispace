@@ -220,11 +220,13 @@ const validateSpaceNumericFields = (
   // the admin form always posts pricePerHour/pricePerDay as `number | null`.)
   const isAbsent = (v: unknown) => v === undefined || v === null;
 
-  // pricePerHour / pricePerDay: a base rate, when present, must be a finite
-  // number > 0 — a booking can never be priced on a zero/negative base rate
-  // (order-service rejects a zero-candidate set), so 0 is not a valid rate. A
-  // space priced only via pricingTiers simply leaves both null.
-  for (const key of ["pricePerHour", "pricePerDay"] as const) {
+  // pricePerHour / pricePerDay / pricePerMonth: a base rate, when present, must
+  // be a finite number > 0 — a booking can never be priced on a zero/negative
+  // base rate (order-service rejects a zero-candidate set), so 0 is not a valid
+  // rate. A space priced only via pricingTiers simply leaves them null.
+  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
+  // calendar month, pro-rated for the remainder), so it follows the same rule.
+  for (const key of ["pricePerHour", "pricePerDay", "pricePerMonth"] as const) {
     const raw = data[key];
     if (isAbsent(raw)) continue;
     if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
@@ -902,6 +904,7 @@ const SPACE_WRITE_KEYS = [
   "pricingType",
   "pricePerHour",
   "pricePerDay",
+  "pricePerMonth",
   "cleaningFee",
   "capacity",
   "minBookingHours",
@@ -943,6 +946,16 @@ export const createSpace = async (req: Request, res: Response) => {
   const numericError = validateSpaceNumericFields(spaceData);
   if (numericError) {
     return res.status(400).json({ message: numericError.message });
+  }
+  // A MONTHLY space is priced solely by pricePerMonth (booking skips tiers for
+  // it), so it must have a positive monthly rate or it would be unbookable.
+  if (
+    spaceData.pricingType === "MONTHLY" &&
+    !((spaceData.pricePerMonth as number) > 0)
+  ) {
+    return res.status(400).json({
+      message: "A monthly space requires a price per month greater than 0",
+    });
   }
 
   // LOW: validate amenityIds (untrusted array from the body) before it's
@@ -1154,6 +1167,22 @@ export const updateSpace = async (req: Request, res: Response) => {
   });
   if (numericError) {
     return res.status(400).json({ message: numericError.message });
+  }
+  // A MONTHLY space must keep a positive pricePerMonth (see createSpace). Use the
+  // effective post-update values so a partial update can't leave it unbookable.
+  const effectivePricingType =
+    (allowed.pricingType as string | undefined) ?? existingSpace.pricingType;
+  const effectivePricePerMonth =
+    allowed.pricePerMonth !== undefined
+      ? (allowed.pricePerMonth as number | null)
+      : existingSpace.pricePerMonth;
+  if (
+    effectivePricingType === "MONTHLY" &&
+    !((effectivePricePerMonth as number) > 0)
+  ) {
+    return res.status(400).json({
+      message: "A monthly space requires a price per month greater than 0",
+    });
   }
 
   // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).

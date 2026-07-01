@@ -142,6 +142,7 @@ export type SpaceType = (typeof SpaceType)[keyof typeof SpaceType]
 export const PricingType: {
   HOURLY: 'HOURLY',
   DAILY: 'DAILY',
+  MONTHLY: 'MONTHLY',
   BOTH: 'BOTH'
 };
 
@@ -13487,6 +13488,7 @@ export namespace Prisma {
     id: number | null
     pricePerHour: number | null
     pricePerDay: number | null
+    pricePerMonth: number | null
     cleaningFee: number | null
     capacity: number | null
     minBookingHours: number | null
@@ -13498,6 +13500,7 @@ export namespace Prisma {
     id: number | null
     pricePerHour: number | null
     pricePerDay: number | null
+    pricePerMonth: number | null
     cleaningFee: number | null
     capacity: number | null
     minBookingHours: number | null
@@ -13514,6 +13517,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType | null
     pricePerHour: number | null
     pricePerDay: number | null
+    pricePerMonth: number | null
     cleaningFee: number | null
     currency: $Enums.Currency | null
     capacity: number | null
@@ -13540,6 +13544,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType | null
     pricePerHour: number | null
     pricePerDay: number | null
+    pricePerMonth: number | null
     cleaningFee: number | null
     currency: $Enums.Currency | null
     capacity: number | null
@@ -13569,6 +13574,7 @@ export namespace Prisma {
     pricingType: number
     pricePerHour: number
     pricePerDay: number
+    pricePerMonth: number
     cleaningFee: number
     currency: number
     capacity: number
@@ -13593,6 +13599,7 @@ export namespace Prisma {
     id?: true
     pricePerHour?: true
     pricePerDay?: true
+    pricePerMonth?: true
     cleaningFee?: true
     capacity?: true
     minBookingHours?: true
@@ -13604,6 +13611,7 @@ export namespace Prisma {
     id?: true
     pricePerHour?: true
     pricePerDay?: true
+    pricePerMonth?: true
     cleaningFee?: true
     capacity?: true
     minBookingHours?: true
@@ -13620,6 +13628,7 @@ export namespace Prisma {
     pricingType?: true
     pricePerHour?: true
     pricePerDay?: true
+    pricePerMonth?: true
     cleaningFee?: true
     currency?: true
     capacity?: true
@@ -13646,6 +13655,7 @@ export namespace Prisma {
     pricingType?: true
     pricePerHour?: true
     pricePerDay?: true
+    pricePerMonth?: true
     cleaningFee?: true
     currency?: true
     capacity?: true
@@ -13675,6 +13685,7 @@ export namespace Prisma {
     pricingType?: true
     pricePerHour?: true
     pricePerDay?: true
+    pricePerMonth?: true
     cleaningFee?: true
     currency?: true
     capacity?: true
@@ -13792,6 +13803,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour: number | null
     pricePerDay: number | null
+    pricePerMonth: number | null
     cleaningFee: number
     currency: $Enums.Currency
     capacity: number
@@ -13841,6 +13853,7 @@ export namespace Prisma {
     pricingType?: boolean
     pricePerHour?: boolean
     pricePerDay?: boolean
+    pricePerMonth?: boolean
     cleaningFee?: boolean
     currency?: boolean
     capacity?: boolean
@@ -13881,6 +13894,7 @@ export namespace Prisma {
     pricingType?: boolean
     pricePerHour?: boolean
     pricePerDay?: boolean
+    pricePerMonth?: boolean
     cleaningFee?: boolean
     currency?: boolean
     capacity?: boolean
@@ -13914,6 +13928,7 @@ export namespace Prisma {
     pricingType?: boolean
     pricePerHour?: boolean
     pricePerDay?: boolean
+    pricePerMonth?: boolean
     cleaningFee?: boolean
     currency?: boolean
     capacity?: boolean
@@ -13947,6 +13962,7 @@ export namespace Prisma {
     pricingType?: boolean
     pricePerHour?: boolean
     pricePerDay?: boolean
+    pricePerMonth?: boolean
     cleaningFee?: boolean
     currency?: boolean
     capacity?: boolean
@@ -13965,7 +13981,7 @@ export namespace Prisma {
     categorySlug?: boolean
   }
 
-  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
+  export type SpaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "spaceType" | "pricingType" | "pricePerHour" | "pricePerDay" | "pricePerMonth" | "cleaningFee" | "currency" | "capacity" | "minBookingHours" | "maxBookingHours" | "images" | "videoUrl" | "isActive" | "instantBook" | "cancellationPolicy" | "houseRules" | "createdAt" | "updatedAt" | "hostId" | "venueId" | "categorySlug", ExtArgs["result"]["space"]>
   export type SpaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     venue?: boolean | VenueDefaultArgs<ExtArgs>
@@ -14014,6 +14030,7 @@ export namespace Prisma {
       pricingType: $Enums.PricingType
       pricePerHour: number | null
       pricePerDay: number | null
+      pricePerMonth: number | null
       cleaningFee: number
       currency: $Enums.Currency
       capacity: number
@@ -14473,6 +14490,7 @@ export namespace Prisma {
     readonly pricingType: FieldRef<"Space", 'PricingType'>
     readonly pricePerHour: FieldRef<"Space", 'Float'>
     readonly pricePerDay: FieldRef<"Space", 'Float'>
+    readonly pricePerMonth: FieldRef<"Space", 'Float'>
     readonly cleaningFee: FieldRef<"Space", 'Float'>
     readonly currency: FieldRef<"Space", 'Currency'>
     readonly capacity: FieldRef<"Space", 'Int'>
@@ -26758,6 +26776,7 @@ export namespace Prisma {
     pricingType: 'pricingType',
     pricePerHour: 'pricePerHour',
     pricePerDay: 'pricePerDay',
+    pricePerMonth: 'pricePerMonth',
     cleaningFee: 'cleaningFee',
     currency: 'currency',
     capacity: 'capacity',
@@ -27979,6 +27998,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFilter<"Space"> | $Enums.PricingType
     pricePerHour?: FloatNullableFilter<"Space"> | number | null
     pricePerDay?: FloatNullableFilter<"Space"> | number | null
+    pricePerMonth?: FloatNullableFilter<"Space"> | number | null
     cleaningFee?: FloatFilter<"Space"> | number
     currency?: EnumCurrencyFilter<"Space"> | $Enums.Currency
     capacity?: IntFilter<"Space"> | number
@@ -28018,6 +28038,7 @@ export namespace Prisma {
     pricingType?: SortOrder
     pricePerHour?: SortOrderInput | SortOrder
     pricePerDay?: SortOrderInput | SortOrder
+    pricePerMonth?: SortOrderInput | SortOrder
     cleaningFee?: SortOrder
     currency?: SortOrder
     capacity?: SortOrder
@@ -28060,6 +28081,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFilter<"Space"> | $Enums.PricingType
     pricePerHour?: FloatNullableFilter<"Space"> | number | null
     pricePerDay?: FloatNullableFilter<"Space"> | number | null
+    pricePerMonth?: FloatNullableFilter<"Space"> | number | null
     cleaningFee?: FloatFilter<"Space"> | number
     currency?: EnumCurrencyFilter<"Space"> | $Enums.Currency
     capacity?: IntFilter<"Space"> | number
@@ -28099,6 +28121,7 @@ export namespace Prisma {
     pricingType?: SortOrder
     pricePerHour?: SortOrderInput | SortOrder
     pricePerDay?: SortOrderInput | SortOrder
+    pricePerMonth?: SortOrderInput | SortOrder
     cleaningFee?: SortOrder
     currency?: SortOrder
     capacity?: SortOrder
@@ -28137,6 +28160,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeWithAggregatesFilter<"Space"> | $Enums.PricingType
     pricePerHour?: FloatNullableWithAggregatesFilter<"Space"> | number | null
     pricePerDay?: FloatNullableWithAggregatesFilter<"Space"> | number | null
+    pricePerMonth?: FloatNullableWithAggregatesFilter<"Space"> | number | null
     cleaningFee?: FloatWithAggregatesFilter<"Space"> | number
     currency?: EnumCurrencyWithAggregatesFilter<"Space"> | $Enums.Currency
     capacity?: IntWithAggregatesFilter<"Space"> | number
@@ -29801,6 +29825,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -29837,6 +29862,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -29872,6 +29898,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -29908,6 +29935,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -29944,6 +29972,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -29973,6 +30002,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -30000,6 +30030,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -31746,6 +31777,7 @@ export namespace Prisma {
     pricingType?: SortOrder
     pricePerHour?: SortOrder
     pricePerDay?: SortOrder
+    pricePerMonth?: SortOrder
     cleaningFee?: SortOrder
     currency?: SortOrder
     capacity?: SortOrder
@@ -31768,6 +31800,7 @@ export namespace Prisma {
     id?: SortOrder
     pricePerHour?: SortOrder
     pricePerDay?: SortOrder
+    pricePerMonth?: SortOrder
     cleaningFee?: SortOrder
     capacity?: SortOrder
     minBookingHours?: SortOrder
@@ -31784,6 +31817,7 @@ export namespace Prisma {
     pricingType?: SortOrder
     pricePerHour?: SortOrder
     pricePerDay?: SortOrder
+    pricePerMonth?: SortOrder
     cleaningFee?: SortOrder
     currency?: SortOrder
     capacity?: SortOrder
@@ -31810,6 +31844,7 @@ export namespace Prisma {
     pricingType?: SortOrder
     pricePerHour?: SortOrder
     pricePerDay?: SortOrder
+    pricePerMonth?: SortOrder
     cleaningFee?: SortOrder
     currency?: SortOrder
     capacity?: SortOrder
@@ -31831,6 +31866,7 @@ export namespace Prisma {
     id?: SortOrder
     pricePerHour?: SortOrder
     pricePerDay?: SortOrder
+    pricePerMonth?: SortOrder
     cleaningFee?: SortOrder
     capacity?: SortOrder
     minBookingHours?: SortOrder
@@ -34453,6 +34489,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -34488,6 +34525,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -34955,6 +34993,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFilter<"Space"> | $Enums.PricingType
     pricePerHour?: FloatNullableFilter<"Space"> | number | null
     pricePerDay?: FloatNullableFilter<"Space"> | number | null
+    pricePerMonth?: FloatNullableFilter<"Space"> | number | null
     cleaningFee?: FloatFilter<"Space"> | number
     currency?: EnumCurrencyFilter<"Space"> | $Enums.Currency
     capacity?: IntFilter<"Space"> | number
@@ -35978,6 +36017,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -36013,6 +36053,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -36838,6 +36879,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -36873,6 +36915,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37050,6 +37093,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37085,6 +37129,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37155,6 +37200,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37190,6 +37236,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37250,6 +37297,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37285,6 +37333,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37335,6 +37384,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37370,6 +37420,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37404,6 +37455,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37439,6 +37491,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37489,6 +37542,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37524,6 +37578,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37558,6 +37613,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37593,6 +37649,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37643,6 +37700,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37678,6 +37736,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -37858,6 +37917,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -37893,6 +37953,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -38129,6 +38190,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -38164,6 +38226,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -38305,6 +38368,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -38340,6 +38404,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -38534,6 +38599,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -38569,6 +38635,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -38889,6 +38956,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -39198,6 +39266,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39233,6 +39302,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39268,6 +39338,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39582,6 +39653,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -39610,6 +39682,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39645,6 +39718,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39680,6 +39754,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -39978,6 +40053,7 @@ export namespace Prisma {
     pricingType: $Enums.PricingType
     pricePerHour?: number | null
     pricePerDay?: number | null
+    pricePerMonth?: number | null
     cleaningFee?: number
     currency?: $Enums.Currency
     capacity: number
@@ -40006,6 +40082,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -40041,6 +40118,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number
@@ -40076,6 +40154,7 @@ export namespace Prisma {
     pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
     pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
     pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
     cleaningFee?: FloatFieldUpdateOperationsInput | number
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
     capacity?: IntFieldUpdateOperationsInput | number

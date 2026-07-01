@@ -11,7 +11,7 @@ export type SpaceType =
   | "WEDDING_VENUE"
   | "COWORKING_SPACE";
 
-export type PricingType = "HOURLY" | "DAILY" | "BOTH";
+export type PricingType = "HOURLY" | "DAILY" | "BOTH" | "MONTHLY";
 
 export type CancellationPolicy = "FLEXIBLE" | "MODERATE" | "STRICT" | "NON_REFUNDABLE";
 
@@ -125,6 +125,7 @@ export interface Space {
   pricingType: PricingType;
   pricePerHour: number | null;
   pricePerDay: number | null;
+  pricePerMonth?: number | null;
   cleaningFee: number;
   currency: Currency;
   pricingTiers?: PricingTier[];
@@ -373,9 +374,10 @@ export const SpaceFormSchema = z.object({
   shortDescription: z.string().min(10, "Short description must be at least 10 characters").max(150),
   description: z.string().min(50, "Description must be at least 50 characters"),
   spaceType: z.enum(LEGACY_SPACE_TYPES),
-  pricingType: z.enum(["HOURLY", "DAILY", "BOTH"]),
+  pricingType: z.enum(["HOURLY", "DAILY", "BOTH", "MONTHLY"]),
   pricePerHour: z.number().nullable(),
   pricePerDay: z.number().nullable(),
+  pricePerMonth: z.number().nullable().optional(),
   cleaningFee: z.number().min(0).default(0),
   capacity: z.number().min(1, "Capacity must be at least 1"),
   minBookingHours: z.number().nullable(),

@@ -25,9 +25,10 @@ import {
   buildSpacePayload,
   cancellationPolicies,
   createEmptySpaceFormValues,
+  defaultPricingTypeForCategory,
   fieldClassName,
   labelClassName,
-  pricingTypes,
+  pricingTypeOptionsForCategory,
   weekdayLabels,
   type AvailabilityFormValue,
   type SpaceFormPayload,
@@ -188,6 +189,23 @@ const SpaceForm = ({
       };
     });
   }, [categories, formData.categorySlug]);
+
+  // Office categories hide the "Both" pricing type, so if the space type
+  // changes to an office category while "Both" is selected (or any pricing type
+  // no longer offered for the current category), repair it to the category
+  // default (Monthly for offices) instead of leaving a stuck invalid value.
+  useEffect(() => {
+    setFormData((prev) => {
+      const options = pricingTypeOptionsForCategory(prev.spaceType);
+      if (options.some((option) => option.value === prev.pricingType)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        pricingType: defaultPricingTypeForCategory(prev.spaceType),
+      };
+    });
+  }, [formData.spaceType]);
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -627,11 +645,13 @@ const SpaceForm = ({
                 }
                 className={fieldClassName}
               >
-                {pricingTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
+                {pricingTypeOptionsForCategory(formData.spaceType).map(
+                  (type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
 
@@ -672,6 +692,27 @@ const SpaceForm = ({
                       setFormData((prev) => ({
                         ...prev,
                         pricePerDay: event.target.value,
+                      }))
+                    }
+                    className={fieldClassName}
+                    placeholder="$"
+                  />
+                </div>
+              )}
+
+              {formData.pricingType === "MONTHLY" && (
+                <div>
+                  <label className={labelClassName}>Price per month</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={formData.pricePerMonth}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        pricePerMonth: event.target.value,
                       }))
                     }
                     className={fieldClassName}

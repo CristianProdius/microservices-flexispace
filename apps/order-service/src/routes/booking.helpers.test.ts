@@ -33,8 +33,10 @@ const {
   calculateBookingPrice,
   computeBookingHours,
   dateRangesOverlap,
+  monthlyProRatedPrice,
   parsePositiveInteger,
   spaceSupportsHourly,
+  spaceSupportsMonthly,
 } = await import("./booking.js");
 
 const date = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -640,5 +642,163 @@ describe("calculateBookingPrice no-intersection zero-hour candidate (PRICE-004)"
     );
     // Daily rate (200) is the only surviving candidate.
     expect(result.subtotal).toBe(200);
+  });
+});
+
+describe("spaceSupportsMonthly (MONTHLY)", () => {
+  it("is true only for MONTHLY with a positive per-month rate", () => {
+    expect(
+      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: 1200 })
+    ).toBe(true);
+  });
+
+  it("is false for MONTHLY with a null / zero / negative rate", () => {
+    expect(spaceSupportsMonthly({ pricingType: "MONTHLY" })).toBe(false);
+    expect(
+      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: null })
+    ).toBe(false);
+    expect(
+      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: 0 })
+    ).toBe(false);
+    expect(
+      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: -500 })
+    ).toBe(false);
+  });
+
+  it("is false for non-MONTHLY types even with a positive per-month rate", () => {
+    // BOTH stays hourly+daily; MONTHLY is its own type and must be opted into.
+    expect(
+      spaceSupportsMonthly({ pricingType: "BOTH", pricePerMonth: 1200 })
+    ).toBe(false);
+    expect(
+      spaceSupportsMonthly({ pricingType: "DAILY", pricePerMonth: 1200 })
+    ).toBe(false);
+    expect(
+      spaceSupportsMonthly({ pricingType: "HOURLY", pricePerMonth: 1200 })
+    ).toBe(false);
+  });
+});
+
+describe("monthlyProRatedPrice (MONTHLY)", () => {
+  it("prices exact whole calendar months at N * rate (endDate inclusive)", () => {
+    // endDate is the LAST occupied day, so all of January is Jan 1 -> Jan 31.
+    expect(monthlyProRatedPrice(date("2026-01-01"), date("2026-01-31"), 1000)).toBe(
+      1000
+    );
+    // Jan 1 -> Feb 28 occupies all of Jan and all of Feb = 2 months.
+    expect(monthlyProRatedPrice(date("2026-01-01"), date("2026-02-28"), 1000)).toBe(
+      2000
+    );
+    // A whole month starting mid-month: Jan 15 -> Feb 14 == 1 month.
+    expect(monthlyProRatedPrice(date("2026-01-15"), date("2026-02-14"), 1000)).toBe(
+      1000
+    );
+  });
+
+  it("prices a single-day booking as a positive day-fraction, never $0", () => {
+    // Regression: startDate == endDate must NOT price to 0 (that would be a
+    // free, slot-blocking hold). Jan 1 -> Jan 1 = 1 of January's 31 days.
+    expect(monthlyProRatedPrice(date("2026-01-01"), date("2026-01-01"), 3100)).toBe(
+      100
+    );
+  });
+
+  it("pro-rates a partial trailing month at the anchor month's day-rate", () => {
+    // Jan 1 -> Feb 14: all of January (1 month) + 14 of Feb's 28 days = 1.5x.
+    expect(
+      monthlyProRatedPrice(date("2026-01-01"), date("2026-02-14"), 1000)
+    ).toBeCloseTo(1500, 2);
+  });
+
+  it("pro-rates a sub-month range (fullMonths = 0)", () => {
+    // Jan 1 -> Jan 16: 0 full months + 16 of January's 31 occupied days.
+    expect(
+      monthlyProRatedPrice(date("2026-01-01"), date("2026-01-16"), 3100)
+    ).toBeCloseTo((16 / 31) * 3100, 2);
+  });
+
+  it("uses the specific remainder month's length for the pro-rate", () => {
+    // The pro-rate denominator is the ANCHOR month's length, so the same
+    // number of trailing days costs more in a short month than a long one.
+    // Feb 1 -> Feb 14 (anchor Feb, 28 days) = 14/28 = 0.5 months.
+    expect(
+      monthlyProRatedPrice(date("2026-02-01"), date("2026-02-14"), 1000)
+    ).toBeCloseTo(500, 2);
+    // Jan 1 -> Jan 14 (anchor Jan, 31 days) = 14/31 months, i.e. cheaper.
+    expect(
+      monthlyProRatedPrice(date("2026-01-01"), date("2026-01-14"), 1000)
+    ).toBeCloseTo((14 / 31) * 1000, 2);
+  });
+});
+
+describe("calculateBookingPrice MONTHLY candidate (MONTHLY)", () => {
+  it("prices a monthly space over a date range via the monthly candidate", () => {
+    // Full-day date-range booking (no times) on a MONTHLY space. endDate is
+    // inclusive, so Jan 1 -> Feb 14 = all of January (1 month) + 14 of Feb's 28
+    // days = 1.5 months * $2000 = $3000.
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: null,
+        pricePerHour: null,
+        pricePerMonth: 2000,
+        pricingType: "MONTHLY",
+      },
+      date("2026-01-01"),
+      date("2026-02-14"),
+      null,
+      null,
+      0.1
+    );
+
+    expect(result.subtotal).toBe(3000);
+    expect(result.total).toBe(3000);
+    expect(result.serviceFee).toBe(300); // 10% commission, deducted from payout.
+  });
+
+  it("throws NoApplicablePriceError for a MONTHLY space with a non-positive rate", () => {
+    // Fails closed exactly like the daily/hourly non-positive-rate paths.
+    expect(() =>
+      calculateBookingPrice(
+        {
+          availability: [],
+          cleaningFee: 0,
+          currency: "USD",
+          pricePerDay: null,
+          pricePerHour: null,
+          pricePerMonth: 0,
+          pricingType: "MONTHLY",
+        },
+        date("2026-01-01"),
+        date("2026-02-01"),
+        null,
+        null,
+        0
+      )
+    ).toThrow(NoApplicablePriceError);
+  });
+
+  it("does not add a monthly candidate for a non-MONTHLY space (daily unaffected)", () => {
+    // A DAILY space that happens to carry a pricePerMonth must still price
+    // per-day — MONTHLY must be explicitly opted into via pricingType.
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: 100,
+        pricePerHour: null,
+        pricePerMonth: 2000,
+        pricingType: "DAILY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      null,
+      null,
+      0
+    );
+    expect(result.subtotal).toBe(100);
   });
 });

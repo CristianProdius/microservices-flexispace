@@ -428,12 +428,22 @@ const validateAvailabilityRules = (
   startDate: Date,
   endDate: Date,
   startTime: string | null,
-  endTime: string | null
+  endTime: string | null,
+  // MONTHLY bookings rent the whole space for the period, so the per-day
+  // open-hours and the hour-based min/max caps don't apply — only host-declared
+  // blocked dates constrain them.
+  isMonthly = false
 ) => {
   const requestedDates = datesBetweenInclusive(startDate, endDate);
   const blockedDates = new Set((space.blockedDates ?? []).map((blockedDate) => dateKey(blockedDate.date)));
   if (requestedDates.some((date) => blockedDates.has(dateKey(date)))) {
     return "Some requested dates are blocked";
+  }
+
+  // A monthly rental isn't gated by the space's daily open-hours or the
+  // hour-based duration caps; only the blocked-date check above applies.
+  if (isMonthly) {
+    return null;
   }
 
   if (!space.availability || space.availability.length === 0) {
@@ -590,6 +600,86 @@ export const spaceSupportsHourly = (space: {
   return hasPositiveHourlyRate || hasPositiveTier;
 };
 
+// MONTHLY: whether a space is billed per calendar month. A monthly booking is a
+// full-day DATE-RANGE booking (no time window, isHourly=false) priced per
+// calendar month and pro-rated for the remainder days. Unlike BOTH (which stays
+// hourly+daily), MONTHLY is its own pricingType. A space supports monthly iff it
+// has a positive pricePerMonth AND its pricingType is MONTHLY — mirroring the
+// positive-rate gating used everywhere else so a null/zero rate fails closed.
+export const spaceSupportsMonthly = (space: {
+  pricingType: string;
+  pricePerMonth?: number | null;
+}): boolean => (space.pricePerMonth ?? 0) > 0 && space.pricingType === "MONTHLY";
+
+// MONTHLY: add `months` whole calendar months to a UTC date. Mirrors date-fns
+// addMonths semantics (clamp the day-of-month to the last day of the target
+// month, e.g. Jan 31 + 1 month = Feb 28/29) but operates purely on the UTC
+// calendar so it is stable regardless of the server's local timezone — the rest
+// of the booking math is UTC-based (see dateFromInput / bookingInstantRange).
+const addMonthsUtc = (date: Date, months: number): Date => {
+  const totalMonths = date.getUTCMonth() + months;
+  const targetYear = date.getUTCFullYear() + Math.floor(totalMonths / 12);
+  const targetMonth = ((totalMonths % 12) + 12) % 12;
+  // Last day of the target month (day 0 of the following month).
+  const lastDayOfTargetMonth = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0)
+  ).getUTCDate();
+  const clampedDay = Math.min(date.getUTCDate(), lastDayOfTargetMonth);
+  return new Date(
+    Date.UTC(
+      targetYear,
+      targetMonth,
+      clampedDay,
+      date.getUTCHours(),
+      date.getUTCMinutes(),
+      date.getUTCSeconds(),
+      date.getUTCMilliseconds()
+    )
+  );
+};
+
+// MONTHLY: price a full-day date range per calendar month, pro-rating the
+// remainder days at the anchor month's day-rate.
+//
+// endDate is the LAST OCCUPIED day (inclusive) — the same convention the block
+// window ([startDate 00:00, endDate+1day)) and the daily path (days = diff+1)
+// use. We convert it to an exclusive `checkout = endDate + 1 day` so the month
+// math lines up with what is actually occupied:
+//   - a single-day booking (start == end) => 1 occupied day => a positive
+//     fraction of a month (never $0 / a free slot-blocking hold);
+//   - a full calendar month (e.g. Jan 1 -> Jan 31) => exactly 1x.
+//
+//   - fullMonths   : whole calendar months from startDate that fit before checkout.
+//   - anchor       : startDate + fullMonths calendar months.
+//   - remainderDays: occupied days from anchor to checkout (exclusive), >= 0.
+//   - monthLen     : whole days in the anchor month (28-31), so the pro-rate is
+//                    relative to the specific remainder month.
+//   - fraction     : clamped to <= 1 so month-length clamping (e.g. a Jan 31
+//                    start whose anchor lands on the shorter Feb) can't price a
+//                    partial month above a full month.
+//
+// result = (fullMonths + fraction) * pricePerMonth, rounded to cents.
+// Examples: Jan 1 -> Jan 31 = 1x; Jan 1 -> Feb 28 = 2x; Jan 1 -> Jan 15 = 15/31x.
+const MONTHLY_DAY_MS = 24 * 60 * 60 * 1000;
+export const monthlyProRatedPrice = (
+  startDate: Date,
+  endDate: Date,
+  pricePerMonth: number
+): number => {
+  const checkout = new Date(endDate.getTime() + MONTHLY_DAY_MS);
+  let fullMonths = 0;
+  while (
+    addMonthsUtc(startDate, fullMonths + 1).getTime() <= checkout.getTime()
+  ) {
+    fullMonths++;
+  }
+  const anchor = addMonthsUtc(startDate, fullMonths);
+  const remainderDays = Math.max(0, differenceInDays(checkout, anchor));
+  const monthLen = differenceInDays(addMonthsUtc(anchor, 1), anchor);
+  const fraction = monthLen > 0 ? Math.min(remainderDays / monthLen, 1) : 0;
+  return roundCurrency((fullMonths + fraction) * pricePerMonth);
+};
+
 // Calculate booking price based on space pricing and duration.
 //
 // Pricing model:
@@ -608,6 +698,7 @@ export const calculateBookingPrice = (
     pricingType: string;
     pricePerHour: number | null;
     pricePerDay: number | null;
+    pricePerMonth?: number | null;
     cleaningFee: number;
     currency: string;
     pricingTiers?: Array<{ minutes: number; price: number }>;
@@ -638,7 +729,11 @@ export const calculateBookingPrice = (
   // Each tier is a billing unit: ceil(duration / tier) blocks at tier.price.
   // For tiers larger than the booked duration that yields 1 unit, which means
   // "the bigger tier price IS the floor" — exactly the cap behavior we want.
-  for (const tier of space.pricingTiers ?? []) {
+  // A MONTHLY space is priced SOLELY by its monthly rate: skip tier (and the
+  // hourly/daily rate) candidates so a stray/cheap tier can't undercut the
+  // monthly price via Math.min.
+  const isMonthlySpace = space.pricingType === "MONTHLY";
+  for (const tier of isMonthlySpace ? [] : space.pricingTiers ?? []) {
     // M6: skip a zero/negative-priced tier the same way the zero-hour hourly
     // candidate is guarded below. A "first hour free" (price <= 0) tier would
     // otherwise win Math.min for an unrelated 30-day booking and zero the
@@ -665,6 +760,13 @@ export const calculateBookingPrice = (
   const allowsDaily =
     (space.pricePerDay ?? 0) > 0 &&
     (space.pricingType === "DAILY" || space.pricingType === "BOTH");
+  // MONTHLY: a monthly space contributes a calendar-month, pro-rated candidate.
+  // Gated on a strictly-positive pricePerMonth exactly like the daily/hourly
+  // rates, so a null/zero/negative monthly rate contributes no candidate and the
+  // space fails closed (zero-candidate -> NoApplicablePriceError -> 400) rather
+  // than pricing a free, slot-blocking hold.
+  const allowsMonthly =
+    (space.pricePerMonth ?? 0) > 0 && space.pricingType === "MONTHLY";
 
   if (allowsHourly) {
     // BOOKSVC-009: per-day intersection with availability windows.
@@ -687,6 +789,13 @@ export const calculateBookingPrice = (
   }
   if (allowsDaily) {
     candidates.push(roundCurrency(space.pricePerDay! * days));
+  }
+  if (allowsMonthly) {
+    // MONTHLY: full-day date-range candidate priced per calendar month and
+    // pro-rated for the remainder days (see monthlyProRatedPrice).
+    candidates.push(
+      monthlyProRatedPrice(startDate, endDate, space.pricePerMonth!)
+    );
   }
 
   // H1: never silently price 0 when nothing applies. A zero subtotal from an
@@ -818,12 +927,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
+      // A MONTHLY space is booked as a full-period rental — relax the per-day
+      // open-hours and hour-cap checks (only blocked dates apply).
+      const isMonthlyBooking = spaceSupportsMonthly(space);
       const availabilityError = validateAvailabilityRules(
         space,
         requestedStartDate,
         requestedEndDate,
         startTime || null,
-        endTime || null
+        endTime || null,
+        isMonthlyBooking
       );
       if (availabilityError) {
         return reply.status(400).send({ message: availabilityError });

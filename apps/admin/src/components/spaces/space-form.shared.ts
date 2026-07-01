@@ -18,8 +18,36 @@ export const PRODUCT_SERVICE_URL =
 export const pricingTypes: Array<{ value: PricingType; label: string }> = [
   { value: "HOURLY", label: "Hourly" },
   { value: "DAILY", label: "Daily" },
+  { value: "MONTHLY", label: "Monthly" },
   { value: "BOTH", label: "Both" },
 ];
+
+// Office categories are booked per calendar month (pro-rated), so they never
+// expose the "Both" (hourly + daily) pricing type. Keep this list in sync with
+// the office space types in @repo/types.
+export const OFFICE_SPACE_TYPES: readonly SpaceType[] = [
+  "OFFICE_DESK",
+  "PRIVATE_OFFICE",
+  "COWORKING_SPACE",
+];
+
+export const isOfficeSpaceType = (spaceType: SpaceType): boolean =>
+  OFFICE_SPACE_TYPES.includes(spaceType);
+
+// Office categories drop "Both" from the selectable pricing types; every other
+// category keeps the full set.
+export const pricingTypeOptionsForCategory = (
+  spaceType: SpaceType,
+): Array<{ value: PricingType; label: string }> =>
+  isOfficeSpaceType(spaceType)
+    ? pricingTypes.filter((type) => type.value !== "BOTH")
+    : pricingTypes;
+
+// Office categories default to monthly pricing; other categories keep the
+// existing "Both" default.
+export const defaultPricingTypeForCategory = (
+  spaceType: SpaceType,
+): PricingType => (isOfficeSpaceType(spaceType) ? "MONTHLY" : "BOTH");
 
 export const cancellationPolicies: Array<{
   value: CancellationPolicy;
@@ -72,6 +100,7 @@ export interface SpaceFormValues {
   pricingType: PricingType;
   pricePerHour: string;
   pricePerDay: string;
+  pricePerMonth: string;
   capacity: string;
   venueId: number | null;
   instantBook: boolean;
@@ -102,6 +131,7 @@ export interface SpaceFormPayload {
   pricingType: PricingType;
   pricePerHour: number | null;
   pricePerDay: number | null;
+  pricePerMonth: number | null;
   capacity: number;
   venueId: number | null;
   instantBook: boolean;
@@ -132,6 +162,7 @@ export const createEmptySpaceFormValues = (): SpaceFormValues => ({
   pricingType: "BOTH",
   pricePerHour: "",
   pricePerDay: "",
+  pricePerMonth: "",
   capacity: "",
   venueId: null,
   instantBook: false,
@@ -171,10 +202,23 @@ export const buildSpacePayload = (
   spaceType: category
     ? resolveLegacySpaceType(category, formData.spaceType)
     : formData.spaceType,
-  pricePerHour: formData.pricePerHour
-    ? parseFloat(formData.pricePerHour)
-    : null,
-  pricePerDay: formData.pricePerDay ? parseFloat(formData.pricePerDay) : null,
+  // Only persist the rate(s) that apply to the selected pricing type, so a
+  // space that was switched (e.g. an office BOTH -> MONTHLY) doesn't carry
+  // stale hourly/daily rates whose inputs are now hidden.
+  pricePerHour:
+    (formData.pricingType === "HOURLY" || formData.pricingType === "BOTH") &&
+    formData.pricePerHour
+      ? parseFloat(formData.pricePerHour)
+      : null,
+  pricePerDay:
+    (formData.pricingType === "DAILY" || formData.pricingType === "BOTH") &&
+    formData.pricePerDay
+      ? parseFloat(formData.pricePerDay)
+      : null,
+  pricePerMonth:
+    formData.pricingType === "MONTHLY" && formData.pricePerMonth
+      ? parseFloat(formData.pricePerMonth)
+      : null,
   capacity: parseInt(formData.capacity, 10),
   venueId: formData.venueId,
   currency: formData.currency,
@@ -234,6 +278,7 @@ export const mapSpaceToFormValues = (
     | "pricingType"
     | "pricePerHour"
     | "pricePerDay"
+    | "pricePerMonth"
     | "capacity"
     | "instantBook"
     | "cancellationPolicy"
@@ -262,6 +307,7 @@ export const mapSpaceToFormValues = (
   pricingType: space.pricingType,
   pricePerHour: space.pricePerHour?.toString() ?? "",
   pricePerDay: space.pricePerDay?.toString() ?? "",
+  pricePerMonth: space.pricePerMonth?.toString() ?? "",
   capacity: space.capacity.toString(),
   venueId: space.venueId ?? null,
   instantBook: space.instantBook,

@@ -43,7 +43,8 @@ interface Space {
   capacity: number;
   pricePerHour: number | null;
   pricePerDay: number | null;
-  pricingType: "HOURLY" | "DAILY" | "BOTH";
+  pricePerMonth: number | null;
+  pricingType: "HOURLY" | "DAILY" | "MONTHLY" | "BOTH";
   currency?: string | null;
   isActive: boolean;
   averageRating: number | null;
@@ -185,6 +186,9 @@ const HostSpacesPage = () => {
     }
     if (space.pricingType === "DAILY" && space.pricePerDay) {
       return `${formatMoney(space.pricePerDay, ccy)}/day`;
+    }
+    if (space.pricingType === "MONTHLY" && space.pricePerMonth) {
+      return `${formatMoney(space.pricePerMonth, ccy)}/mo`;
     }
     if (space.pricingType === "BOTH") {
       if (space.pricePerHour) return `${formatMoney(space.pricePerHour, ccy)}/hr`;

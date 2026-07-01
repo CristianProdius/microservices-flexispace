@@ -29,6 +29,7 @@ enum SpaceType {
 enum PricingType {
   HOURLY
   DAILY
+  MONTHLY
   BOTH
 }
 
@@ -314,6 +315,7 @@ model Space {
   pricingType             PricingType
   pricePerHour            Float? // In dollars
   pricePerDay             Float? // In dollars
+  pricePerMonth           Float? // In dollars
   cleaningFee             Float       @default(0) // In dollars
   currency                Currency    @default(USD)
   capacity                Int

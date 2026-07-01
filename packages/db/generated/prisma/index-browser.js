@@ -252,6 +252,7 @@ exports.Prisma.SpaceScalarFieldEnum = {
   pricingType: 'pricingType',
   pricePerHour: 'pricePerHour',
   pricePerDay: 'pricePerDay',
+  pricePerMonth: 'pricePerMonth',
   cleaningFee: 'cleaningFee',
   currency: 'currency',
   capacity: 'capacity',
@@ -442,6 +443,7 @@ exports.SpaceType = exports.$Enums.SpaceType = {
 exports.PricingType = exports.$Enums.PricingType = {
   HOURLY: 'HOURLY',
   DAILY: 'DAILY',
+  MONTHLY: 'MONTHLY',
   BOTH: 'BOTH'
 };
 

@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildSpacePayload,
   createEmptySpaceFormValues,
+  defaultPricingTypeForCategory,
   mapSpaceToFormValues,
+  pricingTypeOptionsForCategory,
   type SpaceFormValues,
 } from "./space-form.shared";
 
@@ -59,6 +61,7 @@ describe("mapSpaceToFormValues pricing tier comments", () => {
       pricingType: "BOTH",
       pricePerHour: 10,
       pricePerDay: 80,
+      pricePerMonth: null,
       capacity: 4,
       instantBook: false,
       cancellationPolicy: "MODERATE",
@@ -78,5 +81,111 @@ describe("mapSpaceToFormValues pricing tier comments", () => {
       { minutes: 60, label: "1 hour", price: "10", comment: "Members only" },
       { minutes: 120, label: "2 hours", price: "18", comment: "" },
     ]);
+  });
+});
+
+describe("buildSpacePayload pricePerMonth", () => {
+  it("parses pricePerMonth to a number when set", () => {
+    const payload = buildSpacePayload(
+      baseValues({ pricingType: "MONTHLY", pricePerMonth: "1200" }),
+    );
+
+    expect(payload.pricePerMonth).toBe(1200);
+  });
+
+  it("sends null for pricePerMonth when left empty", () => {
+    const payload = buildSpacePayload(baseValues({ pricePerMonth: "" }));
+
+    expect(payload.pricePerMonth).toBeNull();
+  });
+});
+
+describe("mapSpaceToFormValues pricePerMonth", () => {
+  it("hydrates pricePerMonth from a loaded space", () => {
+    const values = mapSpaceToFormValues({
+      name: "Desk",
+      shortDescription: "",
+      description: "",
+      spaceType: "OFFICE_DESK",
+      pricingType: "MONTHLY",
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: 1200,
+      capacity: 1,
+      instantBook: false,
+      cancellationPolicy: "MODERATE",
+      houseRules: "",
+      categorySlug: "office-desk",
+      images: [],
+      amenities: [],
+      currency: "USD",
+      pricingTiers: [],
+      availability: [],
+    });
+
+    expect(values.pricePerMonth).toBe("1200");
+  });
+
+  it("defaults pricePerMonth to an empty string when absent", () => {
+    const values = mapSpaceToFormValues({
+      name: "Room",
+      shortDescription: "",
+      description: "",
+      spaceType: "MEETING_ROOM",
+      pricingType: "BOTH",
+      pricePerHour: 10,
+      pricePerDay: 80,
+      pricePerMonth: null,
+      capacity: 4,
+      instantBook: false,
+      cancellationPolicy: "MODERATE",
+      houseRules: "",
+      categorySlug: "meeting-room",
+      images: [],
+      amenities: [],
+      currency: "USD",
+      pricingTiers: [],
+      availability: [],
+    });
+
+    expect(values.pricePerMonth).toBe("");
+  });
+});
+
+describe("pricingTypeOptionsForCategory", () => {
+  it("excludes Both and includes Monthly for office categories", () => {
+    for (const spaceType of [
+      "OFFICE_DESK",
+      "PRIVATE_OFFICE",
+      "COWORKING_SPACE",
+    ] as const) {
+      const values = pricingTypeOptionsForCategory(spaceType).map(
+        (option) => option.value,
+      );
+
+      expect(values).toContain("MONTHLY");
+      expect(values).not.toContain("BOTH");
+      expect(values).toEqual(["HOURLY", "DAILY", "MONTHLY"]);
+    }
+  });
+
+  it("keeps the full set (including Both) for non-office categories", () => {
+    const values = pricingTypeOptionsForCategory("MEETING_ROOM").map(
+      (option) => option.value,
+    );
+
+    expect(values).toEqual(["HOURLY", "DAILY", "MONTHLY", "BOTH"]);
+  });
+});
+
+describe("defaultPricingTypeForCategory", () => {
+  it("defaults office categories to Monthly", () => {
+    expect(defaultPricingTypeForCategory("OFFICE_DESK")).toBe("MONTHLY");
+    expect(defaultPricingTypeForCategory("PRIVATE_OFFICE")).toBe("MONTHLY");
+    expect(defaultPricingTypeForCategory("COWORKING_SPACE")).toBe("MONTHLY");
+  });
+
+  it("keeps Both as the default for non-office categories", () => {
+    expect(defaultPricingTypeForCategory("MEETING_ROOM")).toBe("BOTH");
   });
 });
