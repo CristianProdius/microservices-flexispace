@@ -181,7 +181,17 @@ export function getRefreshToken(): string | null {
 export function getStoredUser(): User | null {
   if (typeof window !== "undefined") {
     const user = localStorage.getItem(USER_KEY);
-    return user ? JSON.parse(user) : null;
+    if (!user) return null;
+    // AUD-B5: a corrupted `user` value used to throw here, which rejected
+    // authStore.initialize() and stranded isLoading=true forever (no auth
+    // controls, unrecoverable). Swallow the parse error, drop the bad key,
+    // and treat it as logged-out so the UI can recover on next load.
+    try {
+      return JSON.parse(user) as User;
+    } catch {
+      clearAuth();
+      return null;
+    }
   }
   return null;
 }

@@ -155,9 +155,9 @@ describe("host earnings page", () => {
 
     expect(container.textContent).toContain("Earnings");
     expect(container.textContent).toContain("Track your hosting income");
-    expect(container.textContent).toContain("Total Earnings");
+    expect(container.textContent).toContain("Earnings by currency");
     expect(container.textContent).toContain("Pending");
-    expect(container.textContent).toContain("This Month");
+    expect(container.textContent).toContain("This month");
     expect(container.textContent).toContain("Completed");
     expect(container.textContent).toContain("Pending Payouts");
     expect(container.textContent).toContain("Completed Bookings");

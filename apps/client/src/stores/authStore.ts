@@ -39,33 +39,40 @@ const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
 
   initialize: async () => {
-    const token = getAccessToken();
-    const user = getStoredUser();
+    // AUD-B5: guarantee isLoading is cleared no matter how we exit. Any throw
+    // here (e.g. from a corrupted store) used to leave isLoading=true forever,
+    // hiding all auth controls with no way to recover.
+    try {
+      const token = getAccessToken();
+      const user = getStoredUser();
 
-    if (!token || !user) {
-      clearAuth();
-      set({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      return;
-    }
-
-    // If token is expired, attempt silent refresh
-    if (isTokenExpired(token)) {
-      try {
-        const refreshToken = getRefreshToken();
-        if (!refreshToken) throw new Error("No refresh token");
-        const refreshed = await refreshAccessToken(refreshToken);
-        // Persist whichever refresh token the server returned; if the server
-        // rotated it we must use the new one or the next refresh will fail.
-        saveTokens(refreshed.accessToken, refreshed.refreshToken ?? refreshToken);
-        set({ user, token: refreshed.accessToken, isAuthenticated: true, isLoading: false });
-      } catch {
+      if (!token || !user) {
         clearAuth();
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        set({ user: null, token: null, isAuthenticated: false });
+        return;
       }
-      return;
-    }
 
-    set({ user, token, isAuthenticated: true, isLoading: false });
+      // If token is expired, attempt silent refresh
+      if (isTokenExpired(token)) {
+        try {
+          const refreshToken = getRefreshToken();
+          if (!refreshToken) throw new Error("No refresh token");
+          const refreshed = await refreshAccessToken(refreshToken);
+          // Persist whichever refresh token the server returned; if the server
+          // rotated it we must use the new one or the next refresh will fail.
+          saveTokens(refreshed.accessToken, refreshed.refreshToken ?? refreshToken);
+          set({ user, token: refreshed.accessToken, isAuthenticated: true });
+        } catch {
+          clearAuth();
+          set({ user: null, token: null, isAuthenticated: false });
+        }
+        return;
+      }
+
+      set({ user, token, isAuthenticated: true });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   setUser: (user: User) => {
@@ -77,6 +84,10 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const response = await apiLogin(email, password);
     saveTokens(response.accessToken, response.refreshToken);
     saveUser(response.user);
+    // AUD-B5: drop any persisted booking draft on login so user B on a shared
+    // device doesn't inherit user A's checkout draft (mirrors logout/
+    // handleSessionExpired).
+    useBookingStore.getState().clearDraft();
     set({
       user: response.user,
       token: response.accessToken,
@@ -88,6 +99,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const response = await apiRegister(email, username, password, name);
     saveTokens(response.accessToken, response.refreshToken);
     saveUser(response.user);
+    // AUD-B5: same shared-device concern as login — clear any inherited draft.
+    useBookingStore.getState().clearDraft();
     set({
       user: response.user,
       token: response.accessToken,

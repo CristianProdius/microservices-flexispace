@@ -75,11 +75,14 @@ export const isTokenNearExpiry = (
 // refresh-token rotation per refresh cycle.
 let inFlightRefresh: Promise<string> | null = null;
 
-// Timestamp (ms epoch) of the last refresh rejection. While we're inside the
-// cool-off window we refuse to issue another refresh with what is almost
-// certainly the same stale refresh token — a fresh attempt would just burn
-// another rotation against an auth server that is either down or has already
-// rejected us. Cleared on next successful refresh (AUD-034).
+// Timestamp (ms epoch) of the last GENUINE session-expiry rejection (a
+// SessionExpiredError / real 401). While we're inside the cool-off window we
+// refuse to issue another refresh with what is almost certainly the same
+// stale refresh token the server has already rejected — a fresh attempt would
+// just burn another rotation. Transient errors (network/5xx, auth-service
+// unreachable) deliberately do NOT set this (AUD-B5) so a blip during the
+// rotation window doesn't bounce in-flight work to /login; they bubble to
+// callers to retry instead. Cleared on next successful refresh (AUD-034).
 const REFRESH_FAILURE_COOLDOWN_MS = 5_000;
 let lastRefreshErrorAt: number | null = null;
 
@@ -339,6 +342,7 @@ const useAuthStore = create<AuthState>((set) => ({
       };
 
       inFlightRefresh = (async () => {
+        let succeeded = false;
         try {
           const { accessToken, refreshToken: rotated } =
             await auth.refreshAccessToken(refreshToken);
@@ -347,17 +351,33 @@ const useAuthStore = create<AuthState>((set) => ({
           auth.saveTokens(accessToken, rotated);
           set({ token: accessToken });
           lastRefreshErrorAt = null;
+          succeeded = true;
           return accessToken;
         } catch (error) {
-          lastRefreshErrorAt = Date.now();
-          // Eager clear on rejection so the cool-off path above (not a
-          // re-await of the rejected promise) governs the next call.
+          // AUD-B5: only a GENUINE session-expiry (auth-service explicitly
+          // rejected our refresh token → SessionExpiredError / real 401) arms
+          // the cool-off. A transient blip (network/5xx, auth-service
+          // unreachable) must NOT set lastRefreshErrorAt — otherwise one flaky
+          // refresh during the rotation window bounces in-flight work to
+          // /login for 5s (dropping mutations as UnauthenticatedError). We let
+          // such errors bubble so callers can retry, mirroring how
+          // initialize() preserves its optimistic session on a transient blip.
+          if (error instanceof auth.SessionExpiredError) {
+            lastRefreshErrorAt = Date.now();
+          }
+          // Eager clear on rejection so the cool-off path above (genuine
+          // expiry) — or a clean retry (transient) — governs the next call,
+          // not a re-await of this rejected promise.
           inFlightRefresh = null;
           throw error;
         } finally {
           // On success, defer the clear by one microtask so co-tick awaiters
-          // can still resolve against the same promise.
-          if (lastRefreshErrorAt === null) {
+          // can still resolve against the same promise. On any rejection we
+          // already eager-cleared above; a transient error leaves
+          // lastRefreshErrorAt untouched, so keying off `succeeded` (not
+          // lastRefreshErrorAt) avoids a deferred clear clobbering a fresh
+          // refresh a retrying caller may have already started (AUD-B5).
+          if (succeeded) {
             scheduleClear();
           }
         }

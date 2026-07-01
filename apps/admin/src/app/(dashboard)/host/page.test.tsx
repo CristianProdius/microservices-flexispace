@@ -107,6 +107,23 @@ describe("host dashboard page", () => {
             },
           ],
         })
+        // AUDIT M12: the dashboard now fetches the currency-grouped earnings
+        // rollup for its summary cards (was a client-side mixed-currency sum).
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            earningsByCurrency: [
+              {
+                currency: "USD",
+                totalEarnings: 300,
+                platformFees: 60,
+                grossRevenue: 360,
+              },
+            ],
+            pendingPayout: 0,
+            completedPayouts: 0,
+          }),
+        })
     );
 
     container = document.createElement("div");
