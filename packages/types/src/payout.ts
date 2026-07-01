@@ -23,11 +23,26 @@ export interface PayoutWithHost extends Payout {
   host: Pick<User, "id" | "name" | "email" | "image">;
 }
 
-export interface HostEarnings {
+// A single-currency money bucket. Earnings/payouts are reported PER CURRENCY
+// (the platform books in USD/RON/MDL) — never summed into one scalar, which
+// would silently add e.g. MDL + USD (M10).
+export interface CurrencyAmount {
+  currency: string;
+  amount: number;
+}
+
+export interface HostEarningsByCurrency {
+  currency: string;
   totalEarnings: number;
-  pendingPayout: number;
-  completedPayouts: number;
   platformFees: number;
+  grossRevenue: number;
+}
+
+// Response shape of GET /bookings/host/earnings.
+export interface HostEarnings {
+  earningsByCurrency: HostEarningsByCurrency[];
+  pendingPayout: CurrencyAmount[];
+  completedPayouts: CurrencyAmount[];
 }
 
 // Zod Schemas

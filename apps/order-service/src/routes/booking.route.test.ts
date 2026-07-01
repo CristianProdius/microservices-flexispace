@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => {
   const bookingFindMany = vi.fn();
   const bookingFindUnique = vi.fn();
   const bookingUpdateMany = vi.fn();
+  const bookingGroupBy = vi.fn();
+  const payoutGroupBy = vi.fn();
   // AUD-005/021: `shouldBe*` middleware now consults `prisma.user.findFirst`
   // via `lookupActiveUser`. Default to "active user with the role the JWT
   // claims" so existing tests don't have to be aware of the active-user check.
@@ -30,10 +32,14 @@ const mocks = vi.hoisted(() => {
       findFirst: bookingFindFirst,
       findMany: bookingFindMany,
       findUnique: bookingFindUnique,
+      groupBy: bookingGroupBy,
       updateMany: bookingUpdateMany,
     },
     exchangeRate: {
       findUnique: vi.fn(),
+    },
+    payout: {
+      groupBy: payoutGroupBy,
     },
     space: {
       findUnique: vi.fn(),
@@ -48,7 +54,10 @@ const mocks = vi.hoisted(() => {
     bookingFindFirst,
     bookingFindMany,
     bookingFindUnique,
+    bookingGroupBy,
     bookingUpdateMany,
+    exchangeRateFindUnique: prisma.exchangeRate.findUnique,
+    payoutGroupBy,
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
@@ -446,6 +455,161 @@ describe("booking routes", () => {
       where: { id: "b-2", status: "CONFIRMED" },
     });
     expect(mocks.producerSend).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // M7: a single seeded rate direction must not block non-USD bookings — the
+  // inverse (USD->from) row is used via 1/rate when the direct row is absent.
+  it("creates a non-USD booking using the inverse exchange-rate row when the direct row is missing", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({ ...baseSpace, currency: "MDL" });
+    mocks.bookingFindFirst.mockResolvedValue(null);
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+    // Only USD->MDL is seeded; the direct MDL->USD lookup returns null.
+    mocks.exchangeRateFindUnique.mockImplementation(({ where }: any) => {
+      const { fromCurrency, toCurrency } = where.fromCurrency_toCurrency;
+      if (fromCurrency === "USD" && toCurrency === "MDL") {
+        return Promise.resolve({ rate: "0.055" });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalled();
+    await app.close();
+  });
+
+  // M7: only when neither direction exists do we surface a 503 rate-unavailable.
+  it("returns 503 when neither exchange-rate direction exists for a non-USD space", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({ ...baseSpace, currency: "MDL" });
+    mocks.bookingFindFirst.mockResolvedValue(null);
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.exchangeRateFindUnique.mockResolvedValue(null);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        isHourly: true,
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  // M8/M9: auto-reject publishes booking.rejected for each race-loser and
+  // includes guestEmail + guestName so the email-service consumer notifies them.
+  it("publishes booking.rejected with guest email/name for auto-rejected bookings on approve", async () => {
+    const app = await createApp();
+    mocks.bookingFindUnique
+      // approve handler: the booking being confirmed
+      .mockResolvedValueOnce({
+        endDate: new Date(monday),
+        endTime: "12:00",
+        guest: { email: "winner@example.com", name: "Winner" },
+        hostId: "host-1",
+        id: "b-win",
+        isHourly: true,
+        space: { name: "Focused room" },
+        spaceId: 42,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      })
+      // post-txn re-read of the confirmed booking
+      .mockResolvedValueOnce({ id: "b-win", status: "CONFIRMED" });
+    mocks.bookingFindMany
+      // overlapping candidates inside the txn (one PENDING race-loser)
+      .mockResolvedValueOnce([
+        {
+          endDate: new Date(monday),
+          endTime: "12:00",
+          id: "b-loser",
+          isHourly: true,
+          startDate: new Date(monday),
+          startTime: "10:00",
+          status: "PENDING",
+        },
+      ])
+      // M9 follow-up query for the rejected bookings' guest email/name
+      .mockResolvedValueOnce([
+        { guest: { email: "loser@example.com", name: "Loser" }, id: "b-loser" },
+      ]);
+    mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.producerSend.mockResolvedValue(undefined);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createHostToken()}` },
+      method: "PUT",
+      payload: {},
+      url: "/bookings/b-win/approve",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mocks.producerSend).toHaveBeenCalledWith("booking.rejected", {
+      value: expect.objectContaining({
+        bookingId: "b-loser",
+        guestEmail: "loser@example.com",
+        guestName: "Loser",
+        spaceName: "Focused room",
+      }),
+    });
+    await app.close();
+  });
+
+  // M10: host earnings returns per-currency payout arrays (never a scalar that
+  // silently sums across currencies).
+  it("returns per-currency pendingPayout/completedPayouts arrays for host earnings", async () => {
+    const app = await createApp();
+    mocks.bookingGroupBy.mockResolvedValue([
+      { _sum: { serviceFee: 20, totalAmount: 200 }, currency: "USD" },
+    ]);
+    mocks.payoutGroupBy
+      // pending (PENDING/PROCESSING) aggregate
+      .mockResolvedValueOnce([{ _sum: { netAmount: 50 }, currency: "USD" }])
+      // completed aggregate
+      .mockResolvedValueOnce([{ _sum: { netAmount: 900 }, currency: "MDL" }]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createHostToken()}` },
+      method: "GET",
+      url: "/bookings/host/earnings",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      completedPayouts: [{ amount: 900, currency: "MDL" }],
+      earningsByCurrency: [
+        { currency: "USD", grossRevenue: 200, platformFees: 20, totalEarnings: 180 },
+      ],
+      pendingPayout: [{ amount: 50, currency: "USD" }],
+    });
     await app.close();
   });
 });
