@@ -556,28 +556,30 @@ export const getSpaces = async (req: Request, res: Response) => {
     // so the (former) host's PII (name/image/bio) doesn't leak via the host
     // include below. Layered on top of any venue/bbox filter further down.
     host: { deletedAt: null },
-    ...(hasValidBbox
+    // M11: a soft-deleted venue (isActive:false) must not surface its
+    // still-active spaces in public search — otherwise a deactivated venue's
+    // spaces keep appearing and republish its location. Always require
+    // venue.isActive, merged with any existing city/bbox venue predicate.
+    venue: hasValidBbox
       ? {
-          venue: {
-            ...(cityFilter
-              ? {
-                  city: {
-                    contains: cityFilter,
-                    mode: "insensitive" as const,
-                  },
-                }
-              : {}),
-            latitude: { gte: bbox.swLat, lte: bbox.neLat },
-            longitude: { gte: bbox.swLng, lte: bbox.neLng },
-          },
+          isActive: true,
+          ...(cityFilter
+            ? {
+                city: {
+                  contains: cityFilter,
+                  mode: "insensitive" as const,
+                },
+              }
+            : {}),
+          latitude: { gte: bbox.swLat, lte: bbox.neLat },
+          longitude: { gte: bbox.swLng, lte: bbox.neLng },
         }
       : cityFilter
         ? {
-            venue: {
-              city: { contains: cityFilter, mode: "insensitive" as const },
-            },
+            isActive: true,
+            city: { contains: cityFilter, mode: "insensitive" as const },
           }
-        : {}),
+        : { isActive: true },
     ...(resolvedSpaceType && { spaceType: resolvedSpaceType }),
     ...(categorySlugFilter && { categorySlug: categorySlugFilter }),
     ...(groupSlugFilter && {
@@ -744,7 +746,10 @@ export const getSpaces = async (req: Request, res: Response) => {
     return flattenVenue({
       ...space,
       averageRating: rating.avg,
-      reviewCount: rating.count,
+      // AUD-B6: emit under `totalReviews` (the @repo/types Space key every
+      // frontend reads); the old `reviewCount` key was silently ignored so
+      // counts always rendered 0.
+      totalReviews: rating.count,
     });
   });
 
@@ -776,8 +781,18 @@ export const getSpace = async (req: Request, res: Response) => {
   // findFirst + relation filter never returns the row in that case; we
   // 404 with the same generic message used for missing spaces so deletion
   // isn't a side channel.
+  // M11: the same generic 404 must also cover a host-deactivated space
+  // (isActive:false) and a soft-deleted venue's spaces (venue.isActive:false)
+  // so the public detail page never serves a hidden listing or leaks its
+  // existence. These predicates live in the where clause so the row simply
+  // never comes back — no separate branch that could diverge.
   const space = await prisma.space.findFirst({
-    where: { id: spaceId, host: { deletedAt: null } },
+    where: {
+      id: spaceId,
+      isActive: true,
+      host: { deletedAt: null },
+      venue: { isActive: true },
+    },
     include: {
       category: true,
       venue: venueInclude,
@@ -840,7 +855,9 @@ export const getSpace = async (req: Request, res: Response) => {
   const spaceWithRating = flattenVenue({
     ...space,
     averageRating: avgRating._avg.rating || 0,
-    reviewCount,
+    // AUD-B6: emit under `totalReviews` to match the @repo/types Space key the
+    // frontends read; `reviewCount` was ignored and rendered 0.
+    totalReviews: reviewCount,
   });
 
   res
@@ -943,6 +960,14 @@ export const createSpace = async (req: Request, res: Response) => {
   }
   if (venue.hostId !== hostId) {
     return res.status(403).json({ message: "Venue does not belong to you" });
+  }
+  // M11: refuse to attach a new active space to a soft-deleted venue
+  // (isActive:false). Otherwise a host republishes the deactivated venue's
+  // location under a fresh listing that public search/detail would serve.
+  if (!venue.isActive) {
+    return res
+      .status(400)
+      .json({ message: "Cannot add a space to a deactivated venue" });
   }
 
   // PRODSVC-009: pre-validate categorySlug so Prisma doesn't 500 on unknown
@@ -1341,7 +1366,34 @@ export const getMySpaces = async (req: Request, res: Response) => {
     skip: (page - 1) * limit,
   });
 
-  res.status(200).json(spaces.map(flattenVenue));
+  // AUD-B6: the admin host Spaces page renders each space's averageRating and a
+  // review count, but this endpoint previously returned neither. Aggregate
+  // ratings the same way getSpaces does (batch groupBy to avoid N+1) and attach
+  // averageRating + totalReviews so the admin cards stop showing 0/blank.
+  const spaceIds = spaces.map((s) => s.id);
+  const ratings = await prisma.review.groupBy({
+    by: ["spaceId"],
+    where: { spaceId: { in: spaceIds } },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+  const ratingMap = new Map(
+    ratings.map((r) => [
+      r.spaceId,
+      { avg: r._avg.rating || 0, count: r._count.rating },
+    ]),
+  );
+
+  const spacesWithRating = spaces.map((space) => {
+    const rating = ratingMap.get(space.id) || { avg: 0, count: 0 };
+    return flattenVenue({
+      ...space,
+      averageRating: rating.avg,
+      totalReviews: rating.count,
+    });
+  });
+
+  res.status(200).json(spacesWithRating);
 };
 
 // Get/Update space availability
@@ -1350,6 +1402,18 @@ export const getAvailability = async (req: Request, res: Response) => {
   const spaceId = parseInt(id, 10);
   if (Number.isNaN(spaceId))
     return res.status(400).json({ message: "Invalid ID" });
+
+  // M11: this is a public read. Resolve the space through the same
+  // isActive + venue.isActive guard so a host-deactivated space or a
+  // soft-deleted venue's space can't be probed for its schedule. 404 with
+  // the generic message so a hidden space isn't a side channel.
+  const space = await prisma.space.findFirst({
+    where: { id: spaceId, isActive: true, venue: { isActive: true } },
+    select: { id: true },
+  });
+  if (!space) {
+    return res.status(404).json({ message: "Space not found" });
+  }
 
   const availability = await prisma.availability.findMany({
     where: { spaceId },
@@ -1529,8 +1593,12 @@ export const checkAvailability = async (req: Request, res: Response) => {
     });
   }
 
-  const space = await prisma.space.findUnique({
-    where: { id: spaceId },
+  // M11: apply the public isActive + venue.isActive guard so a hidden space
+  // (host-deactivated, or belonging to a soft-deleted venue) can't be probed
+  // or booked. findFirst (not findUnique) so the relation filter applies; a
+  // filtered-out space returns the same generic 404 as a missing one.
+  const space = await prisma.space.findFirst({
+    where: { id: spaceId, isActive: true, venue: { isActive: true } },
     include: {
       availability: true,
       blockedDates: true,

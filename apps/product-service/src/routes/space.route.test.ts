@@ -356,6 +356,8 @@ describe("space routes", () => {
   });
 
   it("routes host/my before the public id route", async () => {
+    // getMySpaces now aggregates ratings (AUD-B6), so stub the batched groupBy.
+    mocks.groupBy.mockResolvedValue([]);
     mocks.findMany.mockResolvedValue([
       {
         _count: { bookings: 0, reviews: 0 },
@@ -474,6 +476,7 @@ describe("space routes", () => {
       country: "Moldova",
       hostId: "host-user-1",
       id: 22,
+      isActive: true,
       latitude: null,
       longitude: null,
       postalCode: null,
@@ -545,6 +548,7 @@ describe("space routes", () => {
       country: "Moldova",
       hostId: "host-user-1",
       id: 22,
+      isActive: true,
       latitude: null,
       longitude: null,
       postalCode: null,
@@ -767,6 +771,7 @@ describe("space routes", () => {
       country: "Moldova",
       hostId: "host-user-1",
       id: 22,
+      isActive: true,
       latitude: null,
       longitude: null,
       postalCode: null,

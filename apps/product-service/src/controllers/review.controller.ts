@@ -128,6 +128,27 @@ export const getSpaceReviews = async (req: Request, res: Response) => {
   }
   const skip = (pageNum - 1) * limitNum;
 
+  // AUD-B4: this is a public route. Resolve the space with the SAME visibility
+  // guards getSpace (space.controller.ts) applies before returning any reviews.
+  // Without this, a space whose host is soft-deleted, that is itself
+  // deactivated, or whose venue is soft-deleted — all of which 404 on the
+  // detail page — still leaked its reviews plus the reviewer id/name/image via
+  // this endpoint. Mirror getSpace's full visibility guard exactly and 404 with
+  // the same generic message so soft-delete state isn't a side channel.
+  const space = await prisma.space.findFirst({
+    where: {
+      id: spaceId,
+      isActive: true,
+      host: { deletedAt: null },
+      venue: { isActive: true },
+    },
+    select: { id: true },
+  });
+
+  if (!space) {
+    return res.status(404).json({ message: "Space not found" });
+  }
+
   const [reviews, total] = await Promise.all([
     prisma.review.findMany({
       where: { spaceId },

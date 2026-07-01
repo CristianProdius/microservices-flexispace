@@ -628,6 +628,86 @@ describe("getVenuesList listing badges", () => {
   });
 });
 
+// AUD-B4: the "most spaces" sort used to order by an UNFILTERED relation
+// `_count` (orderBy { spaces: { _count: 'desc' } }), which counts soft-deleted
+// (isActive:false) spaces and contradicts the isActive-filtered `spaceCount` we
+// display. Prisma can't filter a relation `_count` in orderBy, so ranking now
+// runs an active-only pre-pass and pages by ranked ids. These lock in that the
+// invalid orderBy is gone and the response follows the active-count ranking.
+describe("getVenuesList most-spaces sort (AUD-B4)", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const fullRow = (id: number, spaceCount: number) => ({
+    id,
+    name: `Venue ${id}`,
+    shortDescription: "Short",
+    city: "Chisinau",
+    country: "Moldova",
+    images: [],
+    venueVerified: false,
+    venueRecommended: false,
+    venueSponsored: false,
+    host: {
+      id: "host-1",
+      name: "Host",
+      username: "host",
+      image: null,
+      hostingSince: null,
+      hostVerified: false,
+      hostRecommended: false,
+      hostSponsored: false,
+    },
+    _count: { spaces: spaceCount },
+  });
+
+  it("ranks by active-only space count instead of the unfiltered relation _count", async () => {
+    // Ranking pre-pass: venue 2 has more ACTIVE spaces than venue 1, so it must
+    // sort first even though the main query returns them in id order.
+    mocks.venueFindMany
+      .mockResolvedValueOnce([
+        { id: 1, createdAt: new Date("2024-01-01"), _count: { spaces: 5 } },
+        { id: 2, createdAt: new Date("2024-02-01"), _count: { spaces: 9 } },
+      ])
+      .mockResolvedValueOnce([fullRow(1, 5), fullRow(2, 9)])
+      .mockResolvedValueOnce([{ city: "Chisinau" }]);
+    mocks.venueCount.mockResolvedValueOnce(2);
+    const req = { query: { sort: "mostVenues" } } as unknown as Request;
+    const res = createResponse();
+
+    await getVenuesList(req, res);
+
+    // The active-only ranking pre-pass filters spaces by isActive:true.
+    expect(mocks.venueFindMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        select: expect.objectContaining({
+          _count: { select: { spaces: { where: { isActive: true } } } },
+        }),
+      }),
+    );
+    // No query must order by the unfiltered relation _count anymore.
+    for (const call of mocks.venueFindMany.mock.calls) {
+      const orderBy = call[0]?.orderBy;
+      if (Array.isArray(orderBy)) {
+        expect(orderBy).not.toContainEqual({ spaces: { _count: "desc" } });
+      }
+    }
+    // Main query hydrates exactly the ranked page ids (highest active count first).
+    expect(mocks.venueFindMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: [2, 1] } }),
+      }),
+    );
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.venues.map((v: { id: number }) => v.id)).toEqual([2, 1]);
+    expect(payload.venues[0]).toMatchObject({ id: 2, spaceCount: 9 });
+    expect(payload.venues[1]).toMatchObject({ id: 1, spaceCount: 5 });
+  });
+});
+
 // Regression for the prod report: deleting "Sala de conferințe" twice and
 // having it bounce back into the host's My Venues list each time. deleteVenue
 // only flips `isActive: false` to preserve booking history, so getMyVenues
@@ -683,6 +763,40 @@ describe("getVenue host PII filter (AUD-006)", () => {
         where: { id: 5, host: { deletedAt: null } },
       }),
     );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+  // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+  // live on the parent Venue (DB-010), not on Space — so nested spaces came back
+  // without them and cards printed a bare ", ". Each returned space must carry
+  // the parent venue's city/country.
+  it("maps the parent venue's city/country onto each returned space", async () => {
+    mocks.venueFindFirst.mockResolvedValueOnce({
+      id: 5,
+      isActive: true,
+      name: "ok",
+      city: "Chisinau",
+      country: "Moldova",
+      host: { id: "host-1", name: "Host" },
+      spaces: [
+        { id: 1, name: "Desk A", instantBook: true },
+        { id: 2, name: "Room B", instantBook: false },
+      ],
+    });
+    const req = {
+      params: { id: "5" },
+      query: {},
+    } as unknown as Request;
+    const res = createResponse();
+
+    await getVenue(req, res);
+
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload.spaces).toHaveLength(2);
+    for (const space of payload.spaces) {
+      expect(space).toMatchObject({ city: "Chisinau", country: "Moldova" });
+    }
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

@@ -144,6 +144,13 @@ export const getVenuesList = async (req: Request, res: Response) => {
   // Featured = sponsored, recommended, then verified inventory first. Venue
   // badges are checked before host badges at each tier so admins can promote a
   // specific venue without lifting every venue from that host.
+  //
+  // AUD-B4: "mostVenues" (most active spaces first) is intentionally NOT handled
+  // here. Prisma can't filter a relation `_count` inside `orderBy`, so the old
+  // `orderBy: { spaces: { _count: 'desc' } }` ranked on ALL spaces including
+  // soft-deleted (isActive:false) ones — contradicting the isActive-filtered
+  // `spaceCount` we display. That sort is ranked in an active-only pre-pass
+  // below instead. `featured`/`newest` keep their DB-level orderBy untouched.
   const orderBy =
     sort === "featured"
       ? [
@@ -156,12 +163,7 @@ export const getVenuesList = async (req: Request, res: Response) => {
           { host: { hostingSince: "asc" as const } },
           { createdAt: "desc" as const },
         ]
-      : sort === "mostVenues"
-        ? [
-            { spaces: { _count: "desc" as const } },
-            { createdAt: "desc" as const },
-          ]
-        : [{ createdAt: "desc" as const }];
+      : [{ createdAt: "desc" as const }];
 
   const andFilters: Prisma.VenueWhereInput[] = [];
   if (verifiedOnly) {
@@ -191,12 +193,44 @@ export const getVenuesList = async (req: Request, res: Response) => {
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
 
+  // AUD-B4: rank the "most spaces" sort by the ACTIVE-only space count so the
+  // ordering matches the `spaceCount` we display (both filter isActive:true).
+  // Prisma can't filter a relation `_count` in `orderBy`, so we do a lightweight
+  // pre-pass over the same `where` selecting only id + active count, sort it in
+  // memory (count desc, then newest), and page it into a stable list of ids.
+  // The main query then hydrates just those ids through the normal select and
+  // reorders to match, keeping the response shape identical to the other sorts.
+  let mostSpacesPageIds: number[] | null = null;
+  if (sort === "mostVenues") {
+    const ranked = await prisma.venue.findMany({
+      where,
+      select: {
+        id: true,
+        createdAt: true,
+        _count: { select: { spaces: { where: { isActive: true } } } },
+      },
+    });
+    ranked.sort((a, b) =>
+      b._count.spaces !== a._count.spaces
+        ? b._count.spaces - a._count.spaces
+        : b.createdAt.getTime() - a.createdAt.getTime()
+    );
+    mostSpacesPageIds = ranked
+      .slice((page - 1) * limit, (page - 1) * limit + limit)
+      .map((v) => v.id);
+  }
+
   const [rows, total, cityRows] = await Promise.all([
     prisma.venue.findMany({
-      where,
+      where: mostSpacesPageIds
+        ? { ...where, id: { in: mostSpacesPageIds } }
+        : where,
       orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
+      // The active-only ranking pre-pass already paged the ids for "most
+      // spaces"; skip/take is only applied for the DB-sorted featured/newest.
+      ...(mostSpacesPageIds
+        ? {}
+        : { skip: (page - 1) * limit, take: limit }),
       select: {
         id: true,
         name: true,
@@ -235,8 +269,16 @@ export const getVenuesList = async (req: Request, res: Response) => {
     .map((v) => v.city)
     .filter((c): c is string => typeof c === "string" && c.length > 0);
 
+  // AUD-B4: `id: { in: [...] }` doesn't preserve order, so re-apply the ranked
+  // page order for "most spaces". Other sorts already come back DB-ordered.
+  const orderedRows = mostSpacesPageIds
+    ? mostSpacesPageIds
+        .map((id) => rows.find((r) => r.id === id))
+        .filter((r): r is (typeof rows)[number] => r !== undefined)
+    : rows;
+
   res.status(200).json({
-    venues: rows.map((v) => ({
+    venues: orderedRows.map((v) => ({
       id: v.id,
       name: v.name,
       shortDescription: v.shortDescription,
@@ -305,7 +347,8 @@ export const getVenue = async (req: Request, res: Response) => {
           currency: true,
           images: true,
           isActive: true,
-          // city/country live on the parent Venue (DB-010) and are already in the response.
+          // city/country live on the parent Venue (DB-010), not on Space, so they
+          // can't be selected here — they're mapped onto each space below.
           instantBook: true,
         },
         orderBy: { createdAt: "asc" },
@@ -319,8 +362,22 @@ export const getVenue = async (req: Request, res: Response) => {
     return res.status(404).json({ message: "Venue not found" });
   }
 
+  // AUD-B6: VenueSpaceSummary.city/country are required in @repo/types and the
+  // client SpaceCard renders `{space.city}, {space.country}`, but those columns
+  // live on the parent Venue (DB-010), not on Space — so each nested space came
+  // back without them and the card printed a bare ", ". Copy the venue's
+  // city/country onto every space; the response shape is otherwise unchanged.
+  const shapedVenue = {
+    ...venue,
+    spaces: venue.spaces.map((space) => ({
+      ...space,
+      city: venue.city,
+      country: venue.country,
+    })),
+  };
+
   const lang = req.query.lang as string | undefined;
-  res.status(200).json(resolveTranslations(venue, lang, VENUE_TRANSLATION_FIELDS));
+  res.status(200).json(resolveTranslations(shapedVenue, lang, VENUE_TRANSLATION_FIELDS));
 };
 
 export const createVenue = async (req: Request, res: Response) => {

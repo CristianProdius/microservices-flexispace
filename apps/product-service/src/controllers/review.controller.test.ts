@@ -2,14 +2,20 @@ import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createReview,
+  getSpaceReviews,
   respondToReview,
   updateReview,
 } from "./review.controller.js";
 
 const mocks = vi.hoisted(() => ({
   spaceFindUnique: vi.fn(),
+  spaceFindFirst: vi.fn(),
   bookingFindFirst: vi.fn(),
   reviewFindUnique: vi.fn(),
+  reviewFindMany: vi.fn(),
+  reviewCount: vi.fn(),
+  reviewGroupBy: vi.fn(),
+  reviewAggregate: vi.fn(),
   reviewCreate: vi.fn(),
   reviewUpdate: vi.fn(),
 }));
@@ -18,12 +24,17 @@ vi.mock("@repo/db", () => ({
   prisma: {
     space: {
       findUnique: mocks.spaceFindUnique,
+      findFirst: mocks.spaceFindFirst,
     },
     booking: {
       findFirst: mocks.bookingFindFirst,
     },
     review: {
       findUnique: mocks.reviewFindUnique,
+      findMany: mocks.reviewFindMany,
+      count: mocks.reviewCount,
+      groupBy: mocks.reviewGroupBy,
+      aggregate: mocks.reviewAggregate,
       create: mocks.reviewCreate,
       update: mocks.reviewUpdate,
     },
@@ -478,6 +489,91 @@ describe("respondToReview input validation (PRODSVC-011)", () => {
           hostResponse: "Thanks for your feedback.",
         }),
       }),
+    );
+  });
+});
+
+// AUD-B4: getSpaceReviews is public and must not leak reviews (or reviewer
+// id/name/image) for spaces that getSpace would 404 — i.e. whose host has been
+// soft-deleted. It now resolves the space with the same host: { deletedAt:
+// null } guard and 404s if it doesn't resolve.
+describe("getSpaceReviews visibility guard (AUD-B4)", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const buildReviewsReq = (
+    params: Record<string, string> = { id: "1" },
+    query: Record<string, string> = {},
+  ): Request =>
+    ({
+      params,
+      query,
+    }) as unknown as Request;
+
+  it("404s when the space's host is soft-deleted (does not resolve)", async () => {
+    // findFirst with the host: { deletedAt: null } guard returns null for a
+    // tombstoned-host / inactive space.
+    mocks.spaceFindFirst.mockResolvedValueOnce(null);
+    const req = buildReviewsReq();
+    const res = createResponse();
+
+    await getSpaceReviews(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "Space not found" });
+    // Reviews must never be queried for an unresolved space.
+    expect(mocks.reviewFindMany).not.toHaveBeenCalled();
+    expect(mocks.reviewCount).not.toHaveBeenCalled();
+    expect(mocks.reviewGroupBy).not.toHaveBeenCalled();
+    expect(mocks.reviewAggregate).not.toHaveBeenCalled();
+  });
+
+  it("applies the same host: { deletedAt: null } guard getSpace uses", async () => {
+    mocks.spaceFindFirst.mockResolvedValueOnce(null);
+    const req = buildReviewsReq();
+    const res = createResponse();
+
+    await getSpaceReviews(req, res);
+
+    expect(mocks.spaceFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 1,
+          isActive: true,
+          host: { deletedAt: null },
+          venue: { isActive: true },
+        },
+      }),
+    );
+  });
+
+  it("returns reviews + stats for a live space", async () => {
+    mocks.spaceFindFirst.mockResolvedValueOnce({ id: 1 });
+    mocks.reviewFindMany.mockResolvedValueOnce([
+      { id: 5, rating: 4, comment: "Great", user: { id: "u1", name: "A", image: null } },
+    ]);
+    mocks.reviewCount.mockResolvedValueOnce(1);
+    mocks.reviewGroupBy.mockResolvedValueOnce([
+      { rating: 4, _count: { rating: 1 } },
+    ]);
+    mocks.reviewAggregate.mockResolvedValueOnce({ _avg: { rating: 4 } });
+    const req = buildReviewsReq();
+    const res = createResponse();
+
+    await getSpaceReviews(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(mocks.reviewFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { spaceId: 1 } }),
+    );
+    const payload = res.json.mock.calls[0]?.[0] as {
+      reviews: unknown[];
+      stats: { averageRating: number; totalReviews: number };
+    };
+    expect(payload.reviews).toHaveLength(1);
+    expect(payload.stats).toEqual(
+      expect.objectContaining({ averageRating: 4, totalReviews: 1 }),
     );
   });
 });
