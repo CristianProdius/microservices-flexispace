@@ -30,8 +30,24 @@ interface DashboardStats {
   activeSpaces: number;
   pendingBookings: number;
   upcomingBookings: number;
+  // AUDIT M12 (BOOKSVC-005): pending earnings grouped by currency so the
+  // "needs attention" prompt never renders a mixed-currency sum as one "$X".
+  pendingByCurrency: Record<string, number>;
+}
+
+// AUDIT M12: payout-aware, currency-grouped earnings from
+// GET /bookings/host/earnings — see the host earnings page for the same shape.
+interface CurrencyEarnings {
+  currency: string;
   totalEarnings: number;
-  pendingEarnings: number;
+  platformFees: number;
+  grossRevenue: number;
+}
+
+interface HostEarnings {
+  earningsByCurrency: CurrencyEarnings[];
+  pendingPayout: number;
+  completedPayouts: number;
 }
 
 interface HostSpaceSummary {
@@ -43,12 +59,14 @@ interface HostBookingSummary {
   startDate: string;
   totalAmount: number;
   serviceFee: number;
+  currency?: string | null;
 }
 
 const HostDashboardPage = () => {
   const router = useRouter();
   const { actingHostId, user, isAdmin } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [earnings, setEarnings] = useState<HostEarnings | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
@@ -107,28 +125,48 @@ const HostDashboardPage = () => {
           new Date(booking.startDate) >= new Date()
       ).length;
 
-      const completedBookings = bookings.filter(
-        (booking) => booking.status === "COMPLETED"
-      );
-      const totalEarnings = completedBookings.reduce(
-        (sum, booking) => sum + (booking.totalAmount - booking.serviceFee),
-        0
-      );
-      const pendingEarnings = bookings
+      // AUDIT M12: group confirmed-booking net earnings by currency instead of
+      // summing across currencies. Each booking carries its own currency;
+      // legacy rows without one fall back to USD.
+      const pendingByCurrency = bookings
         .filter((booking) => ["CONFIRMED"].includes(booking.status))
-        .reduce(
-          (sum, booking) => sum + (booking.totalAmount - booking.serviceFee),
-          0
-        );
+        .reduce<Record<string, number>>((acc, booking) => {
+          const currency = booking.currency || "USD";
+          acc[currency] =
+            (acc[currency] ?? 0) + (booking.totalAmount - booking.serviceFee);
+          return acc;
+        }, {});
 
       setStats({
         totalSpaces: spaces.length,
         activeSpaces,
         pendingBookings,
         upcomingBookings,
-        totalEarnings,
-        pendingEarnings,
+        pendingByCurrency,
       });
+
+      // AUDIT M12: fetch the currency-grouped earnings rollup for the summary
+      // cards so a host with RON/MDL bookings never sees a meaningless "$X".
+      let earningsRes: Response;
+      try {
+        earningsRes = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host/earnings`,
+        );
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        throw err;
+      }
+      if (earningsRes.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (earningsRes.ok) {
+        const earningsData: HostEarnings = await earningsRes.json();
+        setEarnings(earningsData);
+      }
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
     }
@@ -204,6 +242,17 @@ const HostDashboardPage = () => {
     );
   }
 
+  // AUDIT M12: one earnings card per currency (from /bookings/host/earnings)
+  // replaces the old single mixed-currency "Total Earnings" card. Formatted
+  // with each row's own currency so RON/MDL are never rendered as USD.
+  const earningsCards = (earnings?.earningsByCurrency ?? []).map((row) => ({
+    label: `Total Earnings (${row.currency})`,
+    value: formatMoney(row.totalEarnings, row.currency, {
+      maximumFractionDigits: 0,
+    }),
+    icon: DollarSign,
+  }));
+
   const statCards = [
     {
       label: "Active Spaces",
@@ -220,17 +269,19 @@ const HostDashboardPage = () => {
       value: `${stats?.upcomingBookings || 0}`,
       icon: CalendarDays,
     },
-    {
-      // Aggregated across all of the host's bookings; multi-currency totals
-      // aren't normalized server-side yet so we display in USD as a sane
-      // default. See AUD-016 CONCERNS for the proper fix.
-      label: "Total Earnings",
-      value: formatMoney(stats?.totalEarnings ?? 0, "USD", {
-        maximumFractionDigits: 0,
-      }),
-      icon: DollarSign,
-    },
+    ...earningsCards,
   ];
+
+  // AUDIT M12: render pending earnings per currency (e.g. "RON 1,800 + MDL 500")
+  // rather than collapsing them into a single mixed-currency USD figure.
+  const pendingCurrencyEntries = Object.entries(
+    stats?.pendingByCurrency ?? {}
+  ).filter(([, amount]) => amount > 0);
+  const pendingEarningsLabel = pendingCurrencyEntries
+    .map(([currency, amount]) =>
+      formatMoney(amount, currency, { maximumFractionDigits: 0 })
+    )
+    .join(" + ");
 
   const needsAttentionLinks = [
     stats?.pendingBookings && stats.pendingBookings > 0
@@ -243,10 +294,10 @@ const HostDashboardPage = () => {
           icon: AlertCircle,
         }
       : null,
-    stats?.pendingEarnings && stats.pendingEarnings > 0
+    pendingCurrencyEntries.length > 0
       ? {
           href: "/host/earnings",
-          title: `${formatMoney(stats.pendingEarnings, "USD", { maximumFractionDigits: 0 })} in pending earnings`,
+          title: `${pendingEarningsLabel} in pending earnings`,
           description: "View your earnings breakdown",
           icon: TrendingUp,
         }

@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation";
 import useAuthStore from "@/stores/authStore";
 import { fetchWithAuth, SessionExpiredError } from "@/lib/apiClient";
 import { ORDER_SERVICE_URL } from "@/lib/config";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Calendar,
   Clock,
@@ -22,7 +22,11 @@ import {
   MessageSquare,
   Star,
 } from "lucide-react";
-import { formatBookingDate, formatPriceFull } from "@/lib/utils";
+import { formatBookingDate } from "@/lib/utils";
+// AUDIT-B5-FRONTEND (LOW-1): call the currency util directly so we can thread
+// the active next-intl locale (useLocale()) into number formatting. utils'
+// formatPriceFull does not yet forward a locale, so we localise at this call site.
+import { formatCurrencyPriceFull } from "@/lib/currency";
 
 interface Booking {
   id: string;
@@ -68,6 +72,7 @@ const BookingDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const locale = useLocale(); // AUDIT-B5-FRONTEND (LOW-1): active next-intl locale for number formatting
   const t = useTranslations("bookings");
   const tStatus = useTranslations("status");
   const tCommon = useTranslations("common");
@@ -206,7 +211,13 @@ const BookingDetailPage = () => {
   const status = statusConfig[booking.status] || statusConfig.PENDING!;
   const StatusIcon = status!.icon;
   const canCancel = ["PENDING", "CONFIRMED"].includes(booking.status);
-  const canReview = booking.status === "COMPLETED";
+  // AUDIT-B5-FRONTEND (LOW-2): the "Write a review" button linked to
+  // /bookings/[id]/review, a route that does not exist yet, so every click 404s.
+  // Gate it behind a feature flag (off) until the review-submission page ships.
+  // TODO(review-feature): flip to `booking.status === "COMPLETED"` once
+  // /bookings/[id]/review exists (backlog).
+  const REVIEW_FEATURE_ENABLED = false;
+  const canReview = REVIEW_FEATURE_ENABLED && booking.status === "COMPLETED";
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -347,15 +358,15 @@ const BookingDetailPage = () => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>{tCommon("subtotal")}</span>
-                <span>{formatPriceFull(booking.subtotal, booking.currency)}</span>
+                <span>{formatCurrencyPriceFull(booking.subtotal, booking.currency, locale)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>{tCommon("cleaningFee")}</span>
-                <span>{formatPriceFull(booking.cleaningFee, booking.currency)}</span>
+                <span>{formatCurrencyPriceFull(booking.cleaningFee, booking.currency, locale)}</span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                 <span>{tCommon("total")}</span>
-                <span>{formatPriceFull(booking.totalAmount, booking.currency)}</span>
+                <span>{formatCurrencyPriceFull(booking.totalAmount, booking.currency, locale)}</span>
               </div>
             </div>
           </div>

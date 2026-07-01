@@ -39,11 +39,49 @@ interface Booking {
   };
 }
 
-interface EarningsStats {
+// AUDIT M12 (BOOKSVC-005): the host earnings summary must be grouped by
+// currency. Summing net earnings across RON/MDL/USD bookings and rendering the
+// rollup as a single "$X" is meaningless, so we read the payout-aware,
+// currency-grouped totals from GET /bookings/host/earnings instead of deriving
+// a mixed-currency sum client-side. Shape mirrors the order-service route.
+interface CurrencyEarnings {
+  currency: string;
   totalEarnings: number;
-  pendingEarnings: number;
-  thisMonth: number;
+  platformFees: number;
+  grossRevenue: number;
+}
+
+interface CurrencyAmount {
+  currency: string;
+  amount: number;
+}
+
+interface HostEarnings {
+  earningsByCurrency: CurrencyEarnings[];
+  // The order-service groups payouts by currency (M10). Accept both shapes so
+  // this renders correctly whether or not that change has shipped yet (the
+  // older route returned a USD-denominated scalar).
+  pendingPayout: number | CurrencyAmount[];
+  completedPayouts: number | CurrencyAmount[];
+}
+
+// Render a payout field that may be a scalar (legacy) or a per-currency array.
+const formatPayout = (
+  payout: number | CurrencyAmount[] | undefined,
+): string => {
+  if (Array.isArray(payout)) {
+    if (payout.length === 0) return formatMoney(0, "USD");
+    return payout
+      .map((row) => formatMoney(row.amount, row.currency))
+      .join(" + ");
+  }
+  return formatMoney(payout ?? 0, "USD");
+};
+
+interface EarningsStats {
   completedBookings: number;
+  // Grouped by currency so we never render a mixed-currency sum as USD.
+  thisMonthByCurrency: Record<string, number>;
 }
 
 const HostEarningsPage = () => {
@@ -51,6 +89,7 @@ const HostEarningsPage = () => {
   const { actingHostId, isAdmin } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<EarningsStats | null>(null);
+  const [earnings, setEarnings] = useState<HostEarnings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // The effective platform commission applied to this host's payouts. Read-only
@@ -113,21 +152,9 @@ const HostEarningsPage = () => {
         const completedBookings = data.filter(
           (b) => b.status === "COMPLETED"
         );
-        const pendingBookings = data.filter((b) =>
-          ["CONFIRMED"].includes(b.status)
-        );
 
         const calculateNetEarnings = (booking: Booking) =>
           booking.totalAmount - booking.serviceFee;
-
-        const totalEarnings = completedBookings.reduce(
-          (sum, b) => sum + calculateNetEarnings(b),
-          0
-        );
-        const pendingEarnings = pendingBookings.reduce(
-          (sum, b) => sum + calculateNetEarnings(b),
-          0
-        );
 
         const now = new Date();
         const thisMonthBookings = completedBookings.filter((b) => {
@@ -142,17 +169,47 @@ const HostEarningsPage = () => {
             endDate.getFullYear() === now.getFullYear()
           );
         });
-        const thisMonth = thisMonthBookings.reduce(
-          (sum, b) => sum + calculateNetEarnings(b),
-          0
-        );
+
+        // AUDIT M12: group this-month net earnings by booking currency rather
+        // than summing across currencies. Each booking already carries its own
+        // currency; falling back to USD only for legacy rows without one.
+        const thisMonthByCurrency = thisMonthBookings.reduce<
+          Record<string, number>
+        >((acc, b) => {
+          const currency = b.currency || "USD";
+          acc[currency] = (acc[currency] ?? 0) + calculateNetEarnings(b);
+          return acc;
+        }, {});
 
         setStats({
-          totalEarnings,
-          pendingEarnings,
-          thisMonth,
           completedBookings: completedBookings.length,
+          thisMonthByCurrency,
         });
+
+        // AUDIT M12: pull the payout-aware, currency-grouped rollup from the
+        // dedicated endpoint. The per-row table below keeps using /bookings/host
+        // (each row already renders booking.currency); this only powers the
+        // summary cards so RON + MDL are never collapsed into one "$X".
+        let earningsRes: Response;
+        try {
+          earningsRes = await apiFetch(
+            `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/bookings/host/earnings`
+          );
+        } catch (err) {
+          if (err instanceof UnauthenticatedError) {
+            router.push("/login");
+            return;
+          }
+          throw err;
+        }
+        if (earningsRes.status === 401) {
+          router.push("/login");
+          return;
+        }
+        if (earningsRes.ok) {
+          const earningsData: HostEarnings = await earningsRes.json();
+          setEarnings(earningsData);
+        }
       } else {
         setError("Booking service unavailable");
       }
@@ -222,30 +279,26 @@ const HostEarningsPage = () => {
   const pendingPayoutBookings = bookings.filter((b) =>
     ["CONFIRMED"].includes(b.status)
   );
-  // Earnings stat cards aggregate across many bookings that may be in
-  // different currencies. We don't have server-side normalization here yet
-  // (see CONCERNS on AUD-016), so the rollup is displayed in USD as a
-  // best-effort default — same convention used in BookingChartType.
+  // AUDIT M12: the money summary now lives in the per-currency "Earnings by
+  // currency" section below (sourced from /bookings/host/earnings). The top
+  // cards only hold values that are safe to show as scalars: the completed
+  // booking count, and the payout totals which are USD-denominated in the
+  // Payout model (so a single-currency USD format is correct here).
   const statCards = [
-    {
-      label: "Total Earnings",
-      value: formatMoney(stats?.totalEarnings ?? 0, "USD"),
-      icon: DollarSign,
-    },
-    {
-      label: "Pending",
-      value: formatMoney(stats?.pendingEarnings ?? 0, "USD"),
-      icon: Clock,
-    },
-    {
-      label: "This Month",
-      value: formatMoney(stats?.thisMonth ?? 0, "USD"),
-      icon: Calendar,
-    },
     {
       label: "Completed",
       value: `${stats?.completedBookings || 0}`,
       icon: CheckCircle,
+    },
+    {
+      label: "Pending Payout",
+      value: formatPayout(earnings?.pendingPayout),
+      icon: Clock,
+    },
+    {
+      label: "Paid Out",
+      value: formatPayout(earnings?.completedPayouts),
+      icon: DollarSign,
     },
   ];
 
@@ -261,6 +314,81 @@ const HostEarningsPage = () => {
           <DashboardStatCard key={stat.label} {...stat} />
         ))}
       </div>
+
+      {/* AUDIT M12: one card per currency instead of a single mixed "$X". */}
+      <DashboardSection
+        title="Earnings by currency"
+        description="Net payout earnings grouped by booking currency."
+      >
+        {earnings?.earningsByCurrency && earnings.earningsByCurrency.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {earnings.earningsByCurrency.map((row) => (
+              <div
+                key={row.currency}
+                className="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {row.currency}
+                  </span>
+                  <DollarSign className="size-4 text-muted-foreground" />
+                </div>
+                <p className="mt-2 text-2xl font-semibold text-primary">
+                  {formatMoney(row.totalEarnings, row.currency)}
+                </p>
+                <dl className="mt-3 space-y-1 text-xs text-muted-foreground">
+                  <div className="flex justify-between">
+                    <dt>Gross revenue</dt>
+                    <dd className="text-card-foreground">
+                      {formatMoney(row.grossRevenue, row.currency)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Platform fees</dt>
+                    <dd className="text-destructive">
+                      -{formatMoney(row.platformFees, row.currency)}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border/60 bg-accent/20 py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              No completed earnings yet
+            </p>
+          </div>
+        )}
+      </DashboardSection>
+
+      {stats && Object.keys(stats.thisMonthByCurrency).length > 0 && (
+        <DashboardSection
+          title="This month"
+          description="Net earnings from stays completed this month."
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(stats.thisMonthByCurrency).map(
+              ([currency, amount]) => (
+                <div
+                  key={currency}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-4 py-3 shadow-sm"
+                >
+                  <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                    <Calendar className="size-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">{currency}</p>
+                    <p className="text-lg font-semibold text-card-foreground">
+                      {formatMoney(amount, currency)}
+                    </p>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </DashboardSection>
+      )}
 
       {commissionRate !== null && (
         <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
