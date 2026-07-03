@@ -8,6 +8,7 @@ interface PricingTier {
   minutes: number;
   label: string;
   price: string;
+  comment?: string;
 }
 
 interface PricingTiersEditorProps {
@@ -60,8 +61,13 @@ const PricingTiersEditor = ({
       (preset) => !tiers.some((t) => t.minutes === preset.minutes),
     );
     const newTier: PricingTier = firstUnused
-      ? { minutes: firstUnused.minutes, label: firstUnused.label, price: "" }
-      : { minutes: 60, label: "1 hour", price: "" };
+      ? {
+          minutes: firstUnused.minutes,
+          label: firstUnused.label,
+          price: "",
+          comment: "",
+        }
+      : { minutes: 60, label: "1 hour", price: "", comment: "" };
     onChange([...tiers, newTier]);
   };
 
@@ -148,106 +154,118 @@ const PricingTiersEditor = ({
       </p>
 
       {tiers.map((tier, index) => (
-        <div key={index} className="flex items-end gap-3">
-          <div className="flex-1">
-            {index === 0 && (
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Duration
-              </label>
+        <div key={index} className="space-y-2">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              {index === 0 && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Duration
+                </label>
+              )}
+              <select
+                value={durationValueForTier(tier.minutes)}
+                onChange={(e) => updateDuration(index, e.target.value)}
+                className={fieldClassName}
+              >
+                {PRICING_TIER_PRESETS.map((preset) => (
+                  <option key={preset.minutes} value={preset.minutes}>
+                    {preset.label}
+                  </option>
+                ))}
+                <option value={customDaysValue}>Custom days</option>
+                <option value={customMinutesValue}>Custom minutes</option>
+              </select>
+            </div>
+
+            {durationValueForTier(tier.minutes) === customDaysValue && (
+              <div className="w-28 shrink-0">
+                {index === 0 && (
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Days
+                  </label>
+                )}
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={customDaysFromMinutes(tier.minutes)}
+                  onChange={(e) => updateCustomDays(index, e.target.value)}
+                  className={fieldClassName}
+                  aria-label="Custom duration in days"
+                />
+              </div>
             )}
-            <select
-              value={durationValueForTier(tier.minutes)}
-              onChange={(e) => updateDuration(index, e.target.value)}
-              className={fieldClassName}
+
+            {durationValueForTier(tier.minutes) === customMinutesValue && (
+              <div className="w-32 shrink-0">
+                {index === 0 && (
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Minutes
+                  </label>
+                )}
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={customMinutesFromMinutes(tier.minutes)}
+                  onChange={(e) => updateCustomMinutes(index, e.target.value)}
+                  className={fieldClassName}
+                  aria-label="Custom duration in minutes"
+                />
+              </div>
+            )}
+
+            <div className="flex-1">
+              {index === 0 && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Label
+                </label>
+              )}
+              <input
+                type="text"
+                value={tier.label}
+                onChange={(e) => updateTier(index, "label", e.target.value)}
+                className={fieldClassName}
+                placeholder="e.g. Half day"
+              />
+            </div>
+
+            <div className="flex-1">
+              {index === 0 && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Price ({currencySymbol})
+                </label>
+              )}
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={tier.price}
+                onChange={(e) => updateTier(index, "price", e.target.value)}
+                className={fieldClassName}
+                placeholder={currencySymbol}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => removeTier(index)}
+              className="mb-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              aria-label={`Remove tier ${index + 1}`}
             >
-              {PRICING_TIER_PRESETS.map((preset) => (
-                <option key={preset.minutes} value={preset.minutes}>
-                  {preset.label}
-                </option>
-              ))}
-              <option value={customDaysValue}>Custom days</option>
-              <option value={customMinutesValue}>Custom minutes</option>
-            </select>
+              <X className="size-4" />
+            </button>
           </div>
 
-          {durationValueForTier(tier.minutes) === customDaysValue && (
-            <div className="w-28 shrink-0">
-              {index === 0 && (
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Days
-                </label>
-              )}
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={customDaysFromMinutes(tier.minutes)}
-                onChange={(e) => updateCustomDays(index, e.target.value)}
-                className={fieldClassName}
-                aria-label="Custom duration in days"
-              />
-            </div>
-          )}
-
-          {durationValueForTier(tier.minutes) === customMinutesValue && (
-            <div className="w-32 shrink-0">
-              {index === 0 && (
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Minutes
-                </label>
-              )}
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={customMinutesFromMinutes(tier.minutes)}
-                onChange={(e) => updateCustomMinutes(index, e.target.value)}
-                className={fieldClassName}
-                aria-label="Custom duration in minutes"
-              />
-            </div>
-          )}
-
-          <div className="flex-1">
-            {index === 0 && (
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Label
-              </label>
-            )}
-            <input
-              type="text"
-              value={tier.label}
-              onChange={(e) => updateTier(index, "label", e.target.value)}
-              className={fieldClassName}
-              placeholder="e.g. Half day"
-            />
-          </div>
-
-          <div className="flex-1">
-            {index === 0 && (
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Price ({currencySymbol})
-              </label>
-            )}
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={tier.price}
-              onChange={(e) => updateTier(index, "price", e.target.value)}
-              className={fieldClassName}
-              placeholder={currencySymbol}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => removeTier(index)}
-            className="mb-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            aria-label={`Remove tier ${index + 1}`}
-          >
-            <X className="size-4" />
-          </button>
+          <textarea
+            rows={2}
+            value={tier.comment ?? ""}
+            onChange={(e) => updateTier(index, "comment", e.target.value)}
+            className={fieldClassName}
+            maxLength={300}
+            placeholder="Optional comment (e.g. subscription details)"
+            aria-label={`Comment for tier ${index + 1}`}
+          />
         </div>
       ))}
 

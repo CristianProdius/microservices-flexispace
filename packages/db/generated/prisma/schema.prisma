@@ -407,11 +407,12 @@ model SpaceAmenity {
 }
 
 model PricingTier {
-  id      Int    @id @default(autoincrement())
+  id      Int     @id @default(autoincrement())
   spaceId Int
   minutes Int // duration in minutes: 60=1h, 240=4h, 480=8h, 1440=1day, 10080=1week, 43200=1month
   label   String // display label: "1 hour", "Half day (4h)", "Full day", "1 week", "1 month"
   price   Float // price in the space's currency
+  comment String? // optional free-text note shown under the tier price (e.g. a subscription nuance), max 300 chars
 
   space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 

@@ -14,10 +14,23 @@ const YouTubeEmbed = ({ url, title = "Video" }: YouTubeEmbedProps) => {
   const videoId = extractYouTubeId(url);
   if (!videoId) return null;
 
+  // Request a clean, high-quality embed: rel=0 keeps related videos limited to
+  // this channel, modestbranding trims YouTube chrome, and playsinline avoids
+  // forced fullscreen on mobile. The aspect-video wrapper gives YouTube a large
+  // player so it can serve the best resolution the connection allows.
+  // Note: actual playback quality is bounded by the uploaded source — YouTube
+  // adapts to the original upload resolution + bandwidth and cannot exceed the
+  // quality of the video that was uploaded.
+  const embedParams = new URLSearchParams({
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+  });
+
   return (
     <div className="relative aspect-video rounded-xl overflow-hidden shadow-[var(--shadow-lg)]">
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?${embedParams.toString()}`}
         title={title}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen

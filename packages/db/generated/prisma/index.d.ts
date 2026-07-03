@@ -19508,6 +19508,7 @@ export namespace Prisma {
     minutes: number | null
     label: string | null
     price: number | null
+    comment: string | null
   }
 
   export type PricingTierMaxAggregateOutputType = {
@@ -19516,6 +19517,7 @@ export namespace Prisma {
     minutes: number | null
     label: string | null
     price: number | null
+    comment: string | null
   }
 
   export type PricingTierCountAggregateOutputType = {
@@ -19524,6 +19526,7 @@ export namespace Prisma {
     minutes: number
     label: number
     price: number
+    comment: number
     _all: number
   }
 
@@ -19548,6 +19551,7 @@ export namespace Prisma {
     minutes?: true
     label?: true
     price?: true
+    comment?: true
   }
 
   export type PricingTierMaxAggregateInputType = {
@@ -19556,6 +19560,7 @@ export namespace Prisma {
     minutes?: true
     label?: true
     price?: true
+    comment?: true
   }
 
   export type PricingTierCountAggregateInputType = {
@@ -19564,6 +19569,7 @@ export namespace Prisma {
     minutes?: true
     label?: true
     price?: true
+    comment?: true
     _all?: true
   }
 
@@ -19659,6 +19665,7 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment: string | null
     _count: PricingTierCountAggregateOutputType | null
     _avg: PricingTierAvgAggregateOutputType | null
     _sum: PricingTierSumAggregateOutputType | null
@@ -19686,6 +19693,7 @@ export namespace Prisma {
     minutes?: boolean
     label?: boolean
     price?: boolean
+    comment?: boolean
     space?: boolean | SpaceDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["pricingTier"]>
 
@@ -19695,6 +19703,7 @@ export namespace Prisma {
     minutes?: boolean
     label?: boolean
     price?: boolean
+    comment?: boolean
     space?: boolean | SpaceDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["pricingTier"]>
 
@@ -19704,6 +19713,7 @@ export namespace Prisma {
     minutes?: boolean
     label?: boolean
     price?: boolean
+    comment?: boolean
     space?: boolean | SpaceDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["pricingTier"]>
 
@@ -19713,9 +19723,10 @@ export namespace Prisma {
     minutes?: boolean
     label?: boolean
     price?: boolean
+    comment?: boolean
   }
 
-  export type PricingTierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "spaceId" | "minutes" | "label" | "price", ExtArgs["result"]["pricingTier"]>
+  export type PricingTierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "spaceId" | "minutes" | "label" | "price" | "comment", ExtArgs["result"]["pricingTier"]>
   export type PricingTierInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     space?: boolean | SpaceDefaultArgs<ExtArgs>
   }
@@ -19737,6 +19748,7 @@ export namespace Prisma {
       minutes: number
       label: string
       price: number
+      comment: string | null
     }, ExtArgs["result"]["pricingTier"]>
     composites: {}
   }
@@ -20166,6 +20178,7 @@ export namespace Prisma {
     readonly minutes: FieldRef<"PricingTier", 'Int'>
     readonly label: FieldRef<"PricingTier", 'String'>
     readonly price: FieldRef<"PricingTier", 'Float'>
+    readonly comment: FieldRef<"PricingTier", 'String'>
   }
     
 
@@ -26814,7 +26827,8 @@ export namespace Prisma {
     spaceId: 'spaceId',
     minutes: 'minutes',
     label: 'label',
-    price: 'price'
+    price: 'price',
+    comment: 'comment'
   };
 
   export type PricingTierScalarFieldEnum = (typeof PricingTierScalarFieldEnum)[keyof typeof PricingTierScalarFieldEnum]
@@ -28380,6 +28394,7 @@ export namespace Prisma {
     minutes?: IntFilter<"PricingTier"> | number
     label?: StringFilter<"PricingTier"> | string
     price?: FloatFilter<"PricingTier"> | number
+    comment?: StringNullableFilter<"PricingTier"> | string | null
     space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
   }
 
@@ -28389,6 +28404,7 @@ export namespace Prisma {
     minutes?: SortOrder
     label?: SortOrder
     price?: SortOrder
+    comment?: SortOrderInput | SortOrder
     space?: SpaceOrderByWithRelationInput
   }
 
@@ -28402,6 +28418,7 @@ export namespace Prisma {
     minutes?: IntFilter<"PricingTier"> | number
     label?: StringFilter<"PricingTier"> | string
     price?: FloatFilter<"PricingTier"> | number
+    comment?: StringNullableFilter<"PricingTier"> | string | null
     space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
   }, "id" | "spaceId_minutes">
 
@@ -28411,6 +28428,7 @@ export namespace Prisma {
     minutes?: SortOrder
     label?: SortOrder
     price?: SortOrder
+    comment?: SortOrderInput | SortOrder
     _count?: PricingTierCountOrderByAggregateInput
     _avg?: PricingTierAvgOrderByAggregateInput
     _max?: PricingTierMaxOrderByAggregateInput
@@ -28427,6 +28445,7 @@ export namespace Prisma {
     minutes?: IntWithAggregatesFilter<"PricingTier"> | number
     label?: StringWithAggregatesFilter<"PricingTier"> | string
     price?: FloatWithAggregatesFilter<"PricingTier"> | number
+    comment?: StringNullableWithAggregatesFilter<"PricingTier"> | string | null
   }
 
   export type AvailabilityWhereInput = {
@@ -30218,6 +30237,7 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
     space: SpaceCreateNestedOneWithoutPricingTiersInput
   }
 
@@ -30227,12 +30247,14 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
   }
 
   export type PricingTierUpdateInput = {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
     space?: SpaceUpdateOneRequiredWithoutPricingTiersNestedInput
   }
 
@@ -30242,6 +30264,7 @@ export namespace Prisma {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PricingTierCreateManyInput = {
@@ -30250,12 +30273,14 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
   }
 
   export type PricingTierUpdateManyMutationInput = {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PricingTierUncheckedUpdateManyInput = {
@@ -30264,6 +30289,7 @@ export namespace Prisma {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AvailabilityCreateInput = {
@@ -32054,6 +32080,7 @@ export namespace Prisma {
     minutes?: SortOrder
     label?: SortOrder
     price?: SortOrder
+    comment?: SortOrder
   }
 
   export type PricingTierAvgOrderByAggregateInput = {
@@ -32069,6 +32096,7 @@ export namespace Prisma {
     minutes?: SortOrder
     label?: SortOrder
     price?: SortOrder
+    comment?: SortOrder
   }
 
   export type PricingTierMinOrderByAggregateInput = {
@@ -32077,6 +32105,7 @@ export namespace Prisma {
     minutes?: SortOrder
     label?: SortOrder
     price?: SortOrder
+    comment?: SortOrder
   }
 
   export type PricingTierSumOrderByAggregateInput = {
@@ -36294,6 +36323,7 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
   }
 
   export type PricingTierUncheckedCreateWithoutSpaceInput = {
@@ -36301,6 +36331,7 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
   }
 
   export type PricingTierCreateOrConnectWithoutSpaceInput = {
@@ -36689,6 +36720,7 @@ export namespace Prisma {
     minutes?: IntFilter<"PricingTier"> | number
     label?: StringFilter<"PricingTier"> | string
     price?: FloatFilter<"PricingTier"> | number
+    comment?: StringNullableFilter<"PricingTier"> | string | null
   }
 
   export type AvailabilityUpsertWithWhereUniqueWithoutSpaceInput = {
@@ -39675,6 +39707,7 @@ export namespace Prisma {
     minutes: number
     label: string
     price: number
+    comment?: string | null
   }
 
   export type AvailabilityCreateManySpaceInput = {
@@ -39750,6 +39783,7 @@ export namespace Prisma {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PricingTierUncheckedUpdateWithoutSpaceInput = {
@@ -39757,6 +39791,7 @@ export namespace Prisma {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PricingTierUncheckedUpdateManyWithoutSpaceInput = {
@@ -39764,6 +39799,7 @@ export namespace Prisma {
     minutes?: IntFieldUpdateOperationsInput | number
     label?: StringFieldUpdateOperationsInput | string
     price?: FloatFieldUpdateOperationsInput | number
+    comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type AvailabilityUpdateWithoutSpaceInput = {

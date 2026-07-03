@@ -603,6 +603,58 @@ describe("validatePricingTiers - AUD-008", () => {
     }));
     expect(validatePricingTiers(tiers).ok).toBe(false);
   });
+
+  it("persists an optional comment when present", () => {
+    const result = validatePricingTiers([
+      { minutes: 30, label: "Half hour", price: 10, comment: "  Peak rate  " },
+    ]);
+    expect(result).toEqual({
+      ok: true,
+      value: [
+        { minutes: 30, label: "Half hour", price: 10, comment: "Peak rate" },
+      ],
+    });
+  });
+
+  it("accepts a tier without a comment", () => {
+    const result = validatePricingTiers([
+      { minutes: 60, label: "Hour", price: 18 },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value[0]?.comment).toBeUndefined();
+    }
+  });
+
+  it("treats an empty / whitespace-only comment as absent", () => {
+    const result = validatePricingTiers([
+      { minutes: 60, label: "Hour", price: 18, comment: "   " },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value[0]?.comment).toBeUndefined();
+    }
+  });
+
+  it("rejects a comment over 300 characters", () => {
+    const result = validatePricingTiers([
+      { minutes: 60, label: "Hour", price: 18, comment: "a".repeat(301) },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("300");
+    }
+  });
+
+  it("rejects a non-string comment", () => {
+    const result = validatePricingTiers([
+      { minutes: 60, label: "Hour", price: 18, comment: 123 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("comment");
+    }
+  });
 });
 
 // Mirror of the updateVenue regression at c353c9d: if a stale client posts
