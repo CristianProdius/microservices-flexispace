@@ -76,6 +76,9 @@ export const formatBookingDate = (
 export interface PriceLabels {
   perHr: string;
   perDay: string;
+  // Optional so existing callers that predate MONTHLY pricing still compile;
+  // the formatter falls back to "/mo" when a caller doesn't supply it.
+  perMonth?: string;
   from: string;
   contactForPricing: string;
 }
@@ -83,6 +86,7 @@ export interface PriceLabels {
 export const defaultPriceLabels: PriceLabels = {
   perHr: "/hr",
   perDay: "/day",
+  perMonth: "/mo",
   from: "From",
   contactForPricing: "Contact for pricing",
 };
@@ -90,6 +94,7 @@ export const defaultPriceLabels: PriceLabels = {
 export const compactPriceLabels: PriceLabels = {
   perHr: "/hr",
   perDay: "/day",
+  perMonth: "/mo",
   from: "",
   contactForPricing: "Contact",
 };
@@ -99,6 +104,7 @@ export const getPriceDisplay = (
     pricingType: Space["pricingType"] | string;
     pricePerHour: number | null;
     pricePerDay: number | null;
+    pricePerMonth?: number | null;
     currency?: string;
   },
   labels: PriceLabels = defaultPriceLabels,
@@ -108,6 +114,8 @@ export const getPriceDisplay = (
     return `${formatPrice(space.pricePerHour, c)}${labels.perHr}`;
   if (space.pricingType === "DAILY" && space.pricePerDay)
     return `${formatPrice(space.pricePerDay, c)}${labels.perDay}`;
+  if (space.pricingType === "MONTHLY" && space.pricePerMonth)
+    return `${formatPrice(space.pricePerMonth, c)}${labels.perMonth ?? "/mo"}`;
   if (space.pricingType === "BOTH") {
     if (space.pricePerHour)
       return `${labels.from}${labels.from ? " " : ""}${formatPrice(space.pricePerHour, c)}${labels.perHr}`;

@@ -15,7 +15,7 @@ import ReviewSection from "./ReviewSection";
 import LocationMapLoader from "./LocationMapLoader";
 import { getTranslations } from "next-intl/server";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
-import { parseImages, formatPrice } from "@/lib/utils";
+import { parseImages, formatPrice, getPriceDisplay } from "@/lib/utils";
 import { getSpaceCategoryLabel } from "@/lib/taxonomy";
 import { Link } from "@/i18n/navigation";
 import ImageGallery from "@/components/ImageGallery";
@@ -151,6 +151,11 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
             <h1 className="text-3xl font-bold text-foreground mb-2 text-balance">
               {space.name}
             </h1>
+            {/* Headline price — getPriceDisplay covers HOURLY/DAILY/BOTH and
+                MONTHLY (per-month rate with a "/mo" label). */}
+            <p className="text-lg font-semibold text-primary mb-2">
+              {getPriceDisplay(space)}
+            </p>
             {(space as { venue?: { name?: string } | null }).venue?.name &&
               (space as { venue?: { name?: string } | null }).venue!.name !==
                 space.name && (

@@ -806,6 +806,56 @@ describe("createSpace - H2 numeric base-rate validation", () => {
     expect(prisma.space.create).toHaveBeenCalled();
   });
 
+  it("rejects a zero or negative pricePerMonth with 400", async () => {
+    const negRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ pricePerMonth: -5 }) }),
+      negRes as never,
+    );
+    expect(negRes.statusCode).toBe(400);
+
+    const zeroRes = buildRes();
+    await createSpace(
+      buildReq({ body: buildCreateBody({ pricePerMonth: 0 }) }),
+      zeroRes as never,
+    );
+    expect(zeroRes.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts a positive pricePerMonth on a MONTHLY space", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "MONTHLY",
+          pricePerMonth: 500,
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepts a null pricePerMonth (clears the column on a DAILY space)", async () => {
+    // The admin form posts the unused rate as `null`; a null clears the
+    // nullable column and must NOT be rejected.
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "DAILY",
+          pricePerDay: 100,
+          pricePerMonth: null,
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
+  });
+
   it("rejects a negative cleaningFee but accepts zero", async () => {
     const negRes = buildRes();
     await createSpace(
@@ -874,6 +924,21 @@ describe("updateSpace - H2 numeric base-rate validation", () => {
     });
     await updateSpace(
       buildReq({ params: { id: "5" }, body: { pricePerDay: -50 } }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects a negative pricePerMonth with 400", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock).mockResolvedValueOnce({
+      id: 7,
+      hostId: "user-1",
+      venueId: 1,
+    });
+    await updateSpace(
+      buildReq({ params: { id: "7" }, body: { pricePerMonth: -5 } }),
       res as never,
     );
     expect(res.statusCode).toBe(400);

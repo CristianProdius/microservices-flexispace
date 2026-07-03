@@ -22,8 +22,13 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const t = useTranslations("booking");
   const tCommon = useTranslations("common");
 
+  // A MONTHLY space books as a full-day date range (like DAILY): no time
+  // window, isHourly=false. It just reuses the "daily" UI path here and shows
+  // the per-month rate instead of the per-day rate.
   const [bookingType, setBookingType] = useState<"hourly" | "daily">(
-    space.pricingType === "DAILY" ? "daily" : "hourly"
+    space.pricingType === "DAILY" || space.pricingType === "MONTHLY"
+      ? "daily"
+      : "hourly"
   );
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -33,6 +38,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
 
   const canBookHourly = space.pricingType === "HOURLY" || space.pricingType === "BOTH";
   const canBookDaily = space.pricingType === "DAILY" || space.pricingType === "BOTH";
+  const canBookMonthly = space.pricingType === "MONTHLY";
 
   const startHour = parseInt(startTime.split(":")[0]!);
 
@@ -47,17 +53,53 @@ const BookingForm = ({ space }: BookingFormProps) => {
     });
   }, [bookingType, startDate, endDate, startTime, endTime, space]);
 
-  const subtotalLabel = pricing?.appliedTier
-    ? `${pricing.appliedTier.label} x ${pricing.appliedTier.units}`
-    : bookingType === "hourly"
-      ? t("hoursCalc", {
-          price: space.pricePerHour ?? 0,
-          count: pricing?.hours ?? 0,
-        })
-      : t("daysCalc", {
-          price: space.pricePerDay ?? 0,
-          count: pricing?.days ?? 0,
-        });
+  // MONTHLY spaces are priced per calendar month, pro-rated for remainder days.
+  // That pro-ration is done server-side and is authoritative; this is a rough
+  // client-side preview that spreads the monthly rate evenly across ~30 days so
+  // the sidebar can show an approximate subtotal/total before checkout.
+  const monthlyEstimate = useMemo(() => {
+    if (!canBookMonthly || !startDate || !endDate) return null;
+    const pricePerMonth = space.pricePerMonth ?? 0;
+    if (!pricePerMonth) return null;
+    const parseDay = (v: string) => {
+      const [y, m, d] = v.split("-").map(Number);
+      return Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1);
+    };
+    // Inclusive day count, mirroring the daily convention (start..end billed
+    // as (end - start) + 1 days).
+    const days = Math.max(
+      1,
+      Math.round((parseDay(endDate) - parseDay(startDate)) / 86400000) + 1
+    );
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const subtotal = round((pricePerMonth * days) / 30);
+    const cleaningFee = round(space.cleaningFee ?? 0);
+    return {
+      days,
+      subtotal,
+      cleaningFee,
+      serviceFee: 0,
+      totalAmount: round(subtotal + cleaningFee),
+    };
+  }, [canBookMonthly, startDate, endDate, space.pricePerMonth, space.cleaningFee]);
+
+  // The breakdown/checkout draft use the monthly estimate for MONTHLY spaces and
+  // the standard hourly/daily pricing otherwise.
+  const activePricing = canBookMonthly ? monthlyEstimate : pricing;
+
+  const subtotalLabel = canBookMonthly
+    ? `${formatPrice(space.pricePerMonth ?? 0, (space as any).currency)}/mo`
+    : pricing?.appliedTier
+      ? `${pricing.appliedTier.label} x ${pricing.appliedTier.units}`
+      : bookingType === "hourly"
+        ? t("hoursCalc", {
+            price: space.pricePerHour ?? 0,
+            count: pricing?.hours ?? 0,
+          })
+        : t("daysCalc", {
+            price: space.pricePerDay ?? 0,
+            count: pricing?.days ?? 0,
+          });
 
   const handleBooking = () => {
     if (!isAuthenticated) {
@@ -65,7 +107,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
       return;
     }
 
-    if (!pricing || !startDate) return;
+    if (!activePricing || !startDate) return;
 
     setDraft({
       spaceId: space.id,
@@ -74,6 +116,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
       hostId: space.hostId,
       hostName: space.host?.name || tCommon("unknown"),
       startDate,
+      // MONTHLY reuses the "daily" date-range path, so a full date range is
+      // sent with no time window and isHourly=false for both.
       endDate: bookingType === "daily" ? endDate : startDate,
       startTime: bookingType === "hourly" ? startTime : undefined,
       endTime: bookingType === "hourly" ? endTime : undefined,
@@ -81,10 +125,10 @@ const BookingForm = ({ space }: BookingFormProps) => {
       pricePerHour: space.pricePerHour || undefined,
       pricePerDay: space.pricePerDay || undefined,
       isHourly: bookingType === "hourly",
-      subtotal: pricing.subtotal,
-      cleaningFee: pricing.cleaningFee,
-      serviceFee: pricing.serviceFee,
-      totalAmount: pricing.totalAmount,
+      subtotal: activePricing.subtotal,
+      cleaningFee: activePricing.cleaningFee,
+      serviceFee: activePricing.serviceFee,
+      totalAmount: activePricing.totalAmount,
       currency: (space as any).currency || "USD",
     });
 
@@ -101,7 +145,14 @@ const BookingForm = ({ space }: BookingFormProps) => {
     <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
       {/* Price Display */}
       <div className="flex items-baseline gap-1 mb-6">
-        {bookingType === "hourly" && space.pricePerHour ? (
+        {canBookMonthly ? (
+          <>
+            <span className="text-2xl font-bold text-foreground">
+              {formatPrice(space.pricePerMonth, (space as any).currency)}
+            </span>
+            <span className="text-muted">/mo</span>
+          </>
+        ) : bookingType === "hourly" && space.pricePerHour ? (
           <>
             <span className="text-2xl font-bold text-foreground">
               {formatPrice(space.pricePerHour, (space as any).currency)}
@@ -276,22 +327,30 @@ const BookingForm = ({ space }: BookingFormProps) => {
       </div>
 
       {/* Pricing Breakdown */}
-      {pricing && startDate && (
+      {activePricing && startDate && (
         <div className="border-t border-border pt-4 mb-6 space-y-2">
           <div className="flex justify-between text-muted">
             <span>
               {subtotalLabel}
             </span>
-            <span>{formatPriceFull(pricing.subtotal, (space as any).currency)}</span>
+            <span>{formatPriceFull(activePricing.subtotal, (space as any).currency)}</span>
           </div>
           <div className="flex justify-between text-muted">
             <span>{tCommon("cleaningFee")}</span>
-            <span>{formatPriceFull(pricing.cleaningFee, (space as any).currency)}</span>
+            <span>{formatPriceFull(activePricing.cleaningFee, (space as any).currency)}</span>
           </div>
           <div className="flex justify-between font-semibold text-foreground pt-2 border-t border-border">
             <span>{tCommon("total")}</span>
-            <span>{formatPriceFull(pricing.totalAmount, (space as any).currency)}</span>
+            <span>{formatPriceFull(activePricing.totalAmount, (space as any).currency)}</span>
           </div>
+          {canBookMonthly && (
+            // The monthly subtotal here is a rough client estimate (rate spread
+            // over ~30 days); the server prices it per calendar month (pro-rated),
+            // so make clear the final total is confirmed at booking.
+            <p className="text-xs text-muted pt-1">
+              Estimated — the final monthly total is calculated at booking.
+            </p>
+          )}
         </div>
       )}
 

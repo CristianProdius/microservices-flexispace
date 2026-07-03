@@ -11,6 +11,7 @@ interface SpaceMapPinProps {
     images: unknown;
     pricePerHour: number | null;
     pricePerDay: number | null;
+    pricePerMonth?: number | null;
     pricingType: string;
     currency?: string;
     venue?: { name: string } | null;
@@ -19,8 +20,18 @@ interface SpaceMapPinProps {
 
 const SpaceMapPin = ({ space }: SpaceMapPinProps) => {
   const images = parseImages(space.images);
-  const price = space.pricingType === "DAILY" ? space.pricePerDay : space.pricePerHour;
-  const priceLabel = space.pricingType === "DAILY" ? "/day" : "/hr";
+  const price =
+    space.pricingType === "MONTHLY"
+      ? space.pricePerMonth
+      : space.pricingType === "DAILY"
+        ? space.pricePerDay
+        : space.pricePerHour;
+  const priceLabel =
+    space.pricingType === "MONTHLY"
+      ? "/mo"
+      : space.pricingType === "DAILY"
+        ? "/day"
+        : "/hr";
   const currency = (space as any).currency;
 
   return (

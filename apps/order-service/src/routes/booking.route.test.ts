@@ -409,6 +409,60 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // MONTHLY: a monthly space booked over a full-day date range (no times) is
+  // priced via the calendar-month candidate and persisted as a full-day
+  // (isHourly=false) multi-day booking, exactly like a daily range.
+  it("prices a monthly space over a date range via the monthly candidate", async () => {
+    const app = await createApp();
+    // Open every day so the multi-day full-day range passes availability, and
+    // drop the max-hours cap so the long range reaches the pricing path.
+    const openAllWeek = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+      dayOfWeek,
+      endTime: "23:59",
+      isOpen: true,
+      startTime: "00:00",
+    }));
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: openAllWeek,
+      maxBookingHours: null,
+      pricePerDay: null,
+      pricePerHour: null,
+      pricePerMonth: 2000,
+      pricingType: "MONTHLY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        // endDate inclusive: 2026-05-18 -> 2026-06-17 occupies exactly one
+        // calendar month (checkout 2026-06-18).
+        endDate: "2026-06-17",
+        guests: 1,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: false, // MONTHLY -> full-day date-range interval
+          startTime: undefined,
+          endTime: undefined,
+          subtotal: 2000, // 1 calendar month * $2000
+          totalAmount: 2000,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {
