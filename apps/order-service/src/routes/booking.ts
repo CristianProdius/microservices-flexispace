@@ -9,6 +9,9 @@ import { prisma, BookingStatus, Prisma } from "@repo/db";
 import { startOfMonth, subMonths, differenceInDays } from "date-fns";
 import { CreateBookingSchema, type BookingChartType } from "@repo/types";
 import { producer } from "../utils/kafka.js";
+import { writeAudit } from "../utils/audit.js";
+import { toMinorUnits } from "../utils/money.js";
+import { getStripe, paymentsEnabled } from "../utils/stripe.js";
 
 // Statuses that occupy a slot and therefore block other bookings from
 // overlapping it. Kept exported (via the module scope) so the conflict scan
@@ -28,6 +31,7 @@ const CONFLICTING_BOOKING_STATUSES: BookingStatus[] = [
 // sweep to flip elapsed PENDING holds to EXPIRED so they also drop out of
 // listings/analytics, not just the conflict scan.
 const HOLD_WINDOW_MS = 48 * 60 * 60 * 1000; // 48 hours
+const PAYMENT_HOLD_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 // AUDIT-B8 (M4): Prisma `where` fragment for "rows that currently occupy a
 // slot". CONFIRMED always conflicts; a PENDING row only conflicts while its
@@ -996,6 +1000,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // is live, so an expired request-to-book hold no longer blocks new
       // bookings. CONFIRMED still always conflicts.
       const now = new Date();
+      const withPayments = paymentsEnabled();
       const conflictWhere: Prisma.BookingWhereInput = {
         spaceId,
         startDate: { lte: requestedEndDate },
@@ -1042,13 +1047,19 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
                 endTime,
                 guests: guests || 1,
                 isHourly,
-                status: space.instantBook ? "CONFIRMED" : "PENDING",
+                status: withPayments
+                  ? "PENDING"
+                  : space.instantBook
+                    ? "CONFIRMED"
+                    : "PENDING",
                 // AUDIT-B8 (M4): stamp a hold window on request-to-book
                 // (PENDING) rows so an un-actioned hold self-releases; instant
                 // bookings are CONFIRMED and never hold-expire.
-                holdExpiresAt: space.instantBook
-                  ? null
-                  : new Date(now.getTime() + HOLD_WINDOW_MS),
+                holdExpiresAt: withPayments
+                  ? new Date(now.getTime() + PAYMENT_HOLD_WINDOW_MS)
+                  : space.instantBook
+                    ? null
+                    : new Date(now.getTime() + HOLD_WINDOW_MS),
                 subtotal: pricing.subtotal,
                 cleaningFee: pricing.cleaningFee,
                 serviceFee: pricing.serviceFee,
@@ -1082,6 +1093,92 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         throw err;
       }
 
+      let paymentResponse:
+        | {
+            paymentId: string;
+            clientSecret: string;
+            amountMinor: number;
+            currency: string;
+            status: "REQUIRES_PAYMENT";
+          }
+        | undefined;
+
+      if (withPayments) {
+        const amountMinor = toMinorUnits(pricing.total);
+        const applicationFeeMinor = toMinorUnits(pricing.serviceFee);
+
+        try {
+          const intent = await getStripe().paymentIntents.create(
+            {
+              amount: amountMinor,
+              currency: space.currency.toLowerCase(),
+              capture_method: "manual",
+              automatic_payment_methods: { enabled: true },
+              metadata: {
+                bookingId: booking.id,
+                spaceId: String(spaceId),
+                guestId,
+                instantBook: String(space.instantBook),
+              },
+            },
+            { idempotencyKey: `pi:${booking.id}` }
+          );
+
+          if (!intent.client_secret) {
+            throw new Error("Stripe PaymentIntent missing client_secret");
+          }
+
+          const payment = await prisma.$transaction(async (tx) => {
+            const row = await tx.payment.create({
+              data: {
+                bookingId: booking.id,
+                guestId,
+                stripePaymentIntentId: intent.id,
+                amountMinor,
+                applicationFeeMinor,
+                currency: space.currency,
+                status: "REQUIRES_PAYMENT",
+              },
+            });
+            await tx.booking.update({
+              where: { id: booking.id },
+              data: { paymentStatus: "REQUIRES_PAYMENT" },
+            });
+            await writeAudit(tx, {
+              bookingId: booking.id,
+              paymentId: row.id,
+              actorType: "GUEST",
+              actorId: guestId,
+              action: "payment.intent_created",
+              amountMinor,
+              currency: space.currency,
+              stripeObjectId: intent.id,
+            });
+            return row;
+          });
+
+          paymentResponse = {
+            paymentId: payment.id,
+            clientSecret: intent.client_secret,
+            amountMinor,
+            currency: space.currency,
+            status: "REQUIRES_PAYMENT",
+          };
+        } catch (err) {
+          request.log.error(
+            { err, bookingId: booking.id },
+            "PaymentIntent creation failed; expiring the booking"
+          );
+          await prisma.booking.updateMany({
+            where: { id: booking.id, status: "PENDING" },
+            data: { status: "EXPIRED" },
+          });
+          return reply.status(502).send({
+            message: "Payment initialization failed, please try again",
+          });
+        }
+      }
+
       // Send Kafka event. The booking row is already committed; surfacing
       // a 5xx here would mislead the user into retrying and creating a
       // duplicate. Log loudly and continue.
@@ -1107,7 +1204,184 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         );
       }
 
-      return reply.status(201).send(booking);
+      return reply
+        .status(201)
+        .send(
+          paymentResponse ? { ...booking, payment: paymentResponse } : booking
+        );
+    }
+  );
+
+  fastify.post(
+    "/bookings/:id/payment-intent",
+    { preHandler: shouldBeUser },
+    async (request, reply) => {
+      if (!paymentsEnabled()) {
+        return reply.status(404).send({ message: "Booking not found" });
+      }
+
+      const { id } = request.params as { id: string };
+      const guestId = request.userId!;
+
+      const booking = await prisma.booking.findUnique({
+        where: { id },
+        include: { payment: true },
+      });
+
+      if (!booking) {
+        return reply.status(404).send({ message: "Booking not found" });
+      }
+
+      if (booking.guestId !== guestId) {
+        return reply.status(403).send({ message: "Not authorized" });
+      }
+
+      if (
+        booking.status !== "PENDING" ||
+        !booking.holdExpiresAt ||
+        new Date(booking.holdExpiresAt).getTime() <= Date.now()
+      ) {
+        return reply.status(409).send({
+          message: "Booking payment hold is no longer active",
+        });
+      }
+
+      const payment = booking.payment;
+      if (
+        !payment ||
+        (payment.status !== "FAILED" && payment.status !== "REQUIRES_PAYMENT")
+      ) {
+        return reply.status(409).send({
+          message: "Booking payment cannot be retried",
+        });
+      }
+
+      try {
+        try {
+          await getStripe().paymentIntents.cancel(payment.stripePaymentIntentId);
+        } catch (err: any) {
+          if (err?.code !== "payment_intent_unexpected_state") {
+            throw err;
+          }
+        }
+
+        const intent = await getStripe().paymentIntents.create(
+          {
+            amount: payment.amountMinor,
+            currency: payment.currency.toLowerCase(),
+            capture_method: "manual",
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+              bookingId: booking.id,
+              spaceId: String(booking.spaceId),
+              guestId,
+            },
+          },
+          {
+            idempotencyKey: `pi:${booking.id}:retry:${new Date(
+              payment.updatedAt
+            ).getTime()}`,
+          }
+        );
+
+        if (!intent.client_secret) {
+          throw new Error("Stripe PaymentIntent missing client_secret");
+        }
+
+        const updatedPayment = await prisma.$transaction(async (tx) => {
+          const row = await tx.payment.update({
+            where: { id: payment.id },
+            data: {
+              stripePaymentIntentId: intent.id,
+              status: "REQUIRES_PAYMENT",
+              lastErrorCode: null,
+              lastErrorMessage: null,
+            },
+          });
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: { paymentStatus: "REQUIRES_PAYMENT" },
+          });
+          await writeAudit(tx, {
+            bookingId: booking.id,
+            paymentId: payment.id,
+            actorType: "GUEST",
+            actorId: guestId,
+            action: "payment.intent_recreated",
+            amountMinor: payment.amountMinor,
+            currency: payment.currency,
+            stripeObjectId: intent.id,
+          });
+          return row;
+        });
+
+        return reply.status(201).send({
+          paymentId: updatedPayment.id,
+          clientSecret: intent.client_secret,
+          amountMinor: updatedPayment.amountMinor,
+          currency: updatedPayment.currency,
+          status: "REQUIRES_PAYMENT",
+        });
+      } catch (err) {
+        request.log.error(
+          { err, bookingId: booking.id, paymentId: payment.id },
+          "PaymentIntent retry failed"
+        );
+        return reply.status(502).send({
+          message: "Payment initialization failed, please try again",
+        });
+      }
+    }
+  );
+
+  fastify.get(
+    "/bookings/:id/payment",
+    { preHandler: shouldBeUser },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const userId = request.userId!;
+
+      const booking = await prisma.booking.findUnique({
+        where: { id },
+        include: {
+          payment: {
+            include: { refunds: true },
+          },
+        },
+      });
+
+      if (!booking) {
+        return reply.status(404).send({ message: "Booking not found" });
+      }
+
+      const userRole = request.user?.role;
+      if (
+        booking.guestId !== userId &&
+        booking.hostId !== userId &&
+        userRole !== "ADMIN"
+      ) {
+        return reply.status(403).send({ message: "Not authorized" });
+      }
+
+      if (!booking.payment) {
+        return reply.status(404).send({ message: "Payment not found" });
+      }
+
+      return reply.send({
+        paymentId: booking.payment.id,
+        status: booking.payment.status,
+        amountMinor: booking.payment.amountMinor,
+        refundedMinor: booking.payment.refundedMinor,
+        currency: booking.payment.currency,
+        capturedAt: booking.payment.capturedAt,
+        lastErrorMessage: booking.payment.lastErrorMessage,
+        refunds: booking.payment.refunds.map((refund) => ({
+          id: refund.id,
+          amountMinor: refund.amountMinor,
+          status: refund.status,
+          createdAt: refund.createdAt,
+        })),
+      });
     }
   );
 

@@ -13,10 +13,19 @@ const mocks = vi.hoisted(() => {
   const bookingFindFirst = vi.fn();
   const bookingFindMany = vi.fn();
   const bookingFindUnique = vi.fn();
+  const bookingUpdate = vi.fn();
   const bookingUpdateMany = vi.fn();
   const bookingGroupBy = vi.fn();
   const payoutGroupBy = vi.fn();
   const payoutCreate = vi.fn();
+  const paymentCreate = vi.fn();
+  const paymentFindUnique = vi.fn();
+  const paymentUpdate = vi.fn();
+  const paymentUpdateMany = vi.fn();
+  const paymentAuditLogCreate = vi.fn();
+  const stripePaymentIntentsCreate = vi.fn();
+  const stripePaymentIntentsCancel = vi.fn();
+  const stripePaymentIntentsCapture = vi.fn();
   // AUD-005/021: `shouldBe*` middleware now consults `prisma.user.findFirst`
   // via `lookupActiveUser`. Default to "active user with the role the JWT
   // claims" so existing tests don't have to be aware of the active-user check.
@@ -34,6 +43,7 @@ const mocks = vi.hoisted(() => {
       findMany: bookingFindMany,
       findUnique: bookingFindUnique,
       groupBy: bookingGroupBy,
+      update: bookingUpdate,
       updateMany: bookingUpdateMany,
     },
     exchangeRate: {
@@ -42,6 +52,15 @@ const mocks = vi.hoisted(() => {
     payout: {
       groupBy: payoutGroupBy,
       create: payoutCreate,
+    },
+    payment: {
+      create: paymentCreate,
+      findUnique: paymentFindUnique,
+      update: paymentUpdate,
+      updateMany: paymentUpdateMany,
+    },
+    paymentAuditLog: {
+      create: paymentAuditLogCreate,
     },
     space: {
       findUnique: vi.fn(),
@@ -57,13 +76,22 @@ const mocks = vi.hoisted(() => {
     bookingFindMany,
     bookingFindUnique,
     bookingGroupBy,
+    bookingUpdate,
     bookingUpdateMany,
     exchangeRateFindUnique: prisma.exchangeRate.findUnique,
+    paymentAuditLogCreate,
+    paymentCreate,
+    paymentFindUnique,
+    paymentUpdate,
+    paymentUpdateMany,
     payoutGroupBy,
     payoutCreate,
     prisma,
     producerSend: vi.fn(),
     spaceFindUnique: prisma.space.findUnique,
+    stripePaymentIntentsCancel,
+    stripePaymentIntentsCapture,
+    stripePaymentIntentsCreate,
     userFindFirst,
   };
 });
@@ -95,6 +123,19 @@ vi.mock("../utils/kafka.js", () => ({
   },
 }));
 
+vi.mock("../utils/stripe.js", () => ({
+  paymentsEnabled: () => process.env.PAYMENTS_ENABLED === "true",
+  stripePayoutsEnabled: () => false,
+  getStripe: () => ({
+    paymentIntents: {
+      create: mocks.stripePaymentIntentsCreate,
+      cancel: mocks.stripePaymentIntentsCancel,
+      capture: mocks.stripePaymentIntentsCapture,
+    },
+  }),
+  resetStripeForTests: () => {},
+}));
+
 const createApp = async () => {
   const app = Fastify();
   await app.register(bookingRoute);
@@ -116,7 +157,23 @@ const createHostToken = () =>
     hostVerified: true,
   });
 
+const createOtherUserToken = () =>
+  signAccessToken({
+    userId: "guest-2",
+    email: "other@example.com",
+    role: "USER",
+  });
+
 const monday = "2026-05-18";
+const validBookingPayload = {
+  endDate: monday,
+  endTime: "11:00",
+  guests: 1,
+  isHourly: true,
+  spaceId: 42,
+  startDate: monday,
+  startTime: "10:00",
+};
 
 const baseSpace = {
   availability: [
@@ -179,6 +236,307 @@ describe("booking routes", () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+  });
+
+  describe("POST /bookings with PAYMENTS_ENABLED", () => {
+    beforeEach(() => {
+      vi.stubEnv("PAYMENTS_ENABLED", "true");
+      mocks.stripePaymentIntentsCreate.mockResolvedValue({
+        id: "pi_123",
+        client_secret: "pi_123_secret_abc",
+      });
+      mocks.paymentCreate.mockImplementation(({ data }: any) =>
+        Promise.resolve({ id: "pay_1", ...data }),
+      );
+      mocks.bookingUpdate.mockResolvedValue({ id: "booking-new" });
+      mocks.paymentAuditLogCreate.mockResolvedValue({ id: "audit-1" });
+    });
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("creates the booking PENDING with a 30-minute payment hold even for instant book, creates a manual-capture PI in integer minor units, and returns the clientSecret", async () => {
+      const app = await createApp();
+      mocks.spaceFindUnique.mockResolvedValue({
+        ...baseSpace,
+        instantBook: true,
+        pricePerHour: 199.99,
+      });
+      mocks.bookingFindMany.mockResolvedValue([]);
+      mocks.bookingCreate.mockImplementation(({ data }: any) =>
+        Promise.resolve({
+          ...createdBooking,
+          ...data,
+          guest: createdBooking.guest,
+          id: "booking-new",
+          space: { host: { email: "host@example.com" }, name: "Focused room" },
+        }),
+      );
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: validBookingPayload,
+        url: "/bookings",
+      });
+
+      expect(response.statusCode).toBe(201);
+      const created = mocks.bookingCreate.mock.calls[0]![0].data;
+      expect(created.status).toBe("PENDING");
+      expect(new Date(created.holdExpiresAt).getTime()).toBeLessThanOrEqual(
+        Date.now() + 30 * 60_000,
+      );
+      expect(mocks.stripePaymentIntentsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 19999,
+          currency: "usd",
+          capture_method: "manual",
+          metadata: expect.objectContaining({ bookingId: "booking-new" }),
+        }),
+        expect.objectContaining({ idempotencyKey: "pi:booking-new" }),
+      );
+      expect(response.json().payment).toEqual(
+        expect.objectContaining({
+          amountMinor: 19999,
+          clientSecret: "pi_123_secret_abc",
+          status: "REQUIRES_PAYMENT",
+        }),
+      );
+      await app.close();
+    });
+
+    it("expires the booking and returns 502 when PaymentIntent creation fails", async () => {
+      const app = await createApp();
+      mocks.spaceFindUnique.mockResolvedValue(baseSpace);
+      mocks.bookingFindMany.mockResolvedValue([]);
+      mocks.bookingCreate.mockImplementation(({ data }: any) =>
+        Promise.resolve({
+          ...createdBooking,
+          ...data,
+          guest: createdBooking.guest,
+          id: "booking-new",
+          space: { host: { email: "host@example.com" }, name: "Focused room" },
+        }),
+      );
+      mocks.stripePaymentIntentsCreate.mockRejectedValue(new Error("stripe down"));
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: validBookingPayload,
+        url: "/bookings",
+      });
+
+      expect(response.statusCode).toBe(502);
+      expect(mocks.bookingUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: "EXPIRED" },
+          where: expect.objectContaining({ status: "PENDING" }),
+        }),
+      );
+      await app.close();
+    });
+
+    it("is unchanged when the flag is off", async () => {
+      vi.stubEnv("PAYMENTS_ENABLED", "false");
+      const app = await createApp();
+      mocks.spaceFindUnique.mockResolvedValue({
+        ...baseSpace,
+        instantBook: true,
+      });
+      mocks.bookingFindMany.mockResolvedValue([]);
+      mocks.bookingCreate.mockResolvedValue({
+        ...createdBooking,
+        status: "CONFIRMED",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: validBookingPayload,
+        url: "/bookings",
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(mocks.stripePaymentIntentsCreate).not.toHaveBeenCalled();
+      expect(response.json().payment).toBeUndefined();
+      await app.close();
+    });
+  });
+
+  describe("booking payment endpoints", () => {
+    beforeEach(() => {
+      vi.stubEnv("PAYMENTS_ENABLED", "true");
+      mocks.stripePaymentIntentsCreate.mockResolvedValue({
+        id: "pi_retry",
+        client_secret: "pi_retry_secret",
+      });
+      mocks.paymentUpdate.mockImplementation(({ data }: any) =>
+        Promise.resolve({
+          amountMinor: 2500,
+          currency: "USD",
+          id: "pay_1",
+          status: data.status,
+          stripePaymentIntentId: data.stripePaymentIntentId,
+        }),
+      );
+      mocks.bookingUpdate.mockResolvedValue({ id: "booking-new" });
+      mocks.paymentAuditLogCreate.mockResolvedValue({ id: "audit-1" });
+    });
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("lets the guest recreate a failed PaymentIntent for a live pending hold", async () => {
+      const app = await createApp();
+      const holdExpiresAt = new Date(Date.now() + 10 * 60_000);
+      mocks.bookingFindUnique.mockResolvedValue({
+        guestId: "guest-1",
+        holdExpiresAt,
+        id: "b-retry",
+        payment: {
+          amountMinor: 2500,
+          applicationFeeMinor: 250,
+          currency: "USD",
+          id: "pay_1",
+          status: "FAILED",
+          stripePaymentIntentId: "pi_old",
+          updatedAt: new Date("2026-05-18T10:00:00.000Z"),
+        },
+        spaceId: 42,
+        status: "PENDING",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: {},
+        url: "/bookings/b-retry/payment-intent",
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(mocks.stripePaymentIntentsCancel).toHaveBeenCalledWith("pi_old");
+      expect(mocks.stripePaymentIntentsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 2500,
+          currency: "usd",
+          capture_method: "manual",
+          metadata: expect.objectContaining({ bookingId: "b-retry" }),
+        }),
+        expect.objectContaining({
+          idempotencyKey: "pi:b-retry:retry:1779098400000",
+        }),
+      );
+      expect(response.json()).toEqual(
+        expect.objectContaining({
+          amountMinor: 2500,
+          clientSecret: "pi_retry_secret",
+          currency: "USD",
+          paymentId: "pay_1",
+          status: "REQUIRES_PAYMENT",
+        }),
+      );
+      await app.close();
+    });
+
+    it("blocks non-guests from recreating a PaymentIntent", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique.mockResolvedValue({
+        guestId: "guest-2",
+        holdExpiresAt: new Date(Date.now() + 10 * 60_000),
+        id: "b-retry",
+        payment: {
+          id: "pay_1",
+          status: "FAILED",
+          stripePaymentIntentId: "pi_old",
+        },
+        status: "PENDING",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: {},
+        url: "/bookings/b-retry/payment-intent",
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(mocks.stripePaymentIntentsCreate).not.toHaveBeenCalled();
+      await app.close();
+    });
+
+    it("lets the guest read booking payment and refund status", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique.mockResolvedValue({
+        guestId: "guest-1",
+        hostId: "host-1",
+        id: "booking-new",
+        payment: {
+          amountMinor: 2500,
+          capturedAt: null,
+          currency: "USD",
+          id: "pay_1",
+          lastErrorMessage: "declined",
+          refundedMinor: 500,
+          refunds: [
+            {
+              amountMinor: 500,
+              createdAt: new Date("2026-05-18T10:00:00.000Z"),
+              id: "refund-1",
+              status: "SUCCEEDED",
+            },
+          ],
+          status: "PARTIALLY_REFUNDED",
+        },
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "GET",
+        url: "/bookings/booking-new/payment",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        amountMinor: 2500,
+        capturedAt: null,
+        currency: "USD",
+        lastErrorMessage: "declined",
+        paymentId: "pay_1",
+        refundedMinor: 500,
+        refunds: [
+          {
+            amountMinor: 500,
+            createdAt: "2026-05-18T10:00:00.000Z",
+            id: "refund-1",
+            status: "SUCCEEDED",
+          },
+        ],
+        status: "PARTIALLY_REFUNDED",
+      });
+      await app.close();
+    });
+
+    it("blocks strangers from reading booking payment status", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique.mockResolvedValue({
+        guestId: "guest-1",
+        hostId: "host-1",
+        id: "booking-new",
+        payment: {
+          id: "pay_1",
+          refunds: [],
+          status: "REQUIRES_PAYMENT",
+        },
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createOtherUserToken()}` },
+        method: "GET",
+        url: "/bookings/booking-new/payment",
+      });
+
+      expect(response.statusCode).toBe(403);
+      await app.close();
+    });
   });
 
   it("allows adjacent hourly bookings on the same date", async () => {
