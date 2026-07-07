@@ -12,7 +12,7 @@ import { producer } from "../utils/kafka.js";
 import { writeAudit } from "../utils/audit.js";
 import { assertRefundable, computeRefundMinor } from "../lib/refund.js";
 import { toMinorUnits } from "../utils/money.js";
-import { getStripe, paymentsEnabled } from "../utils/stripe.js";
+import { getStripe, paymentsEnabled, stripePayoutsEnabled } from "../utils/stripe.js";
 
 // Statuses that occupy a slot and therefore block other bookings from
 // overlapping it. Kept exported (via the module scope) so the conflict scan
@@ -2323,13 +2323,19 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
 
         const amount = roundCurrency(booking.totalAmount);
         const platformFee = roundCurrency(booking.serviceFee);
+        const netAmount = roundCurrency(amount - platformFee);
         await tx.payout.create({
           data: {
             hostId: booking.hostId,
             amount,
+            amountMinor: toMinorUnits(amount),
             platformFee,
-            netAmount: roundCurrency(amount - platformFee),
+            platformFeeMinor: toMinorUnits(platformFee),
+            netAmount,
+            netAmountMinor: toMinorUnits(netAmount),
             currency: booking.currency,
+            method: stripePayoutsEnabled() ? "STRIPE_TRANSFER" : "MANUAL",
+            idempotencyKey: `transfer:${id}`,
             // status defaults to PENDING; a real disbursement flow flips it to
             // PROCESSING/COMPLETED later. Until then it feeds the host earnings
             // endpoint's pendingPayout (per-currency).

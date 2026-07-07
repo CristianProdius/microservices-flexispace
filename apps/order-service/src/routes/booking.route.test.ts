@@ -1353,8 +1353,13 @@ describe("booking routes", () => {
       data: {
         hostId: "host-1",
         amount: 100,
+        amountMinor: 10000,
+        idempotencyKey: "transfer:b-3",
+        method: "MANUAL",
         platformFee: 20,
+        platformFeeMinor: 2000,
         netAmount: 80,
+        netAmountMinor: 8000,
         currency: "USD",
         bookingIds: ["b-3"],
       },
