@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
   const paymentUpdate = vi.fn();
   const paymentUpdateMany = vi.fn();
   const paymentAuditLogCreate = vi.fn();
+  const refundCreate = vi.fn();
   const stripePaymentIntentsCreate = vi.fn();
   const stripePaymentIntentsCancel = vi.fn();
   const stripePaymentIntentsCapture = vi.fn();
@@ -62,6 +63,9 @@ const mocks = vi.hoisted(() => {
     paymentAuditLog: {
       create: paymentAuditLogCreate,
     },
+    refund: {
+      create: refundCreate,
+    },
     space: {
       findUnique: vi.fn(),
     },
@@ -88,6 +92,7 @@ const mocks = vi.hoisted(() => {
     payoutCreate,
     prisma,
     producerSend: vi.fn(),
+    refundCreate,
     spaceFindUnique: prisma.space.findUnique,
     stripePaymentIntentsCancel,
     stripePaymentIntentsCapture,
@@ -535,6 +540,320 @@ describe("booking routes", () => {
       });
 
       expect(response.statusCode).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe("payment capture and uncaptured release transitions", () => {
+    beforeEach(() => {
+      vi.stubEnv("PAYMENTS_ENABLED", "true");
+      mocks.paymentAuditLogCreate.mockResolvedValue({ id: "audit-1" });
+      mocks.paymentUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.bookingUpdate.mockResolvedValue({ id: "booking" });
+      mocks.stripePaymentIntentsCapture.mockResolvedValue({
+        latest_charge: "ch_1",
+      });
+      mocks.stripePaymentIntentsCancel.mockResolvedValue({ id: "pi_cancelled" });
+      mocks.producerSend.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("captures an AUTHORIZED payment when a host approves the booking", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          endDate: new Date(monday),
+          endTime: "12:00",
+          guest: { email: "guest@example.com", name: "Guest" },
+          hostId: "host-1",
+          id: "b-auth",
+          isHourly: true,
+          space: { name: "Focused room" },
+          spaceId: 42,
+          startDate: new Date(monday),
+          startTime: "10:00",
+          status: "PENDING",
+        })
+        .mockResolvedValueOnce({ id: "b-auth", status: "CONFIRMED" });
+      mocks.paymentFindUnique.mockResolvedValue({
+        amountMinor: 19999,
+        bookingId: "b-auth",
+        currency: "USD",
+        id: "pay_1",
+        status: "AUTHORIZED",
+        stripePaymentIntentId: "pi_auth",
+      });
+      mocks.bookingFindMany.mockResolvedValue([]);
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createHostToken()}` },
+        method: "PUT",
+        payload: {},
+        url: "/bookings/b-auth/approve",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(mocks.stripePaymentIntentsCapture).toHaveBeenCalledWith(
+        "pi_auth",
+        undefined,
+        { idempotencyKey: "capture:b-auth" },
+      );
+      expect(mocks.paymentUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: "PAID",
+            stripeChargeId: "ch_1",
+          }),
+          where: { id: "pay_1", status: "AUTHORIZED" },
+        }),
+      );
+      expect(mocks.bookingUpdate).toHaveBeenCalledWith({
+        data: { paymentStatus: "PAID" },
+        where: { id: "b-auth" },
+      });
+      await app.close();
+    });
+
+    it("blocks approval when the guest payment is not authorized", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique.mockResolvedValueOnce({
+        endDate: new Date(monday),
+        endTime: "12:00",
+        guest: { email: "guest@example.com", name: "Guest" },
+        hostId: "host-1",
+        id: "b-unpaid",
+        isHourly: true,
+        space: { name: "Focused room" },
+        spaceId: 42,
+        startDate: new Date(monday),
+        startTime: "10:00",
+        status: "PENDING",
+      });
+      mocks.paymentFindUnique.mockResolvedValue({
+        amountMinor: 19999,
+        bookingId: "b-unpaid",
+        currency: "USD",
+        id: "pay_1",
+        status: "REQUIRES_PAYMENT",
+        stripePaymentIntentId: "pi_requires",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createHostToken()}` },
+        method: "PUT",
+        payload: {},
+        url: "/bookings/b-unpaid/approve",
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({
+        code: "PAYMENT_NOT_AUTHORIZED",
+        message:
+          "Guest payment is not authorized yet — the booking cannot be approved",
+      });
+      expect(mocks.stripePaymentIntentsCapture).not.toHaveBeenCalled();
+      expect(mocks.bookingUpdateMany).not.toHaveBeenCalled();
+      await app.close();
+    });
+
+    it("compensates a confirmed booking back to CANCELLED when capture fails", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          endDate: new Date(monday),
+          endTime: "12:00",
+          guest: { email: "guest@example.com", name: "Guest" },
+          hostId: "host-1",
+          id: "b-capture-fail",
+          isHourly: true,
+          space: { name: "Focused room" },
+          spaceId: 42,
+          startDate: new Date(monday),
+          startTime: "10:00",
+          status: "PENDING",
+        })
+        .mockResolvedValueOnce({ id: "b-capture-fail", status: "CONFIRMED" });
+      mocks.paymentFindUnique.mockResolvedValue({
+        amountMinor: 19999,
+        bookingId: "b-capture-fail",
+        currency: "USD",
+        id: "pay_1",
+        status: "AUTHORIZED",
+        stripePaymentIntentId: "pi_auth",
+      });
+      mocks.bookingFindMany.mockResolvedValue([]);
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.stripePaymentIntentsCapture.mockRejectedValue(new Error("auth expired"));
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createHostToken()}` },
+        method: "PUT",
+        payload: {},
+        url: "/bookings/b-capture-fail/approve",
+      });
+
+      expect(response.statusCode).toBe(402);
+      expect(response.json()).toEqual({
+        code: "PAYMENT_CAPTURE_FAILED",
+        message:
+          "The guest's payment could not be captured; the booking was cancelled",
+      });
+      expect(mocks.bookingUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            cancellationReason: "payment_capture_failed",
+            cancelledByRole: "HOST",
+            paymentStatus: "FAILED",
+            status: "CANCELLED",
+          }),
+          where: { id: "b-capture-fail", status: "CONFIRMED" },
+        }),
+      );
+      expect(mocks.paymentUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lastErrorMessage: "capture_failed",
+            status: "FAILED",
+          }),
+          where: { id: "pay_1" },
+        }),
+      );
+      expect(mocks.stripePaymentIntentsCancel).toHaveBeenCalledWith("pi_auth");
+      await app.close();
+    });
+
+    it("releases an AUTHORIZED payment when the host rejects the booking", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          guest: { email: "guest@example.com" },
+          hostId: "host-1",
+          id: "b-reject",
+          space: { name: "Focused room" },
+          status: "PENDING",
+        })
+        .mockResolvedValueOnce({ id: "b-reject", status: "REJECTED" });
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.paymentFindUnique.mockResolvedValue({
+        amountMinor: 2500,
+        bookingId: "b-reject",
+        currency: "USD",
+        id: "pay_1",
+        status: "AUTHORIZED",
+        stripePaymentIntentId: "pi_auth",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createHostToken()}` },
+        method: "PUT",
+        payload: { reason: "Not available" },
+        url: "/bookings/b-reject/reject",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(mocks.stripePaymentIntentsCancel).toHaveBeenCalledWith("pi_auth");
+      expect(mocks.paymentUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "CANCELED" }),
+          where: {
+            id: "pay_1",
+            status: { in: ["REQUIRES_PAYMENT", "AUTHORIZED", "FAILED"] },
+          },
+        }),
+      );
+      await app.close();
+    });
+
+    it("cancels an AUTHORIZED pending payment on guest cancellation without creating a refund", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique
+        .mockResolvedValueOnce({
+          currency: "USD",
+          endDate: new Date(monday),
+          endTime: "12:00",
+          guest: { email: "guest@example.com", name: "Guest" },
+          guestId: "guest-1",
+          host: { email: "host@example.com", name: "Host" },
+          hostId: "host-1",
+          id: "b-pending-cancel",
+          isHourly: true,
+          space: {
+            cancellationPolicy: "FLEXIBLE",
+            name: "Focused room",
+            venue: { timezone: "Europe/Chisinau" },
+          },
+          spaceId: 42,
+          startDate: new Date(monday),
+          startTime: "10:00",
+          status: "PENDING",
+          totalAmount: 100,
+        })
+        .mockResolvedValueOnce({ id: "b-pending-cancel", status: "CANCELLED" });
+      mocks.bookingUpdateMany.mockResolvedValue({ count: 1 });
+      mocks.paymentFindUnique.mockResolvedValue({
+        amountMinor: 2500,
+        bookingId: "b-pending-cancel",
+        currency: "USD",
+        id: "pay_1",
+        status: "AUTHORIZED",
+        stripePaymentIntentId: "pi_auth",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createUserToken()}` },
+        method: "POST",
+        payload: { reason: "Plans changed" },
+        url: "/bookings/b-pending-cancel/cancel",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(mocks.stripePaymentIntentsCancel).toHaveBeenCalledWith("pi_auth");
+      expect(mocks.paymentUpdateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: "CANCELED" }),
+          where: {
+            id: "pay_1",
+            status: { in: ["REQUIRES_PAYMENT", "AUTHORIZED", "FAILED"] },
+          },
+        }),
+      );
+      expect(mocks.refundCreate).not.toHaveBeenCalled();
+      await app.close();
+    });
+
+    it("blocks completion when a Payment row exists but has not been captured", async () => {
+      const app = await createApp();
+      mocks.bookingFindUnique.mockResolvedValueOnce({
+        guest: { email: "guest@example.com" },
+        hostId: "host-1",
+        id: "b-complete-unpaid",
+        serviceFee: 20,
+        space: { name: "Focused room" },
+        status: "CONFIRMED",
+        totalAmount: 100,
+      });
+      mocks.paymentFindUnique.mockResolvedValue({
+        bookingId: "b-complete-unpaid",
+        id: "pay_1",
+        status: "AUTHORIZED",
+      });
+
+      const response = await app.inject({
+        headers: { authorization: `Bearer ${createHostToken()}` },
+        method: "PUT",
+        payload: {},
+        url: "/bookings/b-complete-unpaid/complete",
+      });
+
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({
+        code: "PAYMENT_NOT_CAPTURED",
+        message: "Guest payment has not been captured yet",
+      });
+      expect(mocks.payoutCreate).not.toHaveBeenCalled();
+      expect(mocks.bookingUpdateMany).not.toHaveBeenCalled();
       await app.close();
     });
   });

@@ -60,6 +60,60 @@ const isHoldExpired = (
   candidate.holdExpiresAt != null &&
   new Date(candidate.holdExpiresAt).getTime() <= now.getTime();
 
+// SF-PAY-01: release an uncaptured authorization. Safe to call repeatedly;
+// the DB CAS and Stripe's terminal-state errors are both tolerated.
+async function releaseUncapturedPayment(
+  bookingId: string,
+  actor: {
+    actorType: "GUEST" | "HOST" | "ADMIN" | "SYSTEM";
+    actorId?: string;
+  },
+  log: { error: (obj: unknown, msg?: string) => void }
+): Promise<void> {
+  if (!paymentsEnabled()) return;
+  const payment = await prisma.payment.findUnique({ where: { bookingId } });
+  if (
+    !payment ||
+    !["REQUIRES_PAYMENT", "AUTHORIZED", "FAILED"].includes(payment.status)
+  ) {
+    return;
+  }
+
+  try {
+    await getStripe().paymentIntents.cancel(payment.stripePaymentIntentId);
+  } catch (err) {
+    log.error(
+      { err, bookingId },
+      "PI cancel returned an error (may already be terminal)"
+    );
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const cas = await tx.payment.updateMany({
+      where: {
+        id: payment.id,
+        status: { in: ["REQUIRES_PAYMENT", "AUTHORIZED", "FAILED"] },
+      },
+      data: { status: "CANCELED", canceledAt: new Date() },
+    });
+    if (cas.count === 0) return;
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: { paymentStatus: "CANCELED" },
+    });
+    await writeAudit(tx, {
+      bookingId,
+      paymentId: payment.id,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      action: "payment.canceled",
+      amountMinor: payment.amountMinor,
+      currency: payment.currency,
+      stripeObjectId: payment.stripePaymentIntentId,
+    });
+  });
+}
+
 // BOOKSVC-011: Postgres Serializable transactions abort with SQLSTATE 40001
 // (Prisma code P2034) under write contention. Real, non-conflicting bookings
 // would otherwise 500. Retry a small number of times with exponential backoff
@@ -1543,6 +1597,17 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
+      const payment = paymentsEnabled()
+        ? await prisma.payment.findUnique({ where: { bookingId: id } })
+        : null;
+      if (payment && payment.status !== "AUTHORIZED") {
+        return reply.status(409).send({
+          message:
+            "Guest payment is not authorized yet — the booking cannot be approved",
+          code: "PAYMENT_NOT_AUTHORIZED",
+        });
+      }
+
       // BOOKSVC-001: even though create-path blocks new overlapping PENDINGs
       // via CONFLICTING_BOOKING_STATUSES, the host can have multiple
       // overlapping PENDINGs that were all submitted while none of them were
@@ -1658,6 +1723,93 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         return reply.status(409).send({
           message: `Cannot approve booking with status ${result.status}`,
         });
+      }
+
+      await Promise.all(
+        result.rejected.map((rejectedId) =>
+          releaseUncapturedPayment(
+            rejectedId,
+            { actorType: "SYSTEM" },
+            request.log
+          )
+        )
+      );
+
+      if (payment) {
+        try {
+          const captured = await getStripe().paymentIntents.capture(
+            payment.stripePaymentIntentId,
+            undefined,
+            { idempotencyKey: `capture:${id}` }
+          );
+          await prisma.$transaction(async (tx) => {
+            await tx.payment.updateMany({
+              where: { id: payment.id, status: "AUTHORIZED" },
+              data: {
+                status: "PAID",
+                capturedAt: new Date(),
+                stripeChargeId:
+                  typeof captured.latest_charge === "string"
+                    ? captured.latest_charge
+                    : captured.latest_charge?.id,
+              },
+            });
+            await tx.booking.update({
+              where: { id },
+              data: { paymentStatus: "PAID" },
+            });
+            await writeAudit(tx, {
+              bookingId: id,
+              paymentId: payment.id,
+              actorType: "HOST",
+              actorId: hostId,
+              action: "payment.captured",
+              amountMinor: payment.amountMinor,
+              currency: payment.currency,
+              stripeObjectId: payment.stripePaymentIntentId,
+            });
+          });
+        } catch (err) {
+          request.log.error(
+            { err, bookingId: id },
+            "Capture failed after approval; compensating"
+          );
+          await prisma.$transaction(async (tx) => {
+            await tx.booking.updateMany({
+              where: { id, status: "CONFIRMED" },
+              data: {
+                status: "CANCELLED",
+                cancelledAt: new Date(),
+                cancelledByRole: "HOST",
+                cancellationReason: "payment_capture_failed",
+                paymentStatus: "FAILED",
+              },
+            });
+            await tx.payment.updateMany({
+              where: { id: payment.id },
+              data: { status: "FAILED", lastErrorMessage: "capture_failed" },
+            });
+            await writeAudit(tx, {
+              bookingId: id,
+              paymentId: payment.id,
+              actorType: "SYSTEM",
+              action: "payment.capture_failed",
+              stripeObjectId: payment.stripePaymentIntentId,
+            });
+          });
+          try {
+            await getStripe().paymentIntents.cancel(
+              payment.stripePaymentIntentId
+            );
+          } catch {
+            // Already terminal at Stripe.
+          }
+          return reply.status(402).send({
+            message:
+              "The guest's payment could not be captured; the booking was cancelled",
+            code: "PAYMENT_CAPTURE_FAILED",
+          });
+        }
       }
 
       const updatedBooking = await prisma.booking.findUnique({
@@ -1799,6 +1951,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           message: `Cannot reject booking with status ${refreshed?.status ?? "UNKNOWN"}`,
         });
       }
+      await releaseUncapturedPayment(
+        id,
+        { actorType: "HOST", actorId: hostId },
+        request.log
+      );
       const updatedBooking = await prisma.booking.findUnique({
         where: { id },
       });
@@ -1919,6 +2076,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
         });
       }
+      await releaseUncapturedPayment(
+        id,
+        { actorType: actor, actorId: userId },
+        request.log
+      );
       const updatedBooking = await prisma.booking.findUnique({ where: { id } });
 
       // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
@@ -1989,6 +2151,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       if (booking.status !== "CONFIRMED") {
         return reply.status(400).send({
           message: "Booking must be confirmed to be completed",
+        });
+      }
+
+      const payment = paymentsEnabled()
+        ? await prisma.payment.findUnique({ where: { bookingId: id } })
+        : null;
+      if (payment && payment.status !== "PAID") {
+        return reply.status(409).send({
+          message: "Guest payment has not been captured yet",
+          code: "PAYMENT_NOT_CAPTURED",
         });
       }
 
