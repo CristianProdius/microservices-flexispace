@@ -74,6 +74,48 @@ enum BookingActor {
   ADMIN
 }
 
+enum PaymentStatus {
+  REQUIRES_PAYMENT
+  AUTHORIZED
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  CANCELED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum ConnectAccountStatus {
+  ONBOARDING
+  PENDING_VERIFICATION
+  ACTIVE
+  DISABLED
+}
+
+enum PayoutMethod {
+  MANUAL
+  STRIPE_TRANSFER
+}
+
+enum WebhookEventStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+enum DisputeStatus {
+  NEEDS_RESPONSE
+  UNDER_REVIEW
+  WON
+  LOST
+}
+
 // ==================== AUTH ====================
 
 model User {
@@ -121,11 +163,12 @@ model User {
   passwordResetUses PasswordResetUse[]
   venues            Venue[]
   spaces            Space[] // Spaces hosted by this user
-  bookingsAsGuest   Booking[]          @relation("GuestBookings")
-  bookingsAsHost    Booking[]          @relation("HostBookings")
+  bookingsAsGuest   Booking[]             @relation("GuestBookings")
+  bookingsAsHost    Booking[]             @relation("HostBookings")
   reviews           Review[] // Reviews written by this user
   payouts           Payout[] // Payouts for hosts
   invites           Invite[] // Invitations issued to this user
+  connectAccount    StripeConnectAccount?
 
   @@index([role])
   @@index([deletedAt])
@@ -473,9 +516,10 @@ model Booking {
   exchangeRate Decimal  @default(1.0) @db.Decimal(12, 6) // Rate to USD at time of booking
 
   // Status
-  status       BookingStatus @default(PENDING)
-  guestMessage String?
-  hostMessage  String?
+  status        BookingStatus  @default(PENDING)
+  paymentStatus PaymentStatus?
+  guestMessage  String?
+  hostMessage   String?
 
   // AUDIT-B8: when a PENDING request-to-book hold auto-expires. Null for
   // bookings without a hold (e.g. instant-book). A reaper transitions PENDING
@@ -494,15 +538,17 @@ model Booking {
   completedAt DateTime?
 
   // Relations
-  guest  User    @relation("GuestBookings", fields: [guestId], references: [id])
-  host   User    @relation("HostBookings", fields: [hostId], references: [id])
-  space  Space   @relation(fields: [spaceId], references: [id])
-  review Review?
+  guest   User     @relation("GuestBookings", fields: [guestId], references: [id])
+  host    User     @relation("HostBookings", fields: [hostId], references: [id])
+  space   Space    @relation(fields: [spaceId], references: [id])
+  review  Review?
+  payment Payment?
 
   @@index([guestId])
   @@index([hostId])
   @@index([spaceId])
   @@index([status])
+  @@index([paymentStatus])
   @@index([startDate])
   @@index([createdAt])
 }
@@ -545,13 +591,22 @@ model Payout {
   netAmount   Float // In dollars (long-term target: Decimal(12, 2))
   currency    Currency @default(USD)
 
+  amountMinor      Int?
+  platformFeeMinor Int?
+  netAmountMinor   Int?
+
   status     PayoutStatus @default(PENDING)
+  method     PayoutMethod @default(MANUAL)
   // AUD-030: a GIN index on `bookingIds` is managed by the raw-SQL migration
   // `20260606200000_add_missing_indexes` (Prisma cannot model `USING GIN` on a
   // `String[]` cleanly). `prisma db pull` should preserve it; `prisma migrate
   // dev` will see a column-level index with no schema declaration and that is
   // acceptable for raw-SQL indexes.
   bookingIds String[]
+
+  stripeTransferId String? @unique
+  idempotencyKey   String? @unique
+  failureReason    String?
 
   processedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -560,5 +615,148 @@ model Payout {
   host User @relation(fields: [hostId], references: [id])
 
   @@index([hostId])
+  @@index([status])
+  @@index([method])
+}
+
+// ==================== PAYMENTS (SF-PAY-01) ====================
+
+model Payment {
+  id        String @id @default(cuid())
+  bookingId String @unique
+  guestId   String
+
+  stripePaymentIntentId String  @unique
+  stripeChargeId        String? @unique
+
+  amountMinor         Int
+  applicationFeeMinor Int
+  currency            Currency
+
+  status        PaymentStatus @default(REQUIRES_PAYMENT)
+  captureMethod String        @default("manual")
+
+  authorizedAt DateTime?
+  capturedAt   DateTime?
+  canceledAt   DateTime?
+
+  refundedMinor Int @default(0)
+
+  lastErrorCode    String?
+  lastErrorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking  @relation(fields: [bookingId], references: [id])
+  refunds Refund[]
+  dispute Dispute?
+
+  @@index([guestId])
+  @@index([status])
+}
+
+model Refund {
+  id        String @id @default(cuid())
+  paymentId String
+  bookingId String
+
+  stripeRefundId String? @unique
+  idempotencyKey String  @unique
+
+  amountMinor Int
+  currency    Currency
+  status      RefundStatus @default(PENDING)
+
+  reason          String?
+  initiatedByRole BookingActor
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model StripeConnectAccount {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  stripeAccountId  String               @unique
+  status           ConnectAccountStatus @default(ONBOARDING)
+  chargesEnabled   Boolean              @default(false)
+  payoutsEnabled   Boolean              @default(false)
+  detailsSubmitted Boolean              @default(false)
+  country          String?
+  defaultCurrency  String?
+  requirementsDue  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model WebhookEvent {
+  id      String             @id
+  type    String
+  status  WebhookEventStatus @default(RECEIVED)
+  payload Json
+  error   String?
+
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([type])
+  @@index([status])
+  @@index([receivedAt])
+}
+
+model PaymentAuditLog {
+  id String @id @default(cuid())
+
+  bookingId String?
+  paymentId String?
+  refundId  String?
+  payoutId  String?
+
+  actorType String
+  actorId   String?
+
+  action         String
+  amountMinor    Int?
+  currency       Currency?
+  stripeObjectId String?
+  metadata       Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([payoutId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Dispute {
+  id        String @id
+  paymentId String @unique
+  bookingId String
+
+  amountMinor Int
+  currency    Currency
+  status      DisputeStatus
+  reason      String?
+
+  evidenceDueBy DateTime?
+  closedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([bookingId])
   @@index([status])
 }

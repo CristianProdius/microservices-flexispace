@@ -345,6 +345,7 @@ exports.Prisma.BookingScalarFieldEnum = {
   currency: 'currency',
   exchangeRate: 'exchangeRate',
   status: 'status',
+  paymentStatus: 'paymentStatus',
   guestMessage: 'guestMessage',
   hostMessage: 'hostMessage',
   holdExpiresAt: 'holdExpiresAt',
@@ -377,9 +378,107 @@ exports.Prisma.PayoutScalarFieldEnum = {
   platformFee: 'platformFee',
   netAmount: 'netAmount',
   currency: 'currency',
+  amountMinor: 'amountMinor',
+  platformFeeMinor: 'platformFeeMinor',
+  netAmountMinor: 'netAmountMinor',
   status: 'status',
+  method: 'method',
   bookingIds: 'bookingIds',
+  stripeTransferId: 'stripeTransferId',
+  idempotencyKey: 'idempotencyKey',
+  failureReason: 'failureReason',
   processedAt: 'processedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  guestId: 'guestId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  stripeChargeId: 'stripeChargeId',
+  amountMinor: 'amountMinor',
+  applicationFeeMinor: 'applicationFeeMinor',
+  currency: 'currency',
+  status: 'status',
+  captureMethod: 'captureMethod',
+  authorizedAt: 'authorizedAt',
+  capturedAt: 'capturedAt',
+  canceledAt: 'canceledAt',
+  refundedMinor: 'refundedMinor',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RefundScalarFieldEnum = {
+  id: 'id',
+  paymentId: 'paymentId',
+  bookingId: 'bookingId',
+  stripeRefundId: 'stripeRefundId',
+  idempotencyKey: 'idempotencyKey',
+  amountMinor: 'amountMinor',
+  currency: 'currency',
+  status: 'status',
+  reason: 'reason',
+  initiatedByRole: 'initiatedByRole',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.StripeConnectAccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  stripeAccountId: 'stripeAccountId',
+  status: 'status',
+  chargesEnabled: 'chargesEnabled',
+  payoutsEnabled: 'payoutsEnabled',
+  detailsSubmitted: 'detailsSubmitted',
+  country: 'country',
+  defaultCurrency: 'defaultCurrency',
+  requirementsDue: 'requirementsDue',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WebhookEventScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  status: 'status',
+  payload: 'payload',
+  error: 'error',
+  receivedAt: 'receivedAt',
+  processedAt: 'processedAt'
+};
+
+exports.Prisma.PaymentAuditLogScalarFieldEnum = {
+  id: 'id',
+  bookingId: 'bookingId',
+  paymentId: 'paymentId',
+  refundId: 'refundId',
+  payoutId: 'payoutId',
+  actorType: 'actorType',
+  actorId: 'actorId',
+  action: 'action',
+  amountMinor: 'amountMinor',
+  currency: 'currency',
+  stripeObjectId: 'stripeObjectId',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DisputeScalarFieldEnum = {
+  id: 'id',
+  paymentId: 'paymentId',
+  bookingId: 'bookingId',
+  amountMinor: 'amountMinor',
+  currency: 'currency',
+  status: 'status',
+  reason: 'reason',
+  evidenceDueBy: 'evidenceDueBy',
+  closedAt: 'closedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -463,6 +562,16 @@ exports.BookingStatus = exports.$Enums.BookingStatus = {
   EXPIRED: 'EXPIRED'
 };
 
+exports.PaymentStatus = exports.$Enums.PaymentStatus = {
+  REQUIRES_PAYMENT: 'REQUIRES_PAYMENT',
+  AUTHORIZED: 'AUTHORIZED',
+  PAID: 'PAID',
+  PARTIALLY_REFUNDED: 'PARTIALLY_REFUNDED',
+  REFUNDED: 'REFUNDED',
+  CANCELED: 'CANCELED',
+  FAILED: 'FAILED'
+};
+
 exports.BookingActor = exports.$Enums.BookingActor = {
   GUEST: 'GUEST',
   HOST: 'HOST',
@@ -474,6 +583,38 @@ exports.PayoutStatus = exports.$Enums.PayoutStatus = {
   PROCESSING: 'PROCESSING',
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED'
+};
+
+exports.PayoutMethod = exports.$Enums.PayoutMethod = {
+  MANUAL: 'MANUAL',
+  STRIPE_TRANSFER: 'STRIPE_TRANSFER'
+};
+
+exports.RefundStatus = exports.$Enums.RefundStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED'
+};
+
+exports.ConnectAccountStatus = exports.$Enums.ConnectAccountStatus = {
+  ONBOARDING: 'ONBOARDING',
+  PENDING_VERIFICATION: 'PENDING_VERIFICATION',
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED'
+};
+
+exports.WebhookEventStatus = exports.$Enums.WebhookEventStatus = {
+  RECEIVED: 'RECEIVED',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED'
+};
+
+exports.DisputeStatus = exports.$Enums.DisputeStatus = {
+  NEEDS_RESPONSE: 'NEEDS_RESPONSE',
+  UNDER_REVIEW: 'UNDER_REVIEW',
+  WON: 'WON',
+  LOST: 'LOST'
 };
 
 exports.Prisma.ModelName = {
@@ -496,7 +637,13 @@ exports.Prisma.ModelName = {
   BlockedDate: 'BlockedDate',
   Booking: 'Booking',
   Review: 'Review',
-  Payout: 'Payout'
+  Payout: 'Payout',
+  Payment: 'Payment',
+  Refund: 'Refund',
+  StripeConnectAccount: 'StripeConnectAccount',
+  WebhookEvent: 'WebhookEvent',
+  PaymentAuditLog: 'PaymentAuditLog',
+  Dispute: 'Dispute'
 };
 
 /**
