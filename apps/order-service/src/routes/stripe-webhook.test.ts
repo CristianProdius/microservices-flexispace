@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
   const paymentAuditLogCreate = vi.fn();
   const refundUpdateMany = vi.fn();
   const stripeConnectAccountUpdate = vi.fn();
+  const stripeConnectAccountUpdateMany = vi.fn();
   const disputeUpsert = vi.fn();
   const producerSend = vi.fn();
 
@@ -41,6 +42,7 @@ const mocks = vi.hoisted(() => {
     },
     stripeConnectAccount: {
       update: stripeConnectAccountUpdate,
+      updateMany: stripeConnectAccountUpdateMany,
     },
     webhookEvent: {
       create: webhookEventCreate,
@@ -60,6 +62,7 @@ const mocks = vi.hoisted(() => {
     producerSend,
     refundUpdateMany,
     stripeConnectAccountUpdate,
+    stripeConnectAccountUpdateMany,
     stripePaymentIntentsCapture,
     webhookEventCreate,
     webhookEventUpdate,
@@ -294,6 +297,50 @@ describe("stripe webhook route", () => {
         where: { id: "evt_4" },
       }),
     );
+    await app.close();
+  });
+
+  it("reconciles account.updated into the host Connect account row", async () => {
+    const app = await createApp();
+    mocks.constructEvent.mockReturnValue(
+      fakeEvent("evt_acct", "account.updated", {
+        charges_enabled: true,
+        country: "RO",
+        default_currency: "eur",
+        details_submitted: true,
+        id: "acct_1",
+        payouts_enabled: true,
+        requirements: {
+          currently_due: ["external_account"],
+          disabled_reason: null,
+        },
+      }),
+    );
+    mocks.stripeConnectAccountUpdateMany.mockResolvedValue({ count: 1 });
+
+    const response = await post(app);
+
+    expect(response.statusCode).toBe(200);
+    expect(mocks.stripeConnectAccountUpdateMany).toHaveBeenCalledWith({
+      where: { stripeAccountId: "acct_1" },
+      data: expect.objectContaining({
+        chargesEnabled: true,
+        country: "RO",
+        defaultCurrency: "eur",
+        detailsSubmitted: true,
+        payoutsEnabled: true,
+        requirementsDue: ["external_account"],
+        status: "ACTIVE",
+      }),
+    });
+    expect(mocks.paymentAuditLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "connect.account_updated",
+        actorType: "STRIPE_WEBHOOK",
+        metadata: { eventId: "evt_acct", status: "ACTIVE" },
+        stripeObjectId: "acct_1",
+      }),
+    });
     await app.close();
   });
 });

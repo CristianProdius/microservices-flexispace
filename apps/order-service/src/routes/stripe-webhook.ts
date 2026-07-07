@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { prisma, Prisma } from "@repo/db";
 import type Stripe from "stripe";
+import { deriveConnectStatus } from "../lib/connectStatus.js";
 import { writeAudit } from "../utils/audit.js";
 import { producer } from "../utils/kafka.js";
 import { getStripe } from "../utils/stripe.js";
@@ -111,7 +112,7 @@ async function handleEvent(
     case "refund.failed":
       return onRefundFailed(event.data.object as Stripe.Refund);
     case "account.updated":
-      return onAccountUpdated(event.data.object as Stripe.Account);
+      return onAccountUpdated(event.data.object as Stripe.Account, event.id);
     case "charge.dispute.created":
     case "charge.dispute.closed":
       return onDispute(event.data.object as Stripe.Dispute, event.type);
@@ -350,8 +351,43 @@ async function onRefundFailed(_refund: Stripe.Refund): Promise<boolean> {
   return false;
 }
 
-async function onAccountUpdated(_account: Stripe.Account): Promise<boolean> {
-  return false;
+async function onAccountUpdated(
+  account: Stripe.Account,
+  eventId: string
+): Promise<boolean> {
+  const status = deriveConnectStatus({
+    payouts_enabled: account.payouts_enabled ?? false,
+    details_submitted: account.details_submitted ?? false,
+    requirements: {
+      disabled_reason: account.requirements?.disabled_reason ?? null,
+    },
+  });
+
+  let handled = false;
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.stripeConnectAccount.updateMany({
+      where: { stripeAccountId: account.id },
+      data: {
+        chargesEnabled: account.charges_enabled ?? false,
+        payoutsEnabled: account.payouts_enabled ?? false,
+        detailsSubmitted: account.details_submitted ?? false,
+        status,
+        country: account.country ?? undefined,
+        defaultCurrency: account.default_currency ?? undefined,
+        requirementsDue: account.requirements?.currently_due ?? [],
+      },
+    });
+    if (updated.count === 0) return;
+    handled = true;
+    await writeAudit(tx, {
+      actorType: "STRIPE_WEBHOOK",
+      action: "connect.account_updated",
+      stripeObjectId: account.id,
+      metadata: { eventId, status },
+    });
+  });
+
+  return handled;
 }
 
 async function onDispute(
