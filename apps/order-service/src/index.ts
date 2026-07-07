@@ -5,6 +5,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { shouldBeUser } from "@repo/auth-middleware/fastify";
 import { bookingRoute } from "./routes/booking.js";
+import { stripeWebhookRoute } from "./routes/stripe-webhook.js";
 import { consumer, producer } from "./utils/kafka.js";
 import { runKafkaSubscriptions } from "./utils/subscriptions.js";
 
@@ -83,6 +84,7 @@ fastify.get("/test", { preHandler: shouldBeUser }, (request, reply) => {
 });
 
 fastify.register(bookingRoute);
+fastify.register(stripeWebhookRoute);
 
 const start = async () => {
   try {
