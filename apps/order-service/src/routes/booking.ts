@@ -10,6 +10,7 @@ import { startOfMonth, subMonths, differenceInDays } from "date-fns";
 import { CreateBookingSchema, type BookingChartType } from "@repo/types";
 import { producer } from "../utils/kafka.js";
 import { writeAudit } from "../utils/audit.js";
+import { assertRefundable, computeRefundMinor } from "../lib/refund.js";
 import { toMinorUnits } from "../utils/money.js";
 import { getStripe, paymentsEnabled } from "../utils/stripe.js";
 
@@ -112,6 +113,39 @@ async function releaseUncapturedPayment(
       stripeObjectId: payment.stripePaymentIntentId,
     });
   });
+}
+
+async function scheduleStripeRefund(
+  refund: {
+    id: string;
+    amountMinor: number;
+    idempotencyKey: string;
+    stripeRefundId?: string | null;
+  },
+  stripeChargeId: string,
+  log: { error: (obj: unknown, msg?: string) => void }
+): Promise<void> {
+  if (refund.stripeRefundId) return;
+
+  try {
+    const stripeRefund = await getStripe().refunds.create(
+      { charge: stripeChargeId, amount: refund.amountMinor },
+      { idempotencyKey: refund.idempotencyKey }
+    );
+    await prisma.refund.update({
+      where: { id: refund.id },
+      data: { stripeRefundId: stripeRefund.id },
+    });
+  } catch (err) {
+    log.error(
+      { err, refundId: refund.id },
+      "Stripe refund creation failed after refund row was committed"
+    );
+    await prisma.refund.update({
+      where: { id: refund.id },
+      data: { status: "FAILED" },
+    });
+  }
 }
 
 // BOOKSVC-011: Postgres Serializable transactions abort with SQLSTATE 40001
@@ -2057,30 +2091,131 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       }
       const refundAmount = round2(booking.totalAmount * refundRate);
 
-      // BOOKSVC-012: compare-and-swap to avoid a concurrent state transition.
-      const cas = await prisma.booking.updateMany({
-        where: { id, status: { in: cancellableStatuses } },
-        data: {
-          status: "CANCELLED",
-          cancelledAt: now,
-          cancelledByRole: actor,
-          cancellationReason: reason,
-        },
-      });
-      if (cas.count === 0) {
-        const refreshed = await prisma.booking.findUnique({
-          where: { id },
-          select: { status: true },
+      const payment = paymentsEnabled()
+        ? await prisma.payment.findUnique({ where: { bookingId: id } })
+        : null;
+      const capturedPayment =
+        payment &&
+        (payment.status === "PAID" || payment.status === "PARTIALLY_REFUNDED")
+          ? payment
+          : null;
+      let refundPaymentInfo: {
+        amountMinor: number;
+        refundId: string | null;
+        provider: "stripe" | "none";
+      } = { amountMinor: 0, refundId: null, provider: "none" };
+
+      if (capturedPayment) {
+        const refundMinor = computeRefundMinor({
+          amountMinor: capturedPayment.amountMinor,
+          refundedMinor: capturedPayment.refundedMinor,
+          rate: refundRate,
         });
-        return reply.status(409).send({
-          message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+        const idempotencyKey = `refund:${id}:cancellation`;
+
+        const cancelResult = await prisma.$transaction(async (tx) => {
+          const cas = await tx.booking.updateMany({
+            where: { id, status: { in: cancellableStatuses } },
+            data: {
+              status: "CANCELLED",
+              cancelledAt: now,
+              cancelledByRole: actor,
+              cancellationReason: reason,
+            },
+          });
+          if (cas.count === 0) {
+            return { kind: "stale" as const };
+          }
+
+          if (refundMinor <= 0) {
+            return { kind: "ok" as const, refundRow: null };
+          }
+
+          assertRefundable(capturedPayment, refundMinor);
+          const refundRow = await tx.refund.upsert({
+            where: { idempotencyKey },
+            create: {
+              paymentId: capturedPayment.id,
+              bookingId: id,
+              idempotencyKey,
+              amountMinor: refundMinor,
+              currency: capturedPayment.currency,
+              status: "PENDING",
+              reason: reason ?? "cancellation",
+              initiatedByRole: actor,
+            },
+            update: {},
+          });
+          await writeAudit(tx, {
+            bookingId: id,
+            paymentId: capturedPayment.id,
+            refundId: refundRow.id,
+            actorType: actor,
+            actorId: userId,
+            action: "refund.created",
+            amountMinor: refundMinor,
+            currency: capturedPayment.currency,
+          });
+          return { kind: "ok" as const, refundRow };
         });
+
+        if (cancelResult.kind === "stale") {
+          const refreshed = await prisma.booking.findUnique({
+            where: { id },
+            select: { status: true },
+          });
+          return reply.status(409).send({
+            message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+          });
+        }
+
+        if (cancelResult.refundRow) {
+          refundPaymentInfo = {
+            amountMinor: refundMinor,
+            refundId: cancelResult.refundRow.id,
+            provider: "stripe",
+          };
+          if (!capturedPayment.stripeChargeId) {
+            throw new Error("Captured payment is missing stripeChargeId");
+          }
+          await scheduleStripeRefund(
+            {
+              id: cancelResult.refundRow.id,
+              amountMinor: refundMinor,
+              idempotencyKey,
+              stripeRefundId: cancelResult.refundRow.stripeRefundId,
+            },
+            capturedPayment.stripeChargeId,
+            request.log
+          );
+        }
+      } else {
+        // BOOKSVC-012: compare-and-swap to avoid a concurrent state transition.
+        const cas = await prisma.booking.updateMany({
+          where: { id, status: { in: cancellableStatuses } },
+          data: {
+            status: "CANCELLED",
+            cancelledAt: now,
+            cancelledByRole: actor,
+            cancellationReason: reason,
+          },
+        });
+        if (cas.count === 0) {
+          const refreshed = await prisma.booking.findUnique({
+            where: { id },
+            select: { status: true },
+          });
+          return reply.status(409).send({
+            message: `Cannot cancel booking with status ${refreshed?.status ?? "UNKNOWN"}`,
+          });
+        }
+        await releaseUncapturedPayment(
+          id,
+          { actorType: actor, actorId: userId },
+          request.log
+        );
       }
-      await releaseUncapturedPayment(
-        id,
-        { actorType: actor, actorId: userId },
-        request.log
-      );
+
       const updatedBooking = await prisma.booking.findUnique({ where: { id } });
 
       // TODO(KAFKA-001 follow-up): transactional outbox. DB write already
@@ -2116,8 +2251,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           policy,
           rate: refundRate,
           amount: refundAmount,
+          amountMinor: refundPaymentInfo.amountMinor,
           currency: booking.currency,
           hoursUntilCheckin: round2(hoursUntilCheckin),
+          provider: refundPaymentInfo.provider,
+          refundId: refundPaymentInfo.refundId,
         },
       });
     }
