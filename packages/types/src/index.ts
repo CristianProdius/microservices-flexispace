@@ -3,6 +3,7 @@ export * from "./space";
 export * from "./booking";
 export * from "./review";
 export * from "./payout";
+export * from "./payment";
 export * from "./currency";
 export * from "./venue";
 export * from "./events";
