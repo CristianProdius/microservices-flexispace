@@ -9,11 +9,13 @@ import {
   CalendarCheck,
   LayoutDashboard,
   DollarSign,
+  CreditCard,
   ChevronUp,
   User2,
   Users,
   Tag,
   Sparkles,
+  WalletCards,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +57,7 @@ const AppSidebar = () => {
     { title: "My Spaces", url: "/host/spaces", icon: Building2 },
     { title: "My Bookings", url: "/host/bookings", icon: CalendarCheck },
     { title: "Earnings", url: "/host/earnings", icon: DollarSign },
+    { title: "Payouts", url: "/host/payouts", icon: WalletCards },
   ];
 
   const adminNavItems = [
@@ -62,6 +65,8 @@ const AppSidebar = () => {
     { title: "Users", url: "/admin/users", icon: Users },
     { title: "All Spaces", url: "/admin/spaces", icon: Building2 },
     { title: "All Bookings", url: "/admin/bookings", icon: CalendarCheck },
+    { title: "Payments", url: "/admin/payments", icon: CreditCard },
+    { title: "Payouts", url: "/admin/payouts", icon: WalletCards },
     { title: "Categories", url: "/admin/categories", icon: Tag },
     { title: "Amenities", url: "/admin/amenities", icon: Sparkles },
     { title: "Exchange Rates", url: "/admin/exchange-rates", icon: DollarSign },

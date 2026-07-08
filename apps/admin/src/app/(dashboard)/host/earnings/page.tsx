@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import useAuthStore from "@/stores/authStore";
 import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
+  AlertTriangle,
   Calendar,
   CheckCircle,
   Clock,
   DollarSign,
   Percent,
+  WalletCards,
 } from "lucide-react";
 
 import {
@@ -65,6 +68,14 @@ interface HostEarnings {
   completedPayouts: number | CurrencyAmount[];
 }
 
+interface ConnectStatus {
+  exists: boolean;
+  status: "ONBOARDING" | "PENDING_VERIFICATION" | "ACTIVE" | "DISABLED" | null;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  requirementsDue: string[];
+}
+
 // Render a payout field that may be a scalar (legacy) or a per-currency array.
 const formatPayout = (
   payout: number | CurrencyAmount[] | undefined,
@@ -96,6 +107,7 @@ const HostEarningsPage = () => {
   // for the host — only an admin can change it from the admin user detail page.
   const [commissionRate, setCommissionRate] = useState<number | null>(null);
   const [hasCommissionOverride, setHasCommissionOverride] = useState(false);
+  const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
 
   const fetchEarnings = useCallback(async () => {
     setError(null);
@@ -125,6 +137,25 @@ const HostEarningsPage = () => {
             : null
         );
         setHasCommissionOverride(typeof meBody.commissionRate === "number");
+      }
+
+      try {
+        const connectRes = await apiFetch(
+          `${process.env.NEXT_PUBLIC_ORDER_SERVICE_URL}/connect/status`
+        );
+        if (connectRes.status === 401) {
+          router.push("/login");
+          return;
+        }
+        if (connectRes.ok) {
+          setConnectStatus(await connectRes.json());
+        }
+      } catch (err) {
+        if (err instanceof UnauthenticatedError) {
+          router.push("/login");
+          return;
+        }
+        setConnectStatus(null);
       }
 
       let res: Response;
@@ -279,6 +310,8 @@ const HostEarningsPage = () => {
   const pendingPayoutBookings = bookings.filter((b) =>
     ["CONFIRMED"].includes(b.status)
   );
+  const connectNeedsSetup =
+    connectStatus !== null && connectStatus.status !== "ACTIVE";
   // AUDIT M12: the money summary now lives in the per-currency "Earnings by
   // currency" section below (sourced from /bookings/host/earnings). The top
   // cards only hold values that are safe to show as scalars: the completed
@@ -308,6 +341,32 @@ const HostEarningsPage = () => {
         title="Earnings"
         description="Track your hosting income"
       />
+
+      {connectNeedsSetup && (
+        <Link
+          href="/host/payouts"
+          className="block rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-4 py-3 text-yellow-900 transition-colors hover:bg-yellow-500/15 dark:text-yellow-100"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-background/70 p-2 text-yellow-700 dark:text-yellow-200">
+                <AlertTriangle className="size-5" />
+              </div>
+              <div>
+                <p className="font-medium">Payout setup required</p>
+                <p className="text-sm text-yellow-800/80 dark:text-yellow-100/80">
+                  Complete Stripe Connect onboarding before completed bookings
+                  can be transferred.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <WalletCards className="size-4" />
+              Open payouts
+            </div>
+          </div>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((stat) => (

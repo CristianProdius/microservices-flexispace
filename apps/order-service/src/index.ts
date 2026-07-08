@@ -6,6 +6,7 @@ import rateLimit from "@fastify/rate-limit";
 import { shouldBeUser } from "@repo/auth-middleware/fastify";
 import { bookingRoute } from "./routes/booking.js";
 import { connectRoute } from "./routes/connect.route.js";
+import { paymentRoute } from "./routes/payment.route.js";
 import { payoutRoute } from "./routes/payout.route.js";
 import { stripeWebhookRoute } from "./routes/stripe-webhook.js";
 import { consumer, producer } from "./utils/kafka.js";
@@ -87,6 +88,7 @@ fastify.get("/test", { preHandler: shouldBeUser }, (request, reply) => {
 
 fastify.register(bookingRoute);
 fastify.register(connectRoute);
+fastify.register(paymentRoute);
 fastify.register(payoutRoute);
 fastify.register(stripeWebhookRoute);
 

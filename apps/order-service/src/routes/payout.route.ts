@@ -30,7 +30,17 @@ const listPayouts = async (where: Record<string, unknown>, page: number, limit: 
       orderBy: { createdAt: "desc" },
       include: {
         host: {
-          select: { id: true, name: true, email: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            connectAccount: {
+              select: {
+                status: true,
+                payoutsEnabled: true,
+              },
+            },
+          },
         },
       },
     }),
