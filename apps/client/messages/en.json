@@ -237,7 +237,14 @@
     "bookingRequestSent": "Booking Request Sent!",
     "bookingRequestSentDesc": "Your booking request has been sent. The host will review your request and respond within 24 hours.",
     "viewMyBookings": "View My Bookings",
-    "browseMoreSpaces": "Browse More Spaces"
+    "browseMoreSpaces": "Browse More Spaces",
+    "payment": {
+      "authorizedNotCharged": "Card authorized - you are charged only when the host approves.",
+      "paidConfirmed": "Payment complete - your booking is confirmed.",
+      "completePayment": "Complete payment",
+      "refundIssued": "Refund issued",
+      "paymentFailedRetry": "Payment failed. Please try another card."
+    }
   },
   "bookings": {
     "title": "My Bookings",

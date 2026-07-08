@@ -10,6 +10,21 @@ import { ORDER_SERVICE_URL } from "@/lib/config";
 import { useTranslations } from "next-intl";
 import { Calendar, Clock, Users, AlertCircle, Check } from "lucide-react";
 import { formatBookingDate, formatPriceFull } from "@/lib/utils";
+import CheckoutPaymentForm from "@/components/checkout/CheckoutPaymentForm";
+
+interface PaymentIntentResponse {
+  paymentId: string;
+  clientSecret: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+}
+
+interface CreatedBookingResponse {
+  id: string;
+  space?: { instantBook?: boolean };
+  payment?: PaymentIntentResponse;
+}
 
 const CheckoutPage = () => {
   const router = useRouter();
@@ -18,6 +33,8 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [createdBooking, setCreatedBooking] = useState<CreatedBookingResponse | null>(null);
+  const [paymentIntent, setPaymentIntent] = useState<PaymentIntentResponse | null>(null);
   const t = useTranslations("booking");
   const tCommon = useTranslations("common");
 
@@ -64,6 +81,13 @@ const CheckoutPage = () => {
         throw new Error(data.message || "Failed to create booking");
       }
 
+      const booking = (await bookingRes.json()) as CreatedBookingResponse;
+      setCreatedBooking(booking);
+      if (booking.payment?.clientSecret) {
+        setPaymentIntent(booking.payment);
+        return;
+      }
+
       // CLIENT-016: flip `success` before clearing the draft so the success
       // gate above wins the empty-draft redirect race in StrictMode.
       setSuccess(true);
@@ -75,6 +99,14 @@ const CheckoutPage = () => {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePaymentConfirmed = () => {
+    setSuccess(true);
+    clearDraft();
+    if (createdBooking?.id) {
+      router.push(`/bookings/${createdBooking.id}`);
     }
   };
 
@@ -203,19 +235,35 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            <div className="space-y-4 text-sm text-gray-600 mb-6">
-              <p>
-                {t("confirmDisclaimer")}
-              </p>
-            </div>
+            {paymentIntent ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  {createdBooking?.space?.instantBook
+                    ? t("payment.paidConfirmed")
+                    : t("payment.authorizedNotCharged")}
+                </p>
+                <CheckoutPaymentForm
+                  clientSecret={paymentIntent.clientSecret}
+                  onConfirmed={handlePaymentConfirmed}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4 text-sm text-gray-600 mb-6">
+                  <p>
+                    {t("confirmDisclaimer")}
+                  </p>
+                </div>
 
-            <button
-              onClick={createBooking}
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-500/20"
-            >
-              {loading ? t("processing") : t("confirmBooking")}
-            </button>
+                <button
+                  onClick={createBooking}
+                  disabled={loading}
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-500/20"
+                >
+                  {loading ? t("processing") : t("confirmBooking")}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

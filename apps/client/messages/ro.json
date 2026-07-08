@@ -237,7 +237,14 @@
     "bookingRequestSent": "Cererea de Rezervare a Fost Trimisa!",
     "bookingRequestSentDesc": "Cererea ta de rezervare a fost trimisa. Gazda va examina cererea ta si va raspunde in 24 de ore.",
     "viewMyBookings": "Vezi Rezervarile Mele",
-    "browseMoreSpaces": "Exploreaza Mai Multe Spatii"
+    "browseMoreSpaces": "Exploreaza Mai Multe Spatii",
+    "payment": {
+      "authorizedNotCharged": "Card autorizat - esti taxat doar cand gazda aproba.",
+      "paidConfirmed": "Plata finalizata - rezervarea este confirmata.",
+      "completePayment": "Finalizeaza plata",
+      "refundIssued": "Rambursare emisa",
+      "paymentFailedRetry": "Plata a esuat. Incearca un alt card."
+    }
   },
   "bookings": {
     "title": "Rezervarile Mele",
