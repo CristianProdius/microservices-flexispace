@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { login, refreshAccessToken, SessionExpiredError } from "./auth";
+import {
+  bootstrapSessionFromCookie,
+  login,
+  refreshAccessToken,
+  SessionExpiredError,
+} from "./auth";
 
 const jsonResponse = (status: number, body: unknown = {}) =>
   new Response(JSON.stringify(body), {
@@ -83,6 +88,89 @@ describe("admin auth api", () => {
         accessToken: "access-2",
         refreshToken: "legacy-refresh",
       });
+    });
+  });
+
+  describe("bootstrapSessionFromCookie", () => {
+    const routeFetch = (
+      handlers: { refresh: Response; me?: Response }
+    ) =>
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.includes("/auth/refresh")) {
+          // Cookie-first bootstrap must send credentials and NO body so the
+          // HttpOnly refresh cookie is the sole credential.
+          expect(init?.credentials).toBe("include");
+          expect(init?.body).toBeUndefined();
+          return Promise.resolve(handlers.refresh);
+        }
+        if (url.includes("/auth/me")) {
+          expect(init?.credentials).toBe("include");
+          return Promise.resolve(handlers.me ?? jsonResponse(200, {}));
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      });
+
+    it("hydrates the account from the refresh + me cookie round-trip", async () => {
+      const meUser = {
+        id: "h1",
+        email: "host@spacefly.ai",
+        username: "host",
+        name: "Host",
+        role: "HOST",
+        image: null,
+      };
+      vi.stubGlobal(
+        "fetch",
+        routeFetch({
+          refresh: jsonResponse(200, {
+            accessToken: "access-1",
+            refreshToken: "refresh-1",
+          }),
+          me: jsonResponse(200, meUser),
+        })
+      );
+
+      await expect(bootstrapSessionFromCookie()).resolves.toEqual({
+        user: meUser,
+        accessToken: "access-1",
+        refreshToken: "refresh-1",
+      });
+    });
+
+    it("returns null (no /me probe) when the browser holds no cookie session", async () => {
+      const fetchMock = routeFetch({
+        refresh: jsonResponse(401, { message: "Invalid refresh token" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(bootstrapSessionFromCookie()).resolves.toBeNull();
+      // Must NOT probe /me once refresh has already said "no session".
+      expect(
+        fetchMock.mock.calls.some(([input]) =>
+          String(input).includes("/auth/me")
+        )
+      ).toBe(false);
+    });
+
+    it("returns null when the legacy refresh path omits the rotated refresh token", async () => {
+      // Only an access token means no storable bearer session — bail rather than
+      // fabricate half a credential pair.
+      vi.stubGlobal(
+        "fetch",
+        routeFetch({ refresh: jsonResponse(200, { accessToken: "access-1" }) })
+      );
+
+      await expect(bootstrapSessionFromCookie()).resolves.toBeNull();
+    });
+
+    it("returns null when the auth service is unreachable", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+      );
+
+      await expect(bootstrapSessionFromCookie()).resolves.toBeNull();
     });
   });
 });
