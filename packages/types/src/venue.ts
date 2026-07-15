@@ -1,5 +1,7 @@
 import type { Currency } from "./currency";
 
+export type VerificationStatus = "UNVERIFIED" | "VERIFIED";
+
 export interface WorkingHoursDay {
   open: string;
   close: string;
@@ -35,7 +37,7 @@ export interface Venue {
   longitude: number | null;
   workingHours?: WorkingHours | null;
   currency?: Currency;
-  venueVerified: boolean;
+  venueVerificationStatus: VerificationStatus;
   venueRecommended: boolean;
   venueSponsored: boolean;
   hostId: string;
@@ -51,7 +53,7 @@ export interface VenueHostSummary {
   image: string | null;
   bio?: string | null;
   hostingSince?: string | null;
-  hostVerified: boolean;
+  hostVerificationStatus: VerificationStatus;
   hostRecommended: boolean;
   hostSponsored: boolean;
 }
@@ -93,7 +95,7 @@ export interface HostSummary {
   coverImage: string | null;
   bio: string | null;
   hostingSince: string | null;
-  hostVerified: boolean;
+  hostVerificationStatus: VerificationStatus;
   hostRecommended: boolean;
   hostSponsored: boolean;
   venueCount: number;
@@ -109,7 +111,7 @@ export interface HostVenueCard {
   country: string;
   images: string[];
   isActive: boolean;
-  venueVerified: boolean;
+  venueVerificationStatus: VerificationStatus;
   venueRecommended: boolean;
   venueSponsored: boolean;
   spaces: VenueSpaceSummary[];
