@@ -8,6 +8,21 @@ import type { AuthResponse, User } from "@/lib/auth";
 const REFRESH_SAFETY_WINDOW_SECONDS = 30;
 const ACTING_HOST_STORAGE_KEY = "spacefly_acting_host";
 
+// The edge middleware (apps/admin/src/middleware.ts) gates exactly these
+// segments, so a cross-subdomain SSO arrival (cold localStorage + a valid
+// `.spacefly.ai` cookie) can only land here. Only on these paths do we spend a
+// network round-trip probing the session cookie; public pages (/login,
+// /register, /) skip it so a genuine anonymous visitor makes no auth-service
+// call and sees no console 4xx.
+const COOKIE_BOOTSTRAP_PREFIXES = ["/host", "/admin", "/onboarding"];
+const shouldAttemptCookieBootstrap = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const path = window.location.pathname;
+  return COOKIE_BOOTSTRAP_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
+  );
+};
+
 interface JwtPayload {
   exp?: number;
 }
@@ -138,9 +153,39 @@ const useAuthStore = create<AuthState>((set) => ({
     const user = auth.getStoredUser();
     const token = auth.getAccessToken();
 
-    // No stored credentials → clean logged-out state. We never touch the
-    // auth-service, so a fresh/incognito visitor sees no 401s.
+    // No stored credentials on this origin. Before treating that as logged-out,
+    // on a protected route try a cookie-authenticated bootstrap: a host who
+    // logged in on the public client (spacefly.ai) and clicked "Host Dashboard"
+    // arrives here via a full cross-origin load, so this origin's localStorage
+    // is cold even though the browser holds a valid `.spacefly.ai` session
+    // cookie. Hydrating from that cookie is what prevents the spurious second
+    // login. On public pages we skip it, so a fresh/incognito visitor still
+    // never touches the auth-service and sees no 401s.
     if (!token || !user) {
+      if (shouldAttemptCookieBootstrap()) {
+        try {
+          const bootstrapped = await auth.bootstrapSessionFromCookie();
+          if (bootstrapped) {
+            auth.saveTokens(bootstrapped.accessToken, bootstrapped.refreshToken);
+            auth.saveUser(bootstrapped.user);
+            set({
+              user: bootstrapped.user,
+              token: bootstrapped.accessToken,
+              isAuthenticated: true,
+              isAdmin: bootstrapped.user.role === "ADMIN",
+              isHost: bootstrapped.user.role === "HOST",
+              isHostOrAdmin:
+                bootstrapped.user.role === "HOST" ||
+                bootstrapped.user.role === "ADMIN",
+              actingHostId: window.localStorage.getItem(ACTING_HOST_STORAGE_KEY),
+              isLoading: false,
+            });
+            return;
+          }
+        } catch {
+          // Fall through to the clean logged-out state below.
+        }
+      }
       set({
         ...loggedOut,
         actingHostId: window.localStorage.getItem(ACTING_HOST_STORAGE_KEY),
