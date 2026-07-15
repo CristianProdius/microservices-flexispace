@@ -61,7 +61,7 @@ describe("host controller", () => {
         image: null,
         bio: "Bio",
         hostingSince: new Date("2024-01-01"),
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: true,
         hostSponsored: false,
         venues: [
@@ -89,7 +89,7 @@ describe("host controller", () => {
         orderBy: [
           { hostSponsored: "desc" },
           { hostRecommended: "desc" },
-          { hostVerified: "desc" },
+          { hostVerificationStatus: "desc" },
           { hostingSince: "asc" },
         ],
       })
@@ -122,7 +122,7 @@ describe("host controller", () => {
     expect(call.where).toMatchObject({
       deletedAt: null,
       venues: { some: { isActive: true, city: "Chisinau" } },
-      hostVerified: true,
+      hostVerificationStatus: "VERIFIED",
       OR: [
         { name: { contains: "iHUB", mode: "insensitive" } },
         { username: { contains: "iHUB", mode: "insensitive" } },
@@ -145,7 +145,7 @@ describe("host controller", () => {
         image: null,
         bio: null,
         hostingSince: null,
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: false,
         hostSponsored: false,
         venues: [],
@@ -157,7 +157,7 @@ describe("host controller", () => {
         image: null,
         bio: null,
         hostingSince: null,
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: false,
         hostSponsored: false,
         venues: [],
@@ -179,7 +179,7 @@ describe("host controller", () => {
       where: {
         isActive: true,
         city: "Chisinau",
-        host: expect.objectContaining({ deletedAt: null, hostVerified: true }),
+        host: expect.objectContaining({ deletedAt: null, hostVerificationStatus: "VERIFIED" }),
       },
       orderBy: { _count: { hostId: "desc" } },
     });
@@ -201,7 +201,7 @@ describe("host controller", () => {
         image: null,
         bio: null,
         hostingSince: null,
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: false,
         hostSponsored: true,
         venues: [{ city: "Bucharest", images: [], _count: { spaces: 1 } }],
@@ -217,7 +217,7 @@ describe("host controller", () => {
     expect(mocks.userFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         select: expect.objectContaining({
-          hostVerified: true,
+          hostVerificationStatus: true,
           hostRecommended: true,
           hostSponsored: true,
         }),
@@ -225,7 +225,7 @@ describe("host controller", () => {
     );
     const payload = res.json.mock.calls[0]![0];
     expect(payload.hosts[0]).toMatchObject({
-      hostVerified: true,
+      hostVerificationStatus: "VERIFIED",
       hostRecommended: false,
       hostSponsored: true,
     });
@@ -277,7 +277,7 @@ describe("host controller", () => {
       image: null,
         bio: "Bio",
         hostingSince: new Date("2024-01-01"),
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: true,
         hostSponsored: false,
         venues: [
@@ -325,7 +325,7 @@ describe("host controller", () => {
     mocks.userUpdate.mockResolvedValueOnce({
       id: "u1",
       role: "HOST",
-      hostVerified: true,
+      hostVerificationStatus: "VERIFIED",
       hostRecommended: true,
       hostSponsored: false,
     });
@@ -341,27 +341,67 @@ describe("host controller", () => {
 
     await updateHostListingBadges(req, res);
 
+    // The `hostVerified` request field drives the public BADGE status; it must
+    // set `hostVerificationStatus` and NEVER touch the `hostVerified`
+    // AUTHORIZATION column (which gates host listing access).
     expect(mocks.userUpdate).toHaveBeenCalledWith({
       where: { id: "u1" },
       data: {
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: true,
         hostSponsored: false,
       },
       select: expect.objectContaining({
-        hostVerified: true,
+        hostVerificationStatus: true,
         hostRecommended: true,
         hostSponsored: true,
       }),
     });
+    const updateData = mocks.userUpdate.mock.calls[0]![0].data;
+    expect(updateData).not.toHaveProperty("hostVerified");
+    expect(mocks.userUpdate.mock.calls[0]![0].select).not.toHaveProperty(
+      "hostVerified"
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: true,
         hostSponsored: false,
       })
     );
+  });
+
+  it("maps hostVerified:false to hostVerificationStatus UNVERIFIED", async () => {
+    mocks.userFindFirst.mockResolvedValueOnce({ id: "u1", role: "HOST" });
+    mocks.userUpdate.mockResolvedValueOnce({
+      id: "u1",
+      role: "HOST",
+      hostVerificationStatus: "UNVERIFIED",
+      hostRecommended: false,
+      hostSponsored: false,
+    });
+    const req = {
+      params: { id: "u1" },
+      body: {
+        hostVerified: false,
+        hostRecommended: false,
+        hostSponsored: false,
+      },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateHostListingBadges(req, res);
+
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          hostVerificationStatus: "UNVERIFIED",
+        }),
+      })
+    );
+    const updateData = mocks.userUpdate.mock.calls[0]![0].data;
+    expect(updateData).not.toHaveProperty("hostVerified");
   });
 
   it("rejects host listing badge payloads with non-boolean values", async () => {

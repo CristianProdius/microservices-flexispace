@@ -158,8 +158,11 @@ export const getVenuesList = async (req: Request, res: Response) => {
           { host: { hostSponsored: "desc" as const } },
           { venueRecommended: "desc" as const },
           { host: { hostRecommended: "desc" as const } },
-          { venueVerified: "desc" as const },
-          { host: { hostVerified: "desc" as const } },
+          // Verified BADGE tier: the enum orders UNVERIFIED < VERIFIED, so `desc`
+          // surfaces VERIFIED venues/hosts first. This is the public badge status,
+          // NOT the host's `hostVerified` authorization flag.
+          { venueVerificationStatus: "desc" as const },
+          { host: { hostVerificationStatus: "desc" as const } },
           { host: { hostingSince: "asc" as const } },
           { createdAt: "desc" as const },
         ]
@@ -169,8 +172,8 @@ export const getVenuesList = async (req: Request, res: Response) => {
   if (verifiedOnly) {
     andFilters.push({
       OR: [
-        { venueVerified: true },
-        { host: { hostVerified: true } },
+        { venueVerificationStatus: "VERIFIED" },
+        { host: { hostVerificationStatus: "VERIFIED" } },
       ],
     });
   }
@@ -238,7 +241,7 @@ export const getVenuesList = async (req: Request, res: Response) => {
         city: true,
         country: true,
         images: true,
-        venueVerified: true,
+        venueVerificationStatus: true,
         venueRecommended: true,
         venueSponsored: true,
         host: {
@@ -248,7 +251,7 @@ export const getVenuesList = async (req: Request, res: Response) => {
             username: true,
             image: true,
             hostingSince: true,
-            hostVerified: true,
+            hostVerificationStatus: true,
             hostRecommended: true,
             hostSponsored: true,
           },
@@ -285,7 +288,7 @@ export const getVenuesList = async (req: Request, res: Response) => {
       city: v.city,
       country: v.country,
       images: Array.isArray(v.images) ? v.images : [],
-      venueVerified: v.venueVerified,
+      venueVerificationStatus: v.venueVerificationStatus,
       venueRecommended: v.venueRecommended,
       venueSponsored: v.venueSponsored,
       spaceCount: v._count.spaces,
@@ -295,7 +298,7 @@ export const getVenuesList = async (req: Request, res: Response) => {
         username: v.host.username,
         image: v.host.image,
         hostingSince: v.host.hostingSince ? v.host.hostingSince.toISOString() : null,
-        hostVerified: v.host.hostVerified,
+        hostVerificationStatus: v.host.hostVerificationStatus,
         hostRecommended: v.host.hostRecommended,
         hostSponsored: v.host.hostSponsored,
       },
@@ -329,7 +332,7 @@ export const getVenue = async (req: Request, res: Response) => {
           image: true,
           bio: true,
           hostingSince: true,
-          hostVerified: true,
+          hostVerificationStatus: true,
           hostRecommended: true,
           hostSponsored: true,
         },
@@ -525,9 +528,23 @@ export const updateVenue = async (req: Request, res: Response) => {
       message: "Only admins can update venue listing badges",
     });
   }
+  // The public "Verified" BADGE is now the `venueVerificationStatus` enum, but
+  // the admin form still posts a `venueVerified` toggle. Accept either a boolean
+  // (true -> VERIFIED, false -> UNVERIFIED) or the status string directly, and
+  // map it to the enum before the write. `venueRecommended`/`venueSponsored`
+  // stay plain booleans.
+  const resolveVerificationStatus = (
+    value: unknown
+  ): "VERIFIED" | "UNVERIFIED" | null => {
+    if (typeof value === "boolean") return value ? "VERIFIED" : "UNVERIFIED";
+    if (value === "VERIFIED" || value === "UNVERIFIED") return value;
+    return null;
+  };
+  const venueVerificationStatus =
+    venueVerified !== undefined ? resolveVerificationStatus(venueVerified) : undefined;
   if (
     hasVenueListingBadgePatch &&
-    ((venueVerified !== undefined && typeof venueVerified !== "boolean") ||
+    ((venueVerified !== undefined && venueVerificationStatus === null) ||
       (venueRecommended !== undefined && typeof venueRecommended !== "boolean") ||
       (venueSponsored !== undefined && typeof venueSponsored !== "boolean"))
   ) {
@@ -567,7 +584,9 @@ export const updateVenue = async (req: Request, res: Response) => {
     ...(currency !== undefined && { currency }),
     ...(isActive !== undefined && { isActive }),
     ...(workingHours !== undefined && { workingHours }),
-    ...(canUpdateVenueListingBadges && venueVerified !== undefined && { venueVerified }),
+    ...(canUpdateVenueListingBadges &&
+      venueVerificationStatus !== undefined &&
+      venueVerificationStatus !== null && { venueVerificationStatus }),
     ...(canUpdateVenueListingBadges && venueRecommended !== undefined && { venueRecommended }),
     ...(canUpdateVenueListingBadges && venueSponsored !== undefined && { venueSponsored }),
   };

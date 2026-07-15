@@ -53,7 +53,7 @@ const venueInclude = {
     // badge and so the `featured` sort can tier by them (see getSpaces orderBy).
     venueRecommended: true,
     venueSponsored: true,
-    venueVerified: true,
+    venueVerificationStatus: true,
   },
 };
 
@@ -649,8 +649,10 @@ export const getSpaces = async (req: Request, res: Response) => {
         { host: { hostSponsored: "desc" } },
         { venue: { venueRecommended: "desc" } },
         { host: { hostRecommended: "desc" } },
-        { venue: { venueVerified: "desc" } },
-        { host: { hostVerified: "desc" } },
+        // Verified BADGE tier (enum UNVERIFIED < VERIFIED, so `desc` = VERIFIED
+        // first) — the public badge status, not the `hostVerified` auth flag.
+        { venue: { venueVerificationStatus: "desc" } },
+        { host: { hostVerificationStatus: "desc" } },
         { host: { hostingSince: "asc" } },
         { createdAt: "desc" },
       ]
