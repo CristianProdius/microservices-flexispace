@@ -239,7 +239,8 @@
     "viewMyBookings": "View My Bookings",
     "browseMoreSpaces": "Browse More Spaces",
     "choosePlan": "Choose a plan",
-    "selectPlanFirst": "Select a plan to continue"
+    "selectPlanFirst": "Select a plan to continue",
+    "fromPerMonth": "From {price}/mo"
   },
   "bookings": {
     "title": "My Bookings",

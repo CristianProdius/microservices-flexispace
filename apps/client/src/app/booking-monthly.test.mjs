@@ -44,9 +44,39 @@ test("booking form shows the per-month headline rate with a /mo label", () => {
   assert.match(
     bookingForm,
     /formatPrice\(space\.pricePerMonth, \(space as any\)\.currency\)/,
-    "Monthly headline should format pricePerMonth",
+    "Single-price monthly headline should still format pricePerMonth",
   );
   assert.match(bookingForm, /<span className="text-muted">\/mo<\/span>/);
+});
+
+// --- Plans-only monthly headline (T6 review) ---
+
+test("headline reflects the lowest plan price when the space has plans", () => {
+  // A plans-only space may have a null base pricePerMonth, so the headline
+  // must fall back to the cheapest plan rather than rendering an empty/NaN price.
+  assert.match(
+    bookingForm,
+    /lowestMonthlyPlanPrice/,
+    "A lowest-plan price should be derived for the headline",
+  );
+  assert.match(
+    bookingForm,
+    /Math\.min\([^)]*monthlyPlans/s,
+    "The lowest plan price should be the min of the plans' pricePerMonth",
+  );
+});
+
+test("plans-only headline uses a 'from' i18n key and the shared formatter", () => {
+  assert.match(
+    bookingForm,
+    /hasMonthlyPlans \?/,
+    "The headline should branch on hasMonthlyPlans",
+  );
+  assert.match(
+    bookingForm,
+    /t\("fromPerMonth"/,
+    "The plans headline should use the booking.fromPerMonth i18n key",
+  );
 });
 
 test("monthly total is previewed client-side but flagged as server-authoritative", () => {

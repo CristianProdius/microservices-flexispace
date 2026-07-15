@@ -49,6 +49,12 @@ const BookingForm = ({ space }: BookingFormProps) => {
   // is used unchanged.
   const hasMonthlyPlans =
     canBookMonthly && (space.monthlyPlans?.length ?? 0) > 0;
+  // A plans-only listing is allowed to have a null base pricePerMonth, so the
+  // headline falls back to the cheapest plan ("from {min}/mo") instead of
+  // rendering an empty/NaN base rate.
+  const lowestMonthlyPlanPrice = hasMonthlyPlans
+    ? Math.min(...space.monthlyPlans!.map((p) => p.pricePerMonth))
+    : null;
 
   const startHour = parseInt(startTime.split(":")[0]!);
 
@@ -154,12 +160,24 @@ const BookingForm = ({ space }: BookingFormProps) => {
       {/* Price Display */}
       <div className="flex items-baseline gap-1 mb-6">
         {canBookMonthly ? (
-          <>
+          hasMonthlyPlans ? (
             <span className="text-2xl font-bold text-foreground">
-              {formatPrice(space.pricePerMonth, (space as any).currency)}
+              {t("fromPerMonth", {
+                price:
+                  formatPrice(
+                    lowestMonthlyPlanPrice,
+                    (space as any).currency
+                  ) ?? "",
+              })}
             </span>
-            <span className="text-muted">/mo</span>
-          </>
+          ) : (
+            <>
+              <span className="text-2xl font-bold text-foreground">
+                {formatPrice(space.pricePerMonth, (space as any).currency)}
+              </span>
+              <span className="text-muted">/mo</span>
+            </>
+          )
         ) : bookingType === "hourly" && space.pricePerHour ? (
           <>
             <span className="text-2xl font-bold text-foreground">

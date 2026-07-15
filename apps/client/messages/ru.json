@@ -239,7 +239,8 @@
     "viewMyBookings": "Посмотреть Мои Бронирования",
     "browseMoreSpaces": "Просмотреть Другие Пространства",
     "choosePlan": "Выберите план",
-    "selectPlanFirst": "Выберите план, чтобы продолжить"
+    "selectPlanFirst": "Выберите план, чтобы продолжить",
+    "fromPerMonth": "От {price}/мес"
   },
   "bookings": {
     "title": "Мои Бронирования",

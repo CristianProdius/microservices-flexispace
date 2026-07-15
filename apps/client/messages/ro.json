@@ -239,7 +239,8 @@
     "viewMyBookings": "Vezi Rezervarile Mele",
     "browseMoreSpaces": "Exploreaza Mai Multe Spatii",
     "choosePlan": "Alege un plan",
-    "selectPlanFirst": "Selecteaza un plan pentru a continua"
+    "selectPlanFirst": "Selecteaza un plan pentru a continua",
+    "fromPerMonth": "De la {price}/luna"
   },
   "bookings": {
     "title": "Rezervarile Mele",
