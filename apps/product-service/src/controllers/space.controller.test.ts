@@ -759,6 +759,23 @@ describe("validateMonthlyPlans - monthly plans T3", () => {
       expect(result.value[0]?.description).toBeUndefined();
     }
   });
+
+  // The DB enforces @@unique([spaceId, name]) on MonthlyPlan, so two plans with
+  // the same (trimmed) name would fail the createMany with a P2002 and surface
+  // as an opaque 409/500. Reject the duplicate up front with a clean 400 —
+  // comparison is case-sensitive to match the DB unique constraint.
+  it("rejects duplicate plan names (post-trim, case-sensitive)", () => {
+    const result = validateMonthlyPlans([
+      { name: "Basic", pricePerMonth: 200 },
+      { name: "  Basic  ", pricePerMonth: 500 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe(
+        "monthlyPlans.name values must be unique",
+      );
+    }
+  });
 });
 
 // Mirror of the updateVenue regression at c353c9d: if a stale client posts
@@ -1223,6 +1240,32 @@ describe("updateSpace - monthly plans persistence (T3)", () => {
     expect(prisma.monthlyPlan.deleteMany).toHaveBeenCalledWith({
       where: { spaceId: 9 },
     });
+    expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
+  });
+
+  // A partial update of a MONTHLY space that doesn't touch monthlyPlans must
+  // preserve the existing plans — the controller must neither delete nor
+  // recreate them when the field is absent from the body.
+  it("preserves plans when a MONTHLY update omits monthlyPlans", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock)
+      .mockResolvedValueOnce({
+        id: 10,
+        hostId: "user-1",
+        venueId: 1,
+        pricingType: "MONTHLY",
+        pricePerMonth: 500,
+      })
+      .mockResolvedValueOnce({ id: 10, category: null });
+    await updateSpace(
+      buildReq({
+        params: { id: "10" },
+        body: { name: "Renamed monthly space" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.monthlyPlan.deleteMany).not.toHaveBeenCalled();
     expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
   });
 });

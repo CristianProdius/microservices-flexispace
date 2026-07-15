@@ -285,6 +285,20 @@ export const validateMonthlyPlans = (
     }
     value.push({ name: trimmedName, pricePerMonth, description });
   }
+  // Reject duplicate plan names up front so we return a clean 400 instead of
+  // letting the DB's @@unique([spaceId, name]) constraint blow up the
+  // createMany with a P2002 (opaque 409/500). Compare trimmed names
+  // case-sensitively to match the constraint's exact semantics.
+  const seenNames = new Set<string>();
+  for (const plan of value) {
+    if (seenNames.has(plan.name)) {
+      return {
+        ok: false,
+        message: "monthlyPlans.name values must be unique",
+      };
+    }
+    seenNames.add(plan.name);
+  }
   return { ok: true, value };
 };
 
