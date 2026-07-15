@@ -1,5 +1,6 @@
 import z from "zod";
 import type { Currency, PricingTier } from "./currency";
+import type { MonthlyPlanItem } from "./monthly-plan";
 
 export type { Currency, ExchangeRate, PricingTier } from "./currency";
 
@@ -129,6 +130,7 @@ export interface Space {
   cleaningFee: number;
   currency: Currency;
   pricingTiers?: PricingTier[];
+  monthlyPlans?: MonthlyPlanItem[];
   capacity: number;
   minBookingHours: number | null;
   maxBookingHours: number | null;

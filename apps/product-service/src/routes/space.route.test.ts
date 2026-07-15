@@ -24,6 +24,9 @@ const mocks = vi.hoisted(() => ({
   groupBy: vi.fn(),
   pricingTierCreateMany: vi.fn(),
   pricingTierDeleteMany: vi.fn(),
+  monthlyPlanCreateMany: vi.fn(),
+  monthlyPlanDeleteMany: vi.fn(),
+  monthlyPlanCount: vi.fn(),
   producerSend: vi.fn(),
   reviewAggregate: vi.fn(),
   spaceCategoryFindUnique: vi.fn(),
@@ -72,6 +75,11 @@ vi.mock("@repo/db", () => {
     pricingTier: {
       createMany: mocks.pricingTierCreateMany,
       deleteMany: mocks.pricingTierDeleteMany,
+    },
+    monthlyPlan: {
+      createMany: mocks.monthlyPlanCreateMany,
+      deleteMany: mocks.monthlyPlanDeleteMany,
+      count: mocks.monthlyPlanCount,
     },
     space: {
       count: mocks.count,

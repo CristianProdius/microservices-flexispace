@@ -237,7 +237,10 @@
     "bookingRequestSent": "Cererea de Rezervare a Fost Trimisa!",
     "bookingRequestSentDesc": "Cererea ta de rezervare a fost trimisa. Gazda va examina cererea ta si va raspunde in 24 de ore.",
     "viewMyBookings": "Vezi Rezervarile Mele",
-    "browseMoreSpaces": "Exploreaza Mai Multe Spatii"
+    "browseMoreSpaces": "Exploreaza Mai Multe Spatii",
+    "choosePlan": "Alege un plan",
+    "selectPlanFirst": "Selecteaza un plan pentru a continua",
+    "fromPerMonth": "De la {price}/luna"
   },
   "bookings": {
     "title": "Rezervarile Mele",

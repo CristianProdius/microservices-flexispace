@@ -344,6 +344,7 @@ model Space {
   category     SpaceCategory  @relation(fields: [categorySlug], references: [slug])
   amenities    SpaceAmenity[]
   pricingTiers PricingTier[]
+  monthlyPlans MonthlyPlan[]
   availability Availability[]
   blockedDates BlockedDate[]
   bookings     Booking[]
@@ -422,6 +423,21 @@ model PricingTier {
   @@index([spaceId])
 }
 
+model MonthlyPlan {
+  id            Int     @id @default(autoincrement())
+  spaceId       Int
+  name          String
+  pricePerMonth Float
+  description   String?
+  sortOrder     Int     @default(0)
+
+  space    Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@unique([spaceId, name])
+  @@index([spaceId])
+}
+
 model Availability {
   id        Int     @id @default(autoincrement())
   spaceId   Int
@@ -455,6 +471,10 @@ model Booking {
   guestId String
   hostId  String
   spaceId Int
+
+  // Monthly plan (set when the guest selects a named monthly subscription plan)
+  monthlyPlanId   Int?
+  monthlyPlanName String? // snapshot of the plan name at time of booking
 
   // Booking details
   startDate DateTime
@@ -494,10 +514,11 @@ model Booking {
   completedAt DateTime?
 
   // Relations
-  guest  User    @relation("GuestBookings", fields: [guestId], references: [id])
-  host   User    @relation("HostBookings", fields: [hostId], references: [id])
-  space  Space   @relation(fields: [spaceId], references: [id])
-  review Review?
+  guest       User         @relation("GuestBookings", fields: [guestId], references: [id])
+  host        User         @relation("HostBookings", fields: [hostId], references: [id])
+  space       Space        @relation(fields: [spaceId], references: [id])
+  monthlyPlan MonthlyPlan? @relation(fields: [monthlyPlanId], references: [id], onDelete: SetNull)
+  review      Review?
 
   @@index([guestId])
   @@index([hostId])

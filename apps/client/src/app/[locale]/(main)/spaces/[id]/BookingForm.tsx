@@ -10,6 +10,10 @@ import useAuthStore from "@/stores/authStore";
 import { useTranslations } from "next-intl";
 import { formatPrice, formatPriceFull } from "@/lib/utils";
 import { calculateBookingPricing } from "@/lib/booking-pricing";
+import {
+  resolveMonthlyRate,
+  calculateMonthlyEstimate,
+} from "@/lib/monthly-estimate";
 
 interface BookingFormProps {
   space: SpaceWithHost;
@@ -35,10 +39,22 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [guests, setGuests] = useState(1);
+  const [selectedMonthlyPlanId, setSelectedMonthlyPlanId] = useState<number | null>(null);
 
   const canBookHourly = space.pricingType === "HOURLY" || space.pricingType === "BOTH";
   const canBookDaily = space.pricingType === "DAILY" || space.pricingType === "BOTH";
   const canBookMonthly = space.pricingType === "MONTHLY";
+  // A MONTHLY space may offer several named plans. When it does, the guest must
+  // pick one and it prices the booking; otherwise the single pricePerMonth flow
+  // is used unchanged.
+  const hasMonthlyPlans =
+    canBookMonthly && (space.monthlyPlans?.length ?? 0) > 0;
+  // A plans-only listing is allowed to have a null base pricePerMonth, so the
+  // headline falls back to the cheapest plan ("from {min}/mo") instead of
+  // rendering an empty/NaN base rate.
+  const lowestMonthlyPlanPrice = hasMonthlyPlans
+    ? Math.min(...space.monthlyPlans!.map((p) => p.pricePerMonth))
+    : null;
 
   const startHour = parseInt(startTime.split(":")[0]!);
 
@@ -53,42 +69,37 @@ const BookingForm = ({ space }: BookingFormProps) => {
     });
   }, [bookingType, startDate, endDate, startTime, endTime, space]);
 
+  // The effective monthly rate: the selected plan's price when the space offers
+  // plans, otherwise the base pricePerMonth. Drives the client-side estimate.
+  const effectiveMonthlyRate = useMemo(
+    () =>
+      resolveMonthlyRate(
+        space.pricePerMonth,
+        space.monthlyPlans,
+        selectedMonthlyPlanId
+      ),
+    [space.pricePerMonth, space.monthlyPlans, selectedMonthlyPlanId]
+  );
+
   // MONTHLY spaces are priced per calendar month, pro-rated for remainder days.
   // That pro-ration is done server-side and is authoritative; this is a rough
-  // client-side preview that spreads the monthly rate evenly across ~30 days so
-  // the sidebar can show an approximate subtotal/total before checkout.
+  // client-side preview so the sidebar can show an approximate subtotal/total.
   const monthlyEstimate = useMemo(() => {
-    if (!canBookMonthly || !startDate || !endDate) return null;
-    const pricePerMonth = space.pricePerMonth ?? 0;
-    if (!pricePerMonth) return null;
-    const parseDay = (v: string) => {
-      const [y, m, d] = v.split("-").map(Number);
-      return Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1);
-    };
-    // Inclusive day count, mirroring the daily convention (start..end billed
-    // as (end - start) + 1 days).
-    const days = Math.max(
-      1,
-      Math.round((parseDay(endDate) - parseDay(startDate)) / 86400000) + 1
-    );
-    const round = (n: number) => Math.round(n * 100) / 100;
-    const subtotal = round((pricePerMonth * days) / 30);
-    const cleaningFee = round(space.cleaningFee ?? 0);
-    return {
-      days,
-      subtotal,
-      cleaningFee,
-      serviceFee: 0,
-      totalAmount: round(subtotal + cleaningFee),
-    };
-  }, [canBookMonthly, startDate, endDate, space.pricePerMonth, space.cleaningFee]);
+    if (!canBookMonthly) return null;
+    return calculateMonthlyEstimate({
+      pricePerMonth: effectiveMonthlyRate,
+      cleaningFee: space.cleaningFee,
+      startDate,
+      endDate,
+    });
+  }, [canBookMonthly, effectiveMonthlyRate, space.cleaningFee, startDate, endDate]);
 
   // The breakdown/checkout draft use the monthly estimate for MONTHLY spaces and
   // the standard hourly/daily pricing otherwise.
   const activePricing = canBookMonthly ? monthlyEstimate : pricing;
 
   const subtotalLabel = canBookMonthly
-    ? `${formatPrice(space.pricePerMonth ?? 0, (space as any).currency)}/mo`
+    ? `${formatPrice(effectiveMonthlyRate ?? space.pricePerMonth ?? 0, (space as any).currency)}/mo`
     : pricing?.appliedTier
       ? `${pricing.appliedTier.label} x ${pricing.appliedTier.units}`
       : bookingType === "hourly"
@@ -108,6 +119,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
     }
 
     if (!activePricing || !startDate) return;
+    // A MONTHLY space with plans requires a selection before proceeding.
+    if (hasMonthlyPlans && !selectedMonthlyPlanId) return;
 
     setDraft({
       spaceId: space.id,
@@ -130,6 +143,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
       serviceFee: activePricing.serviceFee,
       totalAmount: activePricing.totalAmount,
       currency: (space as any).currency || "USD",
+      monthlyPlanId: hasMonthlyPlans ? selectedMonthlyPlanId ?? undefined : undefined,
     });
 
     router.push("/bookings/checkout");
@@ -146,12 +160,24 @@ const BookingForm = ({ space }: BookingFormProps) => {
       {/* Price Display */}
       <div className="flex items-baseline gap-1 mb-6">
         {canBookMonthly ? (
-          <>
+          hasMonthlyPlans ? (
             <span className="text-2xl font-bold text-foreground">
-              {formatPrice(space.pricePerMonth, (space as any).currency)}
+              {t("fromPerMonth", {
+                price:
+                  formatPrice(
+                    lowestMonthlyPlanPrice,
+                    (space as any).currency
+                  ) ?? "",
+              })}
             </span>
-            <span className="text-muted">/mo</span>
-          </>
+          ) : (
+            <>
+              <span className="text-2xl font-bold text-foreground">
+                {formatPrice(space.pricePerMonth, (space as any).currency)}
+              </span>
+              <span className="text-muted">/mo</span>
+            </>
+          )
         ) : bookingType === "hourly" && space.pricePerHour ? (
           <>
             <span className="text-2xl font-bold text-foreground">
@@ -168,6 +194,52 @@ const BookingForm = ({ space }: BookingFormProps) => {
           </>
         )}
       </div>
+
+      {/* Monthly Plan Selector — only for a MONTHLY space that offers plans. */}
+      {hasMonthlyPlans && (
+        <div className="mb-6">
+          <p className="block text-sm font-medium text-muted mb-2">
+            {t("choosePlan")}
+          </p>
+          <div className="space-y-2" role="radiogroup" aria-label={t("choosePlan")}>
+            {space.monthlyPlans!.map((plan) => {
+              const selected = selectedMonthlyPlanId === plan.id;
+              return (
+                <label
+                  key={plan.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    selected
+                      ? "border-primary ring-2 ring-primary/30 bg-primary/5"
+                      : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="monthly-plan"
+                    value={plan.id}
+                    checked={selected}
+                    onChange={() => setSelectedMonthlyPlanId(plan.id)}
+                    className="mt-1 accent-primary"
+                  />
+                  <span className="flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium text-foreground">{plan.name}</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatPrice(plan.pricePerMonth, (space as any).currency)}/mo
+                      </span>
+                    </span>
+                    {plan.description && (
+                      <span className="block text-xs text-muted mt-0.5">
+                        {plan.description}
+                      </span>
+                    )}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Booking Type Toggle */}
       {canBookHourly && canBookDaily && (
@@ -357,7 +429,11 @@ const BookingForm = ({ space }: BookingFormProps) => {
       {/* Book Button */}
       <button
         onClick={handleBooking}
-        disabled={!startDate || (bookingType === "daily" && !endDate)}
+        disabled={
+          !startDate ||
+          (bookingType === "daily" && !endDate) ||
+          (hasMonthlyPlans && !selectedMonthlyPlanId)
+        }
         className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
       >
         {space.instantBook ? t("bookNow") : t("requestToBook")}

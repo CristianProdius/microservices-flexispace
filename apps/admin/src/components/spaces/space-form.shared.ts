@@ -117,6 +117,11 @@ export interface SpaceFormValues {
     price: string;
     comment?: string;
   }>;
+  monthlyPlans: Array<{
+    name: string;
+    pricePerMonth: string;
+    description?: string;
+  }>;
   availability: AvailabilityFormValue[];
 }
 
@@ -148,6 +153,11 @@ export interface SpaceFormPayload {
     price: number;
     comment?: string;
   }>;
+  monthlyPlans: Array<{
+    name: string;
+    pricePerMonth: number;
+    description?: string;
+  }>;
   availability: AvailabilityFormValue[];
 }
 
@@ -174,6 +184,7 @@ export const createEmptySpaceFormValues = (): SpaceFormValues => ({
   videoUrl: "",
   currency: "USD",
   pricingTiers: [],
+  monthlyPlans: [],
   availability: createDefaultAvailability(),
 });
 
@@ -233,6 +244,21 @@ export const buildSpacePayload = (
         ...(comment ? { comment } : {}),
       };
     }),
+  // Only persist named monthly plans for MONTHLY spaces; blank rows (empty
+  // name) are dropped, and empty/whitespace descriptions are omitted.
+  monthlyPlans:
+    formData.pricingType === "MONTHLY"
+      ? formData.monthlyPlans
+          .filter((plan) => plan.name.trim() !== "")
+          .map((plan) => {
+            const description = plan.description?.trim();
+            return {
+              name: plan.name.trim(),
+              pricePerMonth: Number(plan.pricePerMonth),
+              ...(description ? { description } : {}),
+            };
+          })
+      : [],
   availability: formData.availability
     .map(({ dayOfWeek, startTime, endTime, isOpen }) => ({
       dayOfWeek,
@@ -288,6 +314,7 @@ export const mapSpaceToFormValues = (
     | "amenities"
     | "currency"
     | "pricingTiers"
+    | "monthlyPlans"
     | "availability"
   > & {
     venueId?: number | null;
@@ -324,6 +351,11 @@ export const mapSpaceToFormValues = (
     label: t.label,
     price: t.price.toString(),
     comment: t.comment ?? "",
+  })),
+  monthlyPlans: (space.monthlyPlans ?? []).map((plan) => ({
+    name: plan.name,
+    pricePerMonth: plan.pricePerMonth.toString(),
+    description: plan.description ?? "",
   })),
   availability: mapAvailabilityToFormValues(space.availability),
 });

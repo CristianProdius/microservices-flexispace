@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
+    "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -12,7 +13,8 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "@types/node": "^24.3.1"
+    "@types/node": "^24.3.1",
+    "vitest": "^3.2.4"
   },
   "exports": {
     ".": {

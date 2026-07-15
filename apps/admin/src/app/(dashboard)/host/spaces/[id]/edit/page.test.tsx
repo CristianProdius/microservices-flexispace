@@ -399,6 +399,7 @@ describe("host edit space page", () => {
       videoUrl: null,
       currency: "USD",
       pricingTiers: [],
+      monthlyPlans: [],
       availability: expectedAvailabilityPayload,
     });
     const updateHeaders = updateRequest?.[1]?.headers as Headers;
