@@ -109,6 +109,7 @@ export const CreateBookingSchema = z.object({
   // it to give an earlier validation hint when present).
   isHourly: z.boolean().optional(),
   message: z.string().optional(),
+  monthlyPlanId: z.number().int().positive().optional(),
 }).superRefine((value, ctx) => {
   const startDate = new Date(`${value.startDate}T00:00:00.000Z`);
   const endDate = new Date(`${value.endDate}T00:00:00.000Z`);
