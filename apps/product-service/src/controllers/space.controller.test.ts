@@ -777,14 +777,33 @@ describe("createSpace - H2 numeric base-rate validation", () => {
     expect(prisma.space.create).not.toHaveBeenCalled();
   });
 
-  it("rejects a zero base rate with 400 (a rate must be positive)", async () => {
+  it("accepts a zero pricePerHour (0 means 'Contact for pricing', not bookable online)", async () => {
+    // A host may set an hourly/daily rate to 0 to list a space as "Contact for
+    // pricing": the public site renders that label and the order-service fails
+    // closed on a zero-candidate price set, so it can't be booked at $0.
     const res = buildRes();
     await createSpace(
       buildReq({ body: buildCreateBody({ pricePerHour: 0 }) }),
       res as never,
     );
-    expect(res.statusCode).toBe(400);
-    expect(prisma.space.create).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
+  });
+
+  it("accepts a zero pricePerDay for a DAILY space (Contact for pricing)", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "DAILY",
+          pricePerDay: 0,
+          pricePerHour: null,
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
   });
 
   it("accepts a null blank rate (regression: DAILY-only space with pricePerHour:null)", async () => {
