@@ -780,6 +780,55 @@ describe("calculateBookingPrice MONTHLY candidate (MONTHLY)", () => {
     ).toThrow(NoApplicablePriceError);
   });
 
+  it("prices off the monthly rate override when provided for a MONTHLY space", () => {
+    // Same date range as the base MONTHLY candidate test (Jan 1 -> Feb 14 =
+    // 1.5 months) but the selected plan's rate ($3000/mo) is passed as the
+    // override instead of space.pricePerMonth ($2000). 1.5 * $3000 = $4500.
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: null,
+        pricePerHour: null,
+        pricePerMonth: 2000,
+        pricingType: "MONTHLY",
+      },
+      date("2026-01-01"),
+      date("2026-02-14"),
+      null,
+      null,
+      0.1,
+      3000
+    );
+
+    expect(result.subtotal).toBe(4500);
+    expect(result.total).toBe(4500);
+    expect(result.serviceFee).toBe(450); // 10% of 4500.
+  });
+
+  it("ignores the monthly rate override for a non-MONTHLY space", () => {
+    // A DAILY space still prices per-day even if a monthly override is passed.
+    const result = calculateBookingPrice(
+      {
+        availability: [],
+        cleaningFee: 0,
+        currency: "USD",
+        pricePerDay: 100,
+        pricePerHour: null,
+        pricePerMonth: 2000,
+        pricingType: "DAILY",
+      },
+      date("2026-05-18"),
+      date("2026-05-18"),
+      null,
+      null,
+      0,
+      9999
+    );
+    expect(result.subtotal).toBe(100);
+  });
+
   it("does not add a monthly candidate for a non-MONTHLY space (daily unaffected)", () => {
     // A DAILY space that happens to carry a pricePerMonth must still price
     // per-day — MONTHLY must be explicitly opted into via pricingType.

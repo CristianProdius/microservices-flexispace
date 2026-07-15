@@ -713,7 +713,11 @@ export const calculateBookingPrice = (
   endDate: Date,
   startTime: string | null,
   endTime: string | null,
-  hostCommissionRate: number | null | undefined = null
+  hostCommissionRate: number | null | undefined = null,
+  // MONTHLY PLANS: when a MONTHLY space's booking selects a plan, the plan's
+  // monthly rate is passed here and used in place of space.pricePerMonth for
+  // the calendar-month proration. Ignored for every non-MONTHLY pricing path.
+  monthlyRateOverride?: number
 ): { subtotal: number; cleaningFee: number; serviceFee: number; total: number } => {
   // Calculate total minutes for the booking
   const days = differenceInDays(endDate, startDate) + 1;
@@ -765,8 +769,17 @@ export const calculateBookingPrice = (
   // rates, so a null/zero/negative monthly rate contributes no candidate and the
   // space fails closed (zero-candidate -> NoApplicablePriceError -> 400) rather
   // than pricing a free, slot-blocking hold.
+  // MONTHLY PLANS: the effective monthly rate is the selected plan's rate when
+  // an override is supplied (MONTHLY spaces only), otherwise the space's base
+  // pricePerMonth. The strictly-positive gate below still applies so a null/
+  // zero/negative rate contributes no candidate and the space fails closed.
+  const effectiveMonthlyRate =
+    space.pricingType === "MONTHLY" &&
+    typeof monthlyRateOverride === "number"
+      ? monthlyRateOverride
+      : space.pricePerMonth ?? 0;
   const allowsMonthly =
-    (space.pricePerMonth ?? 0) > 0 && space.pricingType === "MONTHLY";
+    effectiveMonthlyRate > 0 && space.pricingType === "MONTHLY";
 
   if (allowsHourly) {
     // BOOKSVC-009: per-day intersection with availability windows.
@@ -794,7 +807,7 @@ export const calculateBookingPrice = (
     // MONTHLY: full-day date-range candidate priced per calendar month and
     // pro-rated for the remainder days (see monthlyProRatedPrice).
     candidates.push(
-      monthlyProRatedPrice(startDate, endDate, space.pricePerMonth!)
+      monthlyProRatedPrice(startDate, endDate, effectiveMonthlyRate)
     );
   }
 
@@ -897,7 +910,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // H1: the client `isHourly` is intentionally NOT destructured/used here.
       // It is derived server-side below so the blocked window equals the priced
       // window (see `isHourly` derivation after the space is loaded).
-      const { spaceId, startDate, endDate, startTime, endTime, guests, message } = result.data;
+      const { spaceId, startDate, endDate, startTime, endTime, guests, message, monthlyPlanId } = result.data;
       const requestedStartDate = dateFromInput(startDate);
       const requestedEndDate = dateFromInput(endDate);
 
@@ -909,6 +922,9 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           blockedDates: true,
           host: true,
           pricingTiers: { orderBy: { minutes: "asc" } },
+          // MONTHLY PLANS: load the space's plans so a booking can select one
+          // and be priced from its rate (see plan resolution below).
+          monthlyPlans: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
         },
       });
 
@@ -958,6 +974,29 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // underpricing). Tracked in docs/bug-audit-2026-07.md follow-ups.
       const isHourly = Boolean(startTime && endTime) && spaceSupportsHourly(space);
 
+      // MONTHLY PLANS: resolve the selected plan for a MONTHLY space that offers
+      // named plans. When plans exist a valid monthlyPlanId is REQUIRED and its
+      // rate drives the pricing (via the monthlyRateOverride); the plan name is
+      // snapshotted onto the booking. For a MONTHLY space with no plans, or any
+      // non-MONTHLY space, monthlyPlanId is ignored and no override is applied.
+      let selectedMonthlyPlan: { id: number; name: string; pricePerMonth: number } | null =
+        null;
+      const monthlyPlans = space.monthlyPlans ?? [];
+      if (space.pricingType === "MONTHLY" && monthlyPlans.length > 0) {
+        if (monthlyPlanId === undefined) {
+          return reply.status(400).send({
+            message: "monthlyPlanId is required for this space",
+          });
+        }
+        const plan = monthlyPlans.find((p) => p.id === monthlyPlanId);
+        if (!plan) {
+          return reply.status(400).send({
+            message: "Selected monthly plan is not available for this space",
+          });
+        }
+        selectedMonthlyPlan = plan;
+      }
+
       // Calculate pricing
       let pricing: ReturnType<typeof calculateBookingPrice>;
       try {
@@ -967,7 +1006,8 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           requestedEndDate,
           startTime || null,
           endTime || null,
-          space.host?.commissionRate ?? null
+          space.host?.commissionRate ?? null,
+          selectedMonthlyPlan?.pricePerMonth
         );
       } catch (err) {
         // H1: no applicable price for the requested window (e.g. an hourly-only
@@ -1053,6 +1093,11 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
                 cleaningFee: pricing.cleaningFee,
                 serviceFee: pricing.serviceFee,
                 totalAmount: pricing.total,
+                // MONTHLY PLANS: persist the selected plan reference + a name
+                // snapshot so booking history survives a later plan rename or
+                // delete. Null when no plan applies (no-plans / non-MONTHLY).
+                monthlyPlanId: selectedMonthlyPlan?.id ?? null,
+                monthlyPlanName: selectedMonthlyPlan?.name ?? null,
                 guestMessage: message,
                 currency: space.currency,
                 exchangeRate,
