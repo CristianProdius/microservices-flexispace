@@ -18,22 +18,42 @@ interface FooterColumn {
   title: string;
 }
 
+interface CompanyDetails {
+  legalName: string;
+  idno: string;
+  address: string;
+}
+
 interface FooterClientProps {
   columns: FooterColumn[];
   copyright: string;
   privacyPolicy: string;
+  privacyPolicyHref: string;
   tagline: string;
   termsOfService: string;
+  termsOfServiceHref: string;
   trustLine: string;
+  legalIdentityHeading: string;
+  idnoLabel: string;
+  acceptedPayments: string;
+  company: CompanyDetails;
+  paymentMethods: readonly string[];
 }
 
 const FooterClient = ({
   columns,
   copyright,
   privacyPolicy,
+  privacyPolicyHref,
   tagline,
   termsOfService,
+  termsOfServiceHref,
   trustLine,
+  legalIdentityHeading,
+  idnoLabel,
+  acceptedPayments,
+  company,
+  paymentMethods,
 }: FooterClientProps) => {
   const socialLinks = [
     { icon: Instagram, label: "Instagram", href: "#" },
@@ -153,14 +173,47 @@ const FooterClient = ({
           </Accordion.Root>
         </div>
 
+        {/* Company legal identity (maib merchant requirement: IDNO, legal name, address) */}
+        <div className="mt-8 pt-6 border-t border-border">
+          <p className="text-sm font-semibold text-foreground mb-2">
+            {legalIdentityHeading}
+          </p>
+          <p className="text-sm text-muted text-pretty">
+            {company.legalName} · {idnoLabel} {company.idno}
+          </p>
+          <p className="text-sm text-muted text-pretty">{company.address}</p>
+        </div>
+
+        {/* Accepted payment methods.
+            TODO: swap these text badges for official maib / Visa / Mastercard SVG logo assets. */}
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-sm text-muted">{acceptedPayments}:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {paymentMethods.map((method) => (
+              <span
+                key={method}
+                className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-xs font-semibold text-foreground/80"
+              >
+                {method}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border">
           <p className="text-sm text-muted text-pretty">{trustLine}</p>
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
             <span>{copyright}</span>
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link
+              href={termsOfServiceHref}
+              className="hover:text-foreground transition-colors"
+            >
               {termsOfService}
             </Link>
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link
+              href={privacyPolicyHref}
+              className="hover:text-foreground transition-colors"
+            >
               {privacyPolicy}
             </Link>
           </div>

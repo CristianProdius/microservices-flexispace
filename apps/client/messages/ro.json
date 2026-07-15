@@ -205,7 +205,7 @@
     "responseFromHost": "Raspunsul gazdei",
     "contactHostForDetails": "Contacteaza gazda pentru detalii",
     "noReviewsYet": "Nicio recenzie",
-    "showAllPhotos": "Arat\u0103 toate cele {count} fotografii",
+    "showAllPhotos": "Arată toate cele {count} fotografii",
     "photoCounter": "{current} / {total}",
     "showingResults": "{shown} din {total} spații",
     "loadingMore": "Se încarcă mai multe spații...",
@@ -488,7 +488,11 @@
     "privacyPolicy": "Politica de Confidentialitate",
     "trustLine": "Peste 1.000 de gazde in peste 50 de orase",
     "copyright": "© 2026 Spacefly.ai.",
-    "allRightsReserved": "Toate drepturile rezervate."
+    "allRightsReserved": "Toate drepturile rezervate.",
+    "refundPolicy": "Politica de Rambursare și Anulare",
+    "legalIdentityHeading": "Datele companiei",
+    "acceptedPayments": "Plăți acceptate",
+    "idnoLabel": "IDNO"
   },
   "venue": {
     "metaTitle": "{name} — Spacefly.ai",
@@ -548,6 +552,416 @@
         "mostVenues": "Cele mai multe locale",
         "newest": "Cele mai noi"
       }
+    }
+  },
+  "legal": {
+    "identity": {
+      "legalName": "Denumire legală",
+      "idno": "IDNO",
+      "address": "Adresă juridică",
+      "registered": "Înregistrată",
+      "email": "Email",
+      "phone": "Telefon"
+    },
+    "common": {
+      "lastUpdated": "Ultima actualizare",
+      "effectiveDate": "15 iulie 2026",
+      "operatorHeading": "Operatorul platformei",
+      "controllerHeading": "Operator de date",
+      "processorNote": "Plățile cu cardul sunt procesate în siguranță de maib (BC „Moldova Agroindbank” S.A.). Spacefly nu primește și nu stochează numărul complet al cardului, data expirării sau codul CVV."
+    },
+    "terms": {
+      "title": "Termeni și Condiții",
+      "metaTitle": "Termeni și Condiții | Spacefly.ai",
+      "metaDescription": "Termenii și condițiile de utilizare a marketplace-ului de rezervări Spacefly.ai, operat de PRODIUS ENTERPRISE S.R.L.",
+      "intro": "Acești Termeni și Condiții reglementează utilizarea marketplace-ului Spacefly.ai, operat de PRODIUS ENTERPRISE S.R.L. („Spacefly”, „noi”). Prin crearea unui cont, efectuarea unei rezervări sau utilizarea platformei, acceptați acești termeni.",
+      "relatedPolicies": "Vezi și:",
+      "privacyLink": "Politica de Confidențialitate",
+      "refundLink": "Politica de Rambursare și Anulare",
+      "sections": [
+        {
+          "heading": "Dispoziții generale",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly.ai este un marketplace online care permite oaspeților să descopere și să rezerve spații și locații (spații de lucru, săli de ședințe, locații pentru evenimente și altele) oferite de gazde independente terțe. Acești Termeni constituie un acord obligatoriu între dumneavoastră și PRODIUS ENTERPRISE S.R.L., operatorul platformei."
+            },
+            {
+              "type": "paragraph",
+              "text": "Putem actualiza acești Termeni periodic. Versiunea în vigoare este cea publicată pe această pagină la momentul rezervării. Continuarea utilizării platformei după intrarea în vigoare a modificărilor constituie acceptarea Termenilor actualizați."
+            }
+          ]
+        },
+        {
+          "heading": "Rolul nostru — marketplace și intermediar",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Gazdele sunt terți independenți. Ele — nu Spacefly — dețin, controlează și sunt responsabile pentru spațiile listate pe platformă."
+            },
+            {
+              "type": "paragraph",
+              "text": "Spacefly acționează exclusiv ca platformă intermediară de rezervări și facilitator de plăți. Când rezervați un spațiu, contractul de utilizare a acelui spațiu se încheie direct între dumneavoastră (oaspetele) și gazdă. Spacefly nu este parte la acest contract și nu deține, operează sau controlează niciun spațiu listat."
+            },
+            {
+              "type": "paragraph",
+              "text": "Spacefly facilitează rezervarea și colectează plata în numele gazdei și percepe un comision de serviciu pentru operarea platformei. Nu suntem răspunzători pentru starea, siguranța, legalitatea sau adecvarea niciunui spațiu, nici pentru acțiunile sau omisiunile gazdelor ori oaspeților."
+            }
+          ]
+        },
+        {
+          "heading": "Cont și eligibilitate",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Trebuie să aveți cel puțin 18 ani și capacitatea legală de a încheia contracte pentru a utiliza Spacefly. Sunteți responsabil de păstrarea confidențialității datelor de autentificare și de toată activitatea din contul dumneavoastră."
+            },
+            {
+              "type": "paragraph",
+              "text": "Vă angajați să furnizați informații corecte și să le mențineți actualizate. Putem suspenda sau închide conturile care încalcă acești Termeni sau legislația aplicabilă."
+            }
+          ]
+        },
+        {
+          "heading": "Obligațiile gazdei",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Să ofere descrieri, fotografii, prețuri, disponibilitate și reguli exacte pentru fiecare spațiu listat.",
+                "Să dețină toate drepturile, licențele și permisiunile necesare pentru a oferi spațiul spre rezervare.",
+                "Să pună spațiul la dispoziția oaspetelui pentru perioada rezervată, în starea descrisă.",
+                "Să respecte legislația aplicabilă, inclusiv obligațiile de sănătate, siguranță și fiscale.",
+                "Să stabilească propriile reguli de anulare și reguli ale locației, care se aplică rezervărilor spațiului lor."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Obligațiile oaspetelui și ale rezervării",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Să utilizeze spațiul doar în scopul, perioada și numărul de persoane rezervate și să respecte regulile locației.",
+                "Să lase spațiul în starea în care l-a primit și să raporteze prompt orice deteriorare.",
+                "Să achite toate sumele aplicabile, inclusiv prețul rezervării, taxele și comisionul de serviciu Spacefly.",
+                "Să nu utilizeze platforma în scopuri ilegale, frauduloase sau abuzive."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Plasarea comenzii și plata",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Plasați o comandă selectând un spațiu, o dată și o oră și confirmând rezervarea. Totalul afișat la finalizare include prețul gazdei și comisionul de serviciu Spacefly, în moneda aplicabilă (USD, EUR sau MDL)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Plata se efectuează online cu cardul prin maib (BC „Moldova Agroindbank” S.A.). Acceptăm Visa și Mastercard. Datele cardului se introduc pe pagina securizată de plată maib și sunt procesate în siguranță de maib; Spacefly nu primește și nu stochează numărul complet al cardului, data expirării sau codul CVV."
+            },
+            {
+              "type": "paragraph",
+              "text": "Rezervarea este confirmată după autorizarea cu succes a plății și primirea confirmării de rezervare. Prețurile sunt afișate cu taxele aplicabile incluse, acolo unde legea o impune."
+            }
+          ]
+        },
+        {
+          "heading": "Executare — accesul la spațiul rezervat",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly nu livrează bunuri fizice. „Executarea” înseamnă că gazda pune spațiul rezervat la dispoziția dumneavoastră pentru utilizare în data și ora confirmate, conform anunțului și instrucțiunilor gazdei."
+            },
+            {
+              "type": "paragraph",
+              "text": "Detaliile de acces (adresă, instrucțiuni de intrare, contact) sunt furnizate în confirmarea rezervării și/sau de către gazdă. Dacă nu puteți accesa spațiul conform rezervării, contactați fără întârziere gazda și suportul Spacefly pentru rezolvarea problemei."
+            }
+          ]
+        },
+        {
+          "heading": "Anulări și rambursări",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Drepturile de anulare, eligibilitatea pentru rambursare și termenele sunt prevăzute în Politica noastră de Rambursare și Anulare, care face parte din acești Termeni. Se aplică și regulile de anulare ale gazdei pentru spațiul respectiv."
+            }
+          ]
+        },
+        {
+          "heading": "Comisioane",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly percepe un comision de serviciu pentru operarea marketplace-ului și facilitarea rezervării și plății. Comisionul este afișat la finalizarea comenzii, înainte de confirmare și plată. Gazdele pot fi supuse unui comision separat conform contractului lor de gazdă."
+            }
+          ]
+        },
+        {
+          "heading": "Limitarea răspunderii",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "În măsura maximă permisă de lege, rolul Spacefly este limitat la cel de intermediar și facilitator de plăți. Nu suntem răspunzători pentru acțiunile, omisiunile ori starea sau siguranța niciunui spațiu oferit de o gazdă, nici pentru pierderi indirecte sau consecvente."
+            },
+            {
+              "type": "paragraph",
+              "text": "Nicio prevedere din acești Termeni nu exclude răspunderea care nu poate fi exclusă conform legislației Republicii Moldova."
+            }
+          ]
+        },
+        {
+          "heading": "Protecția datelor cu caracter personal și confidențialitate",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Prelucrăm datele cu caracter personal în conformitate cu Politica noastră de Confidențialitate și legislația aplicabilă privind protecția datelor. Datele de plată cu cardul sunt gestionate de maib și nu sunt stocate de Spacefly. Vă rugăm să consultați Politica de Confidențialitate pentru detalii despre ce colectăm, de ce și drepturile dumneavoastră."
+            }
+          ]
+        },
+        {
+          "heading": "Legea aplicabilă",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Acești Termeni sunt guvernați de legislația Republicii Moldova. Orice litigiu va fi supus instanțelor competente din Republica Moldova, fără a aduce atingere drepturilor imperative de protecție a consumatorilor."
+            }
+          ]
+        },
+        {
+          "heading": "Informații de contact",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Operatorul platformei este PRODIUS ENTERPRISE S.R.L., IDNO 1024600066933, str. Nicolae Testemițanu 16/3, ap. 80, MD-2006, Chișinău, Republica Moldova. Ne puteți contacta la cristian@prodiusenterprise.com sau +373 68200722. Datele complete de identificare sunt afișate mai jos."
+            }
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Politica de Confidențialitate",
+      "metaTitle": "Politica de Confidențialitate | Spacefly.ai",
+      "metaDescription": "Cum colectează, utilizează și protejează PRODIUS ENTERPRISE S.R.L. datele cu caracter personal pe marketplace-ul Spacefly.ai.",
+      "intro": "Această Politică de Confidențialitate explică modul în care PRODIUS ENTERPRISE S.R.L. („Spacefly”, „noi”) colectează, utilizează și protejează datele dumneavoastră cu caracter personal atunci când utilizați marketplace-ul Spacefly.ai. Urmărim conformitatea cu Regulamentul general privind protecția datelor (GDPR) al UE și cu legislația aplicabilă din Republica Moldova.",
+      "sections": [
+        {
+          "heading": "Cine suntem",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Operatorul de date este PRODIUS ENTERPRISE S.R.L., IDNO 1024600066933, str. Nicolae Testemițanu 16/3, ap. 80, MD-2006, Chișinău, Republica Moldova. Contact: cristian@prodiusenterprise.com."
+            }
+          ]
+        },
+        {
+          "heading": "Datele pe care le colectăm",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Date de cont: nume, adresă de email, număr de telefon și parolă (stocată sub formă criptată).",
+                "Date de rezervare: spații rezervate, date, ore, numărul de oaspeți și comunicări legate de o rezervare.",
+                "Date de plată: plățile cu cardul sunt procesate de maib. Primim doar statutul plății și o referință a tranzacției — niciodată numărul complet al cardului, data expirării sau CVV.",
+                "Date tehnice: adresa IP, informații despre dispozitiv și browser și cookie-uri utilizate pentru operarea și securizarea site-ului.",
+                "Date de suport: informațiile pe care le furnizați când ne contactați."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Cum utilizăm datele",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Pentru a crea și gestiona contul dumneavoastră.",
+                "Pentru a procesa rezervările și a facilita plata prin maib.",
+                "Pentru a comunica confirmări de rezervare, modificări și răspunsuri de suport.",
+                "Pentru a opera, securiza și îmbunătăți platforma.",
+                "Pentru a respecta obligațiile legale, contabile și fiscale."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Datele de plată",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Plățile cu cardul sunt procesate în siguranță de maib (BC „Moldova Agroindbank” S.A.). Datele cardului se introduc în mediul securizat de plată al maib. Spacefly nu primește și nu stochează numărul complet al cardului, data expirării sau codul CVV. maib acționează ca procesator de plăți independent în ceea ce privește datele cardului."
+            }
+          ]
+        },
+        {
+          "heading": "Accesul gazdelor la datele de rezervare",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Deoarece gazdele sunt terți independenți care execută rezervarea, comunicăm gazdei relevante datele de rezervare necesare pentru a asigura accesul la spațiu — precum numele, detaliile rezervării și o metodă de contact. Gazdele trebuie să utilizeze aceste date doar pentru executarea rezervării și în conformitate cu legislația aplicabilă."
+            }
+          ]
+        },
+        {
+          "heading": "Divulgarea către alți terți",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Comunicăm date furnizorilor de servicii care acționează în numele nostru (de exemplu găzduire, procesarea plăților prin maib și comunicații) și autorităților atunci când legea o impune. Nu vindem datele dumneavoastră cu caracter personal."
+            }
+          ]
+        },
+        {
+          "heading": "Păstrarea datelor",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Păstrăm datele cu caracter personal doar atât timp cât este necesar pentru scopurile descrise, inclusiv pentru a îndeplini cerințele legale, contabile și fiscale. Înregistrările de rezervare și tranzacție sunt păstrate pentru perioadele impuse de legislația aplicabilă."
+            }
+          ]
+        },
+        {
+          "heading": "Drepturile dumneavoastră",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "În condițiile legii aplicabile, aveți dreptul de acces, rectificare, ștergere sau restricționare a prelucrării datelor, dreptul de a vă opune anumitor prelucrări și dreptul la portabilitatea datelor. Pentru a exercita aceste drepturi, contactați-ne la cristian@prodiusenterprise.com. De asemenea, puteți depune o plângere la Centrul Național pentru Protecția Datelor cu Caracter Personal al Republicii Moldova."
+            }
+          ]
+        },
+        {
+          "heading": "Cookie-uri",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Utilizăm cookie-uri și tehnologii similare necesare pentru operarea site-ului, menținerea sesiunii și reținerea preferințelor precum limba și moneda. Puteți controla cookie-urile din setările browserului."
+            }
+          ]
+        },
+        {
+          "heading": "Contact",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Pentru orice întrebare sau solicitare privind confidențialitatea, contactați PRODIUS ENTERPRISE S.R.L. la cristian@prodiusenterprise.com sau +373 68200722. Datele complete de identificare sunt afișate mai jos."
+            }
+          ]
+        }
+      ]
+    },
+    "refunds": {
+      "title": "Politica de Rambursare și Anulare",
+      "metaTitle": "Politica de Rambursare și Anulare | Spacefly.ai",
+      "metaDescription": "Niveluri de anulare, metode și termene de rambursare pentru marketplace-ul Spacefly.ai.",
+      "intro": "Această Politică de Rambursare și Anulare explică modul în care funcționează anulările și rambursările pentru rezervările efectuate pe Spacefly.ai. Ea face parte din Termenii și Condițiile noastre. Deoarece gazdele sunt terți independenți, se aplică și regulile specifice de anulare ale spațiului rezervat.",
+      "relatedPolicies": "Vezi și:",
+      "termsLink": "Termeni și Condiții",
+      "contactLink": "Contact",
+      "sections": [
+        {
+          "heading": "Cum funcționează anularea",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Puteți solicita anularea din detaliile rezervării, în contul dumneavoastră. Suma rambursată depinde de cât de din timp anulați și de politica de anulare stabilită de gazdă pentru acel spațiu, afișată înainte de rezervare."
+            }
+          ]
+        },
+        {
+          "heading": "Niveluri standard de anulare",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Cu excepția cazului în care pe anunț este afișată o altă politică, se aplică următoarele niveluri implicite:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Anulare cu 48 de ore sau mai mult înainte de începerea rezervării: rambursarea integrală a prețului rezervării.",
+                "Anulare între 24 și 48 de ore înainte de începere: rambursarea a 50% din prețul rezervării.",
+                "Anulare cu mai puțin de 24 de ore înainte de începere sau neprezentare: fără rambursarea prețului rezervării.",
+                "Comisionul de serviciu Spacefly nu este rambursabil, cu excepția cazului în care rezervarea este anulată de gazdă sau spațiul nu este pus la dispoziție."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Anulări de către gazdă",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Dacă o gazdă anulează o rezervare confirmată sau nu pune spațiul la dispoziție conform rezervării, aveți dreptul la rambursarea integrală, inclusiv a comisionului de serviciu Spacefly. Acolo unde este posibil, vă vom ajuta să găsiți un spațiu alternativ."
+            }
+          ]
+        },
+        {
+          "heading": "Metoda și termenul de rambursare",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Rambursările aprobate sunt returnate pe cardul original utilizat la plată, prin maib. După emiterea unei rambursări, aceasta apare de regulă pe extras în 5–10 zile lucrătoare, în funcție de emitentul cardului. Rambursările se fac în moneda originală a tranzacției."
+            }
+          ]
+        },
+        {
+          "heading": "Gestionarea comisionului de serviciu",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Comisionul de serviciu Spacefly acoperă operarea platformei și facilitarea plății. Se rambursează doar atunci când rezervarea este anulată de gazdă sau spațiul nu este pus la dispoziție. În rest, nu este rambursabil."
+            }
+          ]
+        },
+        {
+          "heading": "Cine suportă rambursarea",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly procesează rambursările în numele gazdei prin maib. Suma rambursată reflectă condițiile de anulare ale gazdei și această politică. Contractul de bază pentru spațiu este între dumneavoastră și gazdă."
+            }
+          ]
+        },
+        {
+          "heading": "Litigii",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Dacă considerați că o taxă este incorectă sau că un spațiu nu a corespuns descrierii ori nu a fost pus la dispoziție, contactați mai întâi suportul Spacefly pentru a rezolva problema cu gazda. Dacă nu poate fi rezolvată, puteți contacta și emitentul cardului privind drepturile de chargeback."
+            }
+          ]
+        },
+        {
+          "heading": "Cum solicitați o rambursare",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Deschideți rezervarea relevantă din contul dumneavoastră și alegeți anularea sau contactați-ne la cristian@prodiusenterprise.com ori +373 68200722 cu referința rezervării. Vom confirma suma eligibilă și o vom procesa pe metoda de plată originală."
+            }
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "metaTitle": "Contact | Spacefly.ai",
+      "metaDescription": "Contactați PRODIUS ENTERPRISE S.R.L., operatorul marketplace-ului de rezervări Spacefly.ai.",
+      "intro": "Spacefly.ai este operat de PRODIUS ENTERPRISE S.R.L. Pentru orice întrebare despre contul dumneavoastră, o rezervare, o plată sau o rambursare, contactați-ne folosind datele de mai jos.",
+      "operatorHeading": "Operatorul platformei",
+      "supportHeading": "Suport",
+      "supportBody": "Pentru întrebări legate de rezervări, plăți și rambursări, scrieți la cristian@prodiusenterprise.com sau sunați la +373 68200722. Ne propunem să răspundem tuturor solicitărilor în două zile lucrătoare. Dacă solicitarea privește un anumit spațiu, includeți referința rezervării."
+    },
+    "about": {
+      "title": "Despre Spacefly",
+      "metaTitle": "Despre | Spacefly.ai",
+      "metaDescription": "Despre Spacefly.ai, marketplace-ul de rezervare a spațiilor și locațiilor operat de PRODIUS ENTERPRISE S.R.L.",
+      "operatorHeading": "Operatorul platformei",
+      "paragraphs": [
+        "Spacefly.ai este un marketplace online pentru descoperirea și rezervarea spațiilor și locațiilor — spații de lucru, săli de ședințe, locații pentru evenimente și altele. Din câteva clicuri, oaspeții pot găsi spațiul potrivit, îl pot rezerva pentru intervalul de care au nevoie și pot plăti în siguranță online.",
+        "Spațiile de pe Spacefly sunt oferite de gazde independente terțe. Spacefly acționează ca platformă de rezervări și facilitator de plăți: aducem împreună gazdele și oaspeții, gestionăm plata securizată și susținem rezervarea de la confirmare până la acces. Contractul de utilizare a unui spațiu se încheie între oaspete și gazdă.",
+        "Spacefly.ai este operat de PRODIUS ENTERPRISE S.R.L., companie înregistrată în Republica Moldova la 21.08.2024 la Agenția Servicii Publice. Susținem rezervări și plăți în USD, EUR și MDL, plățile cu cardul fiind procesate în siguranță de maib."
+      ]
     }
   }
 }

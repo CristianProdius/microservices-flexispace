@@ -488,7 +488,11 @@
     "privacyPolicy": "Privacy Policy",
     "trustLine": "Trusted by 1,000+ hosts across 50+ cities",
     "copyright": "© 2026 Spacefly.ai.",
-    "allRightsReserved": "All rights reserved."
+    "allRightsReserved": "All rights reserved.",
+    "refundPolicy": "Refund & Cancellation Policy",
+    "legalIdentityHeading": "Company details",
+    "acceptedPayments": "Accepted payments",
+    "idnoLabel": "IDNO"
   },
   "venue": {
     "metaTitle": "{name} — Spacefly.ai",
@@ -548,6 +552,416 @@
         "mostVenues": "Most venues",
         "newest": "Newest"
       }
+    }
+  },
+  "legal": {
+    "identity": {
+      "legalName": "Legal name",
+      "idno": "IDNO",
+      "address": "Registered address",
+      "registered": "Registered",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "common": {
+      "lastUpdated": "Last updated",
+      "effectiveDate": "15 July 2026",
+      "operatorHeading": "Platform operator",
+      "controllerHeading": "Data controller",
+      "processorNote": "Card payments are processed securely by maib (BC \"Moldova Agroindbank\" S.A.). Spacefly does not receive or store your full card number, expiry date, or CVV."
+    },
+    "terms": {
+      "title": "Terms & Conditions",
+      "metaTitle": "Terms & Conditions | Spacefly.ai",
+      "metaDescription": "Terms and conditions for using the Spacefly.ai booking marketplace operated by PRODIUS ENTERPRISE S.R.L.",
+      "intro": "These Terms & Conditions govern your use of the Spacefly.ai marketplace, operated by PRODIUS ENTERPRISE S.R.L. (\"Spacefly\", \"we\", \"us\"). By creating an account, making a booking, or otherwise using the platform, you agree to these terms.",
+      "relatedPolicies": "See also:",
+      "privacyLink": "Privacy Policy",
+      "refundLink": "Refund & Cancellation Policy",
+      "sections": [
+        {
+          "heading": "General provisions",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly.ai is an online marketplace that lets guests discover and book spaces and venues (workspaces, meeting rooms, event locations and similar) offered by independent third-party hosts. These Terms form a binding agreement between you and PRODIUS ENTERPRISE S.R.L., the operator of the platform."
+            },
+            {
+              "type": "paragraph",
+              "text": "We may update these Terms from time to time. The version in force is the one published on this page at the time of your booking. Continued use of the platform after changes take effect constitutes acceptance of the updated Terms."
+            }
+          ]
+        },
+        {
+          "heading": "Our role — marketplace and intermediary disclosure",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Hosts are independent third parties. They — not Spacefly — own, control and are responsible for the spaces listed on the platform."
+            },
+            {
+              "type": "paragraph",
+              "text": "Spacefly acts solely as an intermediary booking platform and payment facilitator. When you book a space, the contract for the use of that space is concluded directly between you (the guest) and the host. Spacefly is not a party to that contract and does not own, operate, manage, or control any listed space."
+            },
+            {
+              "type": "paragraph",
+              "text": "Spacefly facilitates the booking and collects payment on behalf of the host, and charges a service fee for operating the platform. We are not liable for the condition, safety, legality, or suitability of any space, nor for the acts or omissions of hosts or guests."
+            }
+          ]
+        },
+        {
+          "heading": "Account & eligibility",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "You must be at least 18 years old and legally able to enter into contracts to use Spacefly. You are responsible for keeping your account credentials confidential and for all activity under your account."
+            },
+            {
+              "type": "paragraph",
+              "text": "You agree to provide accurate information and to keep it up to date. We may suspend or terminate accounts that violate these Terms or applicable law."
+            }
+          ]
+        },
+        {
+          "heading": "Host obligations",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Provide accurate descriptions, photos, pricing, availability and rules for each listed space.",
+                "Hold all rights, licences and permissions necessary to offer the space for booking.",
+                "Make the space available to the guest for the booked period in the condition described.",
+                "Comply with all applicable laws, including health, safety and tax obligations.",
+                "Set their own cancellation and house rules, which apply to bookings of their space."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Guest & booking obligations",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Use the space only for the booked purpose, period and number of people, and respect the host's house rules.",
+                "Leave the space in the condition in which it was received and report any damage promptly.",
+                "Pay all applicable amounts, including the booking price, taxes and the Spacefly service fee.",
+                "Not use the platform for any unlawful, fraudulent or abusive purpose."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Order placement & payment",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "You place an order by selecting a space, date and time and confirming the booking. The total shown at checkout includes the host's price and the Spacefly service fee, in the applicable currency (USD, EUR or MDL)."
+            },
+            {
+              "type": "paragraph",
+              "text": "Payment is processed online by card via maib (BC \"Moldova Agroindbank\" S.A.). We accept Visa and Mastercard. Card data is entered on maib's secure payment page and processed securely by maib; Spacefly does not receive or store your full card number, expiry date, or CVV."
+            },
+            {
+              "type": "paragraph",
+              "text": "Your booking is confirmed once payment is successfully authorised and you receive a booking confirmation. Prices are shown inclusive of applicable taxes where required by law."
+            }
+          ]
+        },
+        {
+          "heading": "Fulfilment — access to the booked space",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly does not deliver physical goods. \"Fulfilment\" means that the host makes the booked space available to you for use during the confirmed date and time, in accordance with the listing and the host's instructions."
+            },
+            {
+              "type": "paragraph",
+              "text": "Access details (address, entry instructions, contact) are provided in the booking confirmation and/or by the host. If you cannot access the space as booked, contact the host and Spacefly support without delay so the issue can be resolved."
+            }
+          ]
+        },
+        {
+          "heading": "Cancellations & refunds",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Cancellation rights, refund eligibility and timelines are set out in our Refund & Cancellation Policy, which forms part of these Terms. The host's cancellation rules for a given space also apply."
+            }
+          ]
+        },
+        {
+          "heading": "Fees",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly charges a service fee for operating the marketplace and facilitating the booking and payment. The fee is shown at checkout before you confirm and pay. Hosts may be subject to a separate commission under their host agreement."
+            }
+          ]
+        },
+        {
+          "heading": "Liability limits",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "To the maximum extent permitted by law, Spacefly's role is limited to that of an intermediary and payment facilitator. We are not liable for the acts, omissions, or the condition or safety of any space provided by a host, nor for any indirect or consequential loss."
+            },
+            {
+              "type": "paragraph",
+              "text": "Nothing in these Terms excludes liability that cannot be excluded under the law of the Republic of Moldova."
+            }
+          ]
+        },
+        {
+          "heading": "Personal data protection & privacy",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We process personal data in accordance with our Privacy Policy and applicable data protection law. Card payment data is handled by maib and is not stored by Spacefly. Please review the Privacy Policy for details on what we collect, why, and your rights."
+            }
+          ]
+        },
+        {
+          "heading": "Governing law",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "These Terms are governed by the law of the Republic of Moldova. Any dispute shall be subject to the competent courts of the Republic of Moldova, without prejudice to any mandatory consumer protection rights."
+            }
+          ]
+        },
+        {
+          "heading": "Contact information",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The platform operator is PRODIUS ENTERPRISE S.R.L., IDNO 1024600066933, str. Nicolae Testemițanu 16/3, ap. 80, MD-2006, Chișinău, Republic of Moldova. You can reach us at cristian@prodiusenterprise.com or +373 68200722. Full identification details are shown below."
+            }
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "metaTitle": "Privacy Policy | Spacefly.ai",
+      "metaDescription": "How PRODIUS ENTERPRISE S.R.L. collects, uses and protects personal data on the Spacefly.ai marketplace.",
+      "intro": "This Privacy Policy explains how PRODIUS ENTERPRISE S.R.L. (\"Spacefly\", \"we\") collects, uses, and protects your personal data when you use the Spacefly.ai marketplace. We aim to align with the EU General Data Protection Regulation (GDPR) and applicable Moldovan data protection law.",
+      "sections": [
+        {
+          "heading": "Who we are",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The data controller is PRODIUS ENTERPRISE S.R.L., IDNO 1024600066933, str. Nicolae Testemițanu 16/3, ap. 80, MD-2006, Chișinău, Republic of Moldova. Contact: cristian@prodiusenterprise.com."
+            }
+          ]
+        },
+        {
+          "heading": "Data we collect",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "Account data: name, email address, phone number, and password (stored in hashed form).",
+                "Booking data: spaces booked, dates, times, number of guests, and communications related to a booking.",
+                "Payment data: card payments are processed by maib. We receive only a payment status and a transaction reference — never your full card number, expiry, or CVV.",
+                "Technical data: IP address, device and browser information, and cookies used to operate and secure the site.",
+                "Support data: information you provide when you contact us."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "How we use your data",
+          "blocks": [
+            {
+              "type": "list",
+              "items": [
+                "To create and manage your account.",
+                "To process bookings and facilitate payment via maib.",
+                "To communicate booking confirmations, changes, and support responses.",
+                "To operate, secure, and improve the platform.",
+                "To comply with legal, accounting and tax obligations."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Payment data",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Card payments are processed securely by maib (BC \"Moldova Agroindbank\" S.A.). Your card details are entered on maib's secure payment environment. Spacefly does not receive or store your full card number, expiry date, or CVV. maib acts as an independent payment processor in respect of card data."
+            }
+          ]
+        },
+        {
+          "heading": "Hosts' access to booking data",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Because hosts are independent third parties who fulfil your booking, we share with the relevant host the booking data they need to provide access to the space — such as your name, the booking details, and a contact method. Hosts must use this data only to fulfil the booking and in accordance with applicable law."
+            }
+          ]
+        },
+        {
+          "heading": "Sharing with other third parties",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We share data with service providers acting on our behalf (for example hosting, payment processing via maib, and communications), and with authorities where required by law. We do not sell your personal data."
+            }
+          ]
+        },
+        {
+          "heading": "Retention",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We keep personal data only as long as necessary for the purposes described, including to meet legal, accounting and tax requirements. Booking and transaction records are retained for the periods required by applicable law."
+            }
+          ]
+        },
+        {
+          "heading": "Your rights",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Subject to applicable law, you have the right to access, correct, delete, or restrict processing of your personal data, to object to certain processing, and to data portability. To exercise these rights, contact us at cristian@prodiusenterprise.com. You may also lodge a complaint with the National Center for Personal Data Protection of the Republic of Moldova."
+            }
+          ]
+        },
+        {
+          "heading": "Cookies",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "We use cookies and similar technologies that are necessary to operate the site, keep you signed in, and remember preferences such as your language and currency. You can control cookies through your browser settings."
+            }
+          ]
+        },
+        {
+          "heading": "Contact",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For any privacy question or request, contact PRODIUS ENTERPRISE S.R.L. at cristian@prodiusenterprise.com or +373 68200722. Full identification details are shown below."
+            }
+          ]
+        }
+      ]
+    },
+    "refunds": {
+      "title": "Refund & Cancellation Policy",
+      "metaTitle": "Refund & Cancellation Policy | Spacefly.ai",
+      "metaDescription": "Booking cancellation tiers, refund methods and timelines for the Spacefly.ai marketplace.",
+      "intro": "This Refund & Cancellation Policy explains how cancellations and refunds work for bookings made on Spacefly.ai. It forms part of our Terms & Conditions. Because hosts are independent third parties, the specific cancellation rules of the booked space also apply.",
+      "relatedPolicies": "See also:",
+      "termsLink": "Terms & Conditions",
+      "contactLink": "Contact",
+      "sections": [
+        {
+          "heading": "How cancellation works",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "You can request a cancellation from your booking details in your account. The refund amount depends on how far in advance you cancel and on the cancellation policy set by the host for that space, which is shown before you book."
+            }
+          ]
+        },
+        {
+          "heading": "Standard cancellation tiers",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Unless a different policy is displayed on the listing, the following default tiers apply:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Cancellation 48 hours or more before the booking start: full refund of the booking price.",
+                "Cancellation between 24 and 48 hours before the start: 50% refund of the booking price.",
+                "Cancellation less than 24 hours before the start, or no-show: no refund of the booking price.",
+                "The Spacefly service fee is non-refundable except where a booking is cancelled by the host or the space is not made available."
+              ]
+            }
+          ]
+        },
+        {
+          "heading": "Cancellations by the host",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If a host cancels a confirmed booking, or fails to make the space available as booked, you are entitled to a full refund, including the Spacefly service fee. Where possible we will help you find an alternative space."
+            }
+          ]
+        },
+        {
+          "heading": "Refund method & timeline",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Approved refunds are returned to the original card used for payment, through maib. Once a refund is issued, it typically appears on your statement within 5–10 business days, depending on your card issuer. Refunds are made in the original currency of the transaction."
+            }
+          ]
+        },
+        {
+          "heading": "Service-fee handling",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The Spacefly service fee covers the operation of the platform and payment facilitation. It is refunded only when the booking is cancelled by the host or the space is not made available. It is otherwise non-refundable."
+            }
+          ]
+        },
+        {
+          "heading": "Who bears the refund",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Spacefly processes refunds on behalf of the host through maib. The amount refunded reflects the host's cancellation terms and this policy. The underlying contract for the space is between you and the host."
+            }
+          ]
+        },
+        {
+          "heading": "Disputes",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If you believe a charge is incorrect, or a space was not as described or not made available, contact Spacefly support first so we can help resolve the matter with the host. If it cannot be resolved, you may also contact your card issuer regarding your chargeback rights."
+            }
+          ]
+        },
+        {
+          "heading": "How to request a refund",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Open the relevant booking in your account and choose to cancel, or contact us at cristian@prodiusenterprise.com or +373 68200722 with your booking reference. We will confirm the eligible refund amount and process it to your original payment method."
+            }
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "metaTitle": "Contact | Spacefly.ai",
+      "metaDescription": "Contact PRODIUS ENTERPRISE S.R.L., operator of the Spacefly.ai booking marketplace.",
+      "intro": "Spacefly.ai is operated by PRODIUS ENTERPRISE S.R.L. For any question about your account, a booking, payment, or a refund, please reach out using the details below.",
+      "operatorHeading": "Platform operator",
+      "supportHeading": "Support",
+      "supportBody": "For booking, payment and refund enquiries, email cristian@prodiusenterprise.com or call +373 68200722. We aim to respond to all enquiries within two business days. If your enquiry concerns a specific space, please include your booking reference."
+    },
+    "about": {
+      "title": "About Spacefly",
+      "metaTitle": "About | Spacefly.ai",
+      "metaDescription": "About Spacefly.ai, the space and venue booking marketplace operated by PRODIUS ENTERPRISE S.R.L.",
+      "operatorHeading": "Platform operator",
+      "paragraphs": [
+        "Spacefly.ai is an online marketplace for discovering and booking spaces and venues — workspaces, meeting rooms, event locations and more. In a few clicks, guests can find the right space, book it for the time they need, and pay securely online.",
+        "Spaces on Spacefly are offered by independent third-party hosts. Spacefly acts as the booking platform and payment facilitator: we bring hosts and guests together, handle secure payment, and support the booking from confirmation to access. The contract for the use of a space is concluded between the guest and the host.",
+        "Spacefly.ai is operated by PRODIUS ENTERPRISE S.R.L., a company registered in the Republic of Moldova on 21.08.2024 with the Public Services Agency (Agenția Servicii Publice). We support bookings and payments in USD, EUR and MDL, with card payments processed securely by maib."
+      ]
     }
   }
 }

@@ -6,6 +6,7 @@ import {
   getFeaturedCategories,
   getFeaturedGroups,
 } from "@/lib/taxonomy";
+import { COMPANY, PAYMENT_METHODS } from "@/lib/company";
 
 const Footer = async () => {
   const t = await getTranslations("footer");
@@ -69,10 +70,11 @@ const Footer = async () => {
     {
       title: t("company"),
       links: [
-        { href: "/", label: t("about") },
-        { href: "/", label: t("contact") },
-        { href: "/", label: t("termsOfService") },
-        { href: "/", label: t("privacyPolicy") },
+        { href: "/about", label: t("about") },
+        { href: "/contact", label: t("contact") },
+        { href: "/terms", label: t("termsOfService") },
+        { href: "/privacy", label: t("privacyPolicy") },
+        { href: "/refunds", label: t("refundPolicy") },
       ],
     },
   ];
@@ -82,9 +84,16 @@ const Footer = async () => {
       columns={columns}
       copyright={t("copyright")}
       privacyPolicy={t("privacyPolicy")}
+      privacyPolicyHref="/privacy"
       tagline={t("tagline")}
       termsOfService={t("termsOfService")}
+      termsOfServiceHref="/terms"
       trustLine={t("trustLine")}
+      legalIdentityHeading={t("legalIdentityHeading")}
+      idnoLabel={t("idnoLabel")}
+      acceptedPayments={t("acceptedPayments")}
+      company={COMPANY}
+      paymentMethods={PAYMENT_METHODS}
     />
   );
 };
