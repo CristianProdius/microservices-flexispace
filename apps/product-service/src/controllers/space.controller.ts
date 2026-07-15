@@ -322,17 +322,28 @@ const validateSpaceNumericFields = (
   // the admin form always posts pricePerHour/pricePerDay as `number | null`.)
   const isAbsent = (v: unknown) => v === undefined || v === null;
 
-  // pricePerHour / pricePerDay / pricePerMonth: a base rate, when present, must
-  // be a finite number > 0 — a booking can never be priced on a zero/negative
-  // base rate (order-service rejects a zero-candidate set), so 0 is not a valid
-  // rate. A space priced only via pricingTiers simply leaves them null.
-  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
-  // calendar month, pro-rated for the remainder), so it follows the same rule.
-  for (const key of ["pricePerHour", "pricePerDay", "pricePerMonth"] as const) {
+  // pricePerHour / pricePerDay: a base rate that, when present, must be a finite
+  // number >= 0. A host may deliberately set it to 0 to list the space as
+  // "Contact for pricing": the public site renders that label (getPriceDisplay
+  // treats a 0/falsy rate as unpriced) and the order-service fails closed on a
+  // zero-candidate price set, so a 0-rate space can never be booked at $0.
+  // Negative or non-finite is still invalid. A space priced only via
+  // pricingTiers simply leaves these null.
+  for (const key of ["pricePerHour", "pricePerDay"] as const) {
     const raw = data[key];
     if (isAbsent(raw)) continue;
+    if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0) {
+      return { message: `${key} must be a finite number >= 0` };
+    }
+  }
+
+  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
+  // calendar month, pro-rated for the remainder). A monthly listing is priced
+  // by this rate, so when present it must be a real positive number > 0.
+  if (!isAbsent(data.pricePerMonth)) {
+    const raw = data.pricePerMonth;
     if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
-      return { message: `${key} must be a finite number > 0` };
+      return { message: "pricePerMonth must be a finite number > 0" };
     }
   }
 
