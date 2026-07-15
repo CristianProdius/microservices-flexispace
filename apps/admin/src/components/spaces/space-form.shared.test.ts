@@ -152,6 +152,126 @@ describe("mapSpaceToFormValues pricePerMonth", () => {
   });
 });
 
+describe("buildSpacePayload monthlyPlans", () => {
+  it("includes monthly plans for MONTHLY spaces, filtering blank rows", () => {
+    const payload = buildSpacePayload(
+      baseValues({
+        pricingType: "MONTHLY",
+        pricePerMonth: "1200",
+        monthlyPlans: [
+          { name: "Hot desk", pricePerMonth: "150", description: "Flexible" },
+          { name: "", pricePerMonth: "250", description: "" },
+        ],
+      }),
+    );
+
+    expect(payload.monthlyPlans).toEqual([
+      { name: "Hot desk", pricePerMonth: 150, description: "Flexible" },
+    ]);
+  });
+
+  it("omits the description when empty or whitespace only", () => {
+    const payload = buildSpacePayload(
+      baseValues({
+        pricingType: "MONTHLY",
+        pricePerMonth: "1200",
+        monthlyPlans: [
+          { name: "Hot desk", pricePerMonth: "150", description: "   " },
+        ],
+      }),
+    );
+
+    expect(payload.monthlyPlans).toEqual([
+      { name: "Hot desk", pricePerMonth: 150 },
+    ]);
+    expect(payload.monthlyPlans?.[0]).not.toHaveProperty("description");
+  });
+
+  it("sends no monthly plans for non-MONTHLY spaces", () => {
+    const payload = buildSpacePayload(
+      baseValues({
+        pricingType: "BOTH",
+        monthlyPlans: [
+          { name: "Hot desk", pricePerMonth: "150", description: "Flexible" },
+        ],
+      }),
+    );
+
+    expect(payload.monthlyPlans).toEqual([]);
+  });
+});
+
+describe("mapSpaceToFormValues monthlyPlans", () => {
+  it("hydrates monthly plans from a loaded space, defaulting description to empty string", () => {
+    const values = mapSpaceToFormValues({
+      name: "Desk",
+      shortDescription: "",
+      description: "",
+      spaceType: "OFFICE_DESK",
+      pricingType: "MONTHLY",
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: 1200,
+      capacity: 1,
+      instantBook: false,
+      cancellationPolicy: "MODERATE",
+      houseRules: "",
+      categorySlug: "office-desk",
+      images: [],
+      amenities: [],
+      currency: "USD",
+      pricingTiers: [],
+      monthlyPlans: [
+        {
+          id: 1,
+          name: "Hot desk",
+          pricePerMonth: 150,
+          description: "Flexible",
+          sortOrder: 0,
+        },
+        {
+          id: 2,
+          name: "Dedicated desk",
+          pricePerMonth: 250,
+          description: null,
+          sortOrder: 1,
+        },
+      ],
+      availability: [],
+    });
+
+    expect(values.monthlyPlans).toEqual([
+      { name: "Hot desk", pricePerMonth: "150", description: "Flexible" },
+      { name: "Dedicated desk", pricePerMonth: "250", description: "" },
+    ]);
+  });
+
+  it("defaults monthly plans to an empty array when absent", () => {
+    const values = mapSpaceToFormValues({
+      name: "Room",
+      shortDescription: "",
+      description: "",
+      spaceType: "MEETING_ROOM",
+      pricingType: "BOTH",
+      pricePerHour: 10,
+      pricePerDay: 80,
+      pricePerMonth: null,
+      capacity: 4,
+      instantBook: false,
+      cancellationPolicy: "MODERATE",
+      houseRules: "",
+      categorySlug: "meeting-room",
+      images: [],
+      amenities: [],
+      currency: "USD",
+      pricingTiers: [],
+      availability: [],
+    });
+
+    expect(values.monthlyPlans).toEqual([]);
+  });
+});
+
 describe("pricingTypeOptionsForCategory", () => {
   it("excludes Both and includes Monthly for office categories", () => {
     for (const spaceType of [

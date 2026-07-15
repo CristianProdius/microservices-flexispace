@@ -670,6 +670,7 @@ describe("host new space page", () => {
       videoUrl: null,
       currency: "USD",
       pricingTiers: [],
+      monthlyPlans: [],
       availability: defaultAvailabilityPayload,
     });
     // apiFetch always wraps headers in a Headers instance, so assert via

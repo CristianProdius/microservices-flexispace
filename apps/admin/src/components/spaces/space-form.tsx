@@ -35,6 +35,7 @@ import {
   type SpaceFormValues,
 } from "./space-form.shared";
 import PricingTiersEditor from "./pricing-tiers-editor";
+import MonthlyPlansEditor from "./monthly-plans-editor";
 import TranslationTabs from "@/components/translation-tabs";
 
 interface VenueOption {
@@ -721,6 +722,16 @@ const SpaceForm = ({
                 </div>
               )}
             </div>
+
+            {formData.pricingType === "MONTHLY" && (
+              <MonthlyPlansEditor
+                plans={formData.monthlyPlans}
+                onChange={(monthlyPlans) =>
+                  setFormData((prev) => ({ ...prev, monthlyPlans }))
+                }
+                currency={formData.currency}
+              />
+            )}
 
             <PricingTiersEditor
               tiers={formData.pricingTiers}
