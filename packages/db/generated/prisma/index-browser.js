@@ -311,6 +311,15 @@ exports.Prisma.PricingTierScalarFieldEnum = {
   comment: 'comment'
 };
 
+exports.Prisma.MonthlyPlanScalarFieldEnum = {
+  id: 'id',
+  spaceId: 'spaceId',
+  name: 'name',
+  pricePerMonth: 'pricePerMonth',
+  description: 'description',
+  sortOrder: 'sortOrder'
+};
+
 exports.Prisma.AvailabilityScalarFieldEnum = {
   id: 'id',
   spaceId: 'spaceId',
@@ -332,6 +341,8 @@ exports.Prisma.BookingScalarFieldEnum = {
   guestId: 'guestId',
   hostId: 'hostId',
   spaceId: 'spaceId',
+  monthlyPlanId: 'monthlyPlanId',
+  monthlyPlanName: 'monthlyPlanName',
   startDate: 'startDate',
   endDate: 'endDate',
   startTime: 'startTime',
@@ -492,6 +503,7 @@ exports.Prisma.ModelName = {
   Amenity: 'Amenity',
   SpaceAmenity: 'SpaceAmenity',
   PricingTier: 'PricingTier',
+  MonthlyPlan: 'MonthlyPlan',
   Availability: 'Availability',
   BlockedDate: 'BlockedDate',
   Booking: 'Booking',
