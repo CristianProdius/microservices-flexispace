@@ -207,6 +207,14 @@ export const BookingActor: {
 
 export type BookingActor = (typeof BookingActor)[keyof typeof BookingActor]
 
+
+export const VerificationStatus: {
+  UNVERIFIED: 'UNVERIFIED',
+  VERIFIED: 'VERIFIED'
+};
+
+export type VerificationStatus = (typeof VerificationStatus)[keyof typeof VerificationStatus]
+
 }
 
 export type Role = $Enums.Role
@@ -244,6 +252,10 @@ export const Currency: typeof $Enums.Currency
 export type BookingActor = $Enums.BookingActor
 
 export const BookingActor: typeof $Enums.BookingActor
+
+export type VerificationStatus = $Enums.VerificationStatus
+
+export const VerificationStatus: typeof $Enums.VerificationStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -3077,6 +3089,7 @@ export namespace Prisma {
     tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
+    hostVerificationStatus: $Enums.VerificationStatus | null
     hostRecommended: boolean | null
     hostSponsored: boolean | null
     hostingSince: Date | null
@@ -3101,6 +3114,7 @@ export namespace Prisma {
     tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean | null
+    hostVerificationStatus: $Enums.VerificationStatus | null
     hostRecommended: boolean | null
     hostSponsored: boolean | null
     hostingSince: Date | null
@@ -3125,6 +3139,7 @@ export namespace Prisma {
     tokensValidAfter: number
     deletedAt: number
     hostVerified: number
+    hostVerificationStatus: number
     hostRecommended: number
     hostSponsored: number
     hostingSince: number
@@ -3159,6 +3174,7 @@ export namespace Prisma {
     tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
+    hostVerificationStatus?: true
     hostRecommended?: true
     hostSponsored?: true
     hostingSince?: true
@@ -3183,6 +3199,7 @@ export namespace Prisma {
     tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
+    hostVerificationStatus?: true
     hostRecommended?: true
     hostSponsored?: true
     hostingSince?: true
@@ -3207,6 +3224,7 @@ export namespace Prisma {
     tokensValidAfter?: true
     deletedAt?: true
     hostVerified?: true
+    hostVerificationStatus?: true
     hostRecommended?: true
     hostSponsored?: true
     hostingSince?: true
@@ -3318,6 +3336,7 @@ export namespace Prisma {
     tokensValidAfter: Date | null
     deletedAt: Date | null
     hostVerified: boolean
+    hostVerificationStatus: $Enums.VerificationStatus
     hostRecommended: boolean
     hostSponsored: boolean
     hostingSince: Date | null
@@ -3361,6 +3380,7 @@ export namespace Prisma {
     tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostVerificationStatus?: boolean
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: boolean
@@ -3397,6 +3417,7 @@ export namespace Prisma {
     tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostVerificationStatus?: boolean
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: boolean
@@ -3421,6 +3442,7 @@ export namespace Prisma {
     tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostVerificationStatus?: boolean
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: boolean
@@ -3445,6 +3467,7 @@ export namespace Prisma {
     tokensValidAfter?: boolean
     deletedAt?: boolean
     hostVerified?: boolean
+    hostVerificationStatus?: boolean
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: boolean
@@ -3452,7 +3475,7 @@ export namespace Prisma {
     commissionRate?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "tokensValidAfter" | "deletedAt" | "hostVerified" | "hostRecommended" | "hostSponsored" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "username" | "name" | "password" | "role" | "emailVerified" | "image" | "phone" | "bio" | "mustChangePassword" | "createdAt" | "updatedAt" | "tokensValidAfter" | "deletedAt" | "hostVerified" | "hostVerificationStatus" | "hostRecommended" | "hostSponsored" | "hostingSince" | "hostApplicationPending" | "commissionRate", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     refreshTokens?: boolean | User$refreshTokensArgs<ExtArgs>
@@ -3502,6 +3525,7 @@ export namespace Prisma {
       tokensValidAfter: Date | null
       deletedAt: Date | null
       hostVerified: boolean
+      hostVerificationStatus: $Enums.VerificationStatus
       hostRecommended: boolean
       hostSponsored: boolean
       hostingSince: Date | null
@@ -3957,6 +3981,7 @@ export namespace Prisma {
     readonly tokensValidAfter: FieldRef<"User", 'DateTime'>
     readonly deletedAt: FieldRef<"User", 'DateTime'>
     readonly hostVerified: FieldRef<"User", 'Boolean'>
+    readonly hostVerificationStatus: FieldRef<"User", 'VerificationStatus'>
     readonly hostRecommended: FieldRef<"User", 'Boolean'>
     readonly hostSponsored: FieldRef<"User", 'Boolean'>
     readonly hostingSince: FieldRef<"User", 'DateTime'>
@@ -11081,7 +11106,7 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency | null
-    venueVerified: boolean | null
+    venueVerificationStatus: $Enums.VerificationStatus | null
     venueRecommended: boolean | null
     venueSponsored: boolean | null
     hostId: string | null
@@ -11105,7 +11130,7 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency | null
-    venueVerified: boolean | null
+    venueVerificationStatus: $Enums.VerificationStatus | null
     venueRecommended: boolean | null
     venueSponsored: boolean | null
     hostId: string | null
@@ -11134,7 +11159,7 @@ export namespace Prisma {
     latitude: number
     longitude: number
     currency: number
-    venueVerified: number
+    venueVerificationStatus: number
     venueRecommended: number
     venueSponsored: number
     hostId: number
@@ -11172,7 +11197,7 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
-    venueVerified?: true
+    venueVerificationStatus?: true
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
@@ -11196,7 +11221,7 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
-    venueVerified?: true
+    venueVerificationStatus?: true
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
@@ -11225,7 +11250,7 @@ export namespace Prisma {
     latitude?: true
     longitude?: true
     currency?: true
-    venueVerified?: true
+    venueVerificationStatus?: true
     venueRecommended?: true
     venueSponsored?: true
     hostId?: true
@@ -11341,7 +11366,7 @@ export namespace Prisma {
     latitude: number | null
     longitude: number | null
     currency: $Enums.Currency
-    venueVerified: boolean
+    venueVerificationStatus: $Enums.VerificationStatus
     venueRecommended: boolean
     venueSponsored: boolean
     hostId: string
@@ -11389,7 +11414,7 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
-    venueVerified?: boolean
+    venueVerificationStatus?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
@@ -11421,7 +11446,7 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
-    venueVerified?: boolean
+    venueVerificationStatus?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
@@ -11451,7 +11476,7 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
-    venueVerified?: boolean
+    venueVerificationStatus?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
@@ -11481,7 +11506,7 @@ export namespace Prisma {
     latitude?: boolean
     longitude?: boolean
     currency?: boolean
-    venueVerified?: boolean
+    venueVerificationStatus?: boolean
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId?: boolean
@@ -11491,7 +11516,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "venueVerified" | "venueRecommended" | "venueSponsored" | "hostId" | "timezone" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
+  export type VenueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "shortDescription" | "description" | "nameTranslations" | "shortDescTranslations" | "descriptionTranslations" | "images" | "videoUrl" | "workingHours" | "address" | "city" | "state" | "country" | "postalCode" | "latitude" | "longitude" | "currency" | "venueVerificationStatus" | "venueRecommended" | "venueSponsored" | "hostId" | "timezone" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["venue"]>
   export type VenueInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     host?: boolean | UserDefaultArgs<ExtArgs>
     spaces?: boolean | Venue$spacesArgs<ExtArgs>
@@ -11529,7 +11554,7 @@ export namespace Prisma {
       latitude: number | null
       longitude: number | null
       currency: $Enums.Currency
-      venueVerified: boolean
+      venueVerificationStatus: $Enums.VerificationStatus
       venueRecommended: boolean
       venueSponsored: boolean
       hostId: string
@@ -11980,7 +12005,7 @@ export namespace Prisma {
     readonly latitude: FieldRef<"Venue", 'Float'>
     readonly longitude: FieldRef<"Venue", 'Float'>
     readonly currency: FieldRef<"Venue", 'Currency'>
-    readonly venueVerified: FieldRef<"Venue", 'Boolean'>
+    readonly venueVerificationStatus: FieldRef<"Venue", 'VerificationStatus'>
     readonly venueRecommended: FieldRef<"Venue", 'Boolean'>
     readonly venueSponsored: FieldRef<"Venue", 'Boolean'>
     readonly hostId: FieldRef<"Venue", 'String'>
@@ -26634,6 +26659,7 @@ export namespace Prisma {
     tokensValidAfter: 'tokensValidAfter',
     deletedAt: 'deletedAt',
     hostVerified: 'hostVerified',
+    hostVerificationStatus: 'hostVerificationStatus',
     hostRecommended: 'hostRecommended',
     hostSponsored: 'hostSponsored',
     hostingSince: 'hostingSince',
@@ -26739,7 +26765,7 @@ export namespace Prisma {
     latitude: 'latitude',
     longitude: 'longitude',
     currency: 'currency',
-    venueVerified: 'venueVerified',
+    venueVerificationStatus: 'venueVerificationStatus',
     venueRecommended: 'venueRecommended',
     venueSponsored: 'venueSponsored',
     hostId: 'hostId',
@@ -27044,6 +27070,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'VerificationStatus'
+   */
+  export type EnumVerificationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VerificationStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'VerificationStatus[]'
+   */
+  export type ListEnumVerificationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VerificationStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -27234,6 +27274,7 @@ export namespace Prisma {
     tokensValidAfter?: DateTimeNullableFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
+    hostVerificationStatus?: EnumVerificationStatusFilter<"User"> | $Enums.VerificationStatus
     hostRecommended?: BoolFilter<"User"> | boolean
     hostSponsored?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -27269,6 +27310,7 @@ export namespace Prisma {
     tokensValidAfter?: SortOrderInput | SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
+    hostVerificationStatus?: SortOrder
     hostRecommended?: SortOrder
     hostSponsored?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
@@ -27307,6 +27349,7 @@ export namespace Prisma {
     tokensValidAfter?: DateTimeNullableFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableFilter<"User"> | Date | string | null
     hostVerified?: BoolFilter<"User"> | boolean
+    hostVerificationStatus?: EnumVerificationStatusFilter<"User"> | $Enums.VerificationStatus
     hostRecommended?: BoolFilter<"User"> | boolean
     hostSponsored?: BoolFilter<"User"> | boolean
     hostingSince?: DateTimeNullableFilter<"User"> | Date | string | null
@@ -27342,6 +27385,7 @@ export namespace Prisma {
     tokensValidAfter?: SortOrderInput | SortOrder
     deletedAt?: SortOrderInput | SortOrder
     hostVerified?: SortOrder
+    hostVerificationStatus?: SortOrder
     hostRecommended?: SortOrder
     hostSponsored?: SortOrder
     hostingSince?: SortOrderInput | SortOrder
@@ -27374,6 +27418,7 @@ export namespace Prisma {
     tokensValidAfter?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     deletedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     hostVerified?: BoolWithAggregatesFilter<"User"> | boolean
+    hostVerificationStatus?: EnumVerificationStatusWithAggregatesFilter<"User"> | $Enums.VerificationStatus
     hostRecommended?: BoolWithAggregatesFilter<"User"> | boolean
     hostSponsored?: BoolWithAggregatesFilter<"User"> | boolean
     hostingSince?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -27780,7 +27825,7 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
-    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueVerificationStatus?: EnumVerificationStatusFilter<"Venue"> | $Enums.VerificationStatus
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
@@ -27811,7 +27856,7 @@ export namespace Prisma {
     latitude?: SortOrderInput | SortOrder
     longitude?: SortOrderInput | SortOrder
     currency?: SortOrder
-    venueVerified?: SortOrder
+    venueVerificationStatus?: SortOrder
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
@@ -27845,7 +27890,7 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
-    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueVerificationStatus?: EnumVerificationStatusFilter<"Venue"> | $Enums.VerificationStatus
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
@@ -27876,7 +27921,7 @@ export namespace Prisma {
     latitude?: SortOrderInput | SortOrder
     longitude?: SortOrderInput | SortOrder
     currency?: SortOrder
-    venueVerified?: SortOrder
+    venueVerificationStatus?: SortOrder
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
@@ -27913,7 +27958,7 @@ export namespace Prisma {
     latitude?: FloatNullableWithAggregatesFilter<"Venue"> | number | null
     longitude?: FloatNullableWithAggregatesFilter<"Venue"> | number | null
     currency?: EnumCurrencyWithAggregatesFilter<"Venue"> | $Enums.Currency
-    venueVerified?: BoolWithAggregatesFilter<"Venue"> | boolean
+    venueVerificationStatus?: EnumVerificationStatusWithAggregatesFilter<"Venue"> | $Enums.VerificationStatus
     venueRecommended?: BoolWithAggregatesFilter<"Venue"> | boolean
     venueSponsored?: BoolWithAggregatesFilter<"Venue"> | boolean
     hostId?: StringWithAggregatesFilter<"Venue"> | string
@@ -28955,6 +29000,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -28990,6 +29036,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -29025,6 +29072,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -29060,6 +29108,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -29095,6 +29144,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -29119,6 +29169,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -29143,6 +29194,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -29569,7 +29621,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     timezone?: string
@@ -29599,7 +29651,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
@@ -29628,7 +29680,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
@@ -29658,7 +29710,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
@@ -29688,7 +29740,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
@@ -29716,7 +29768,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
@@ -29744,7 +29796,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
@@ -30884,6 +30936,13 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type EnumVerificationStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusFilter<$PrismaModel> | $Enums.VerificationStatus
+  }
+
   export type FloatNullableFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel> | null
     in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
@@ -31017,6 +31076,7 @@ export namespace Prisma {
     tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostVerificationStatus?: SortOrder
     hostRecommended?: SortOrder
     hostSponsored?: SortOrder
     hostingSince?: SortOrder
@@ -31045,6 +31105,7 @@ export namespace Prisma {
     tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostVerificationStatus?: SortOrder
     hostRecommended?: SortOrder
     hostSponsored?: SortOrder
     hostingSince?: SortOrder
@@ -31069,6 +31130,7 @@ export namespace Prisma {
     tokensValidAfter?: SortOrder
     deletedAt?: SortOrder
     hostVerified?: SortOrder
+    hostVerificationStatus?: SortOrder
     hostRecommended?: SortOrder
     hostSponsored?: SortOrder
     hostingSince?: SortOrder
@@ -31160,6 +31222,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type EnumVerificationStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel> | $Enums.VerificationStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVerificationStatusFilter<$PrismaModel>
+    _max?: NestedEnumVerificationStatusFilter<$PrismaModel>
   }
 
   export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -31481,7 +31553,7 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
-    venueVerified?: SortOrder
+    venueVerificationStatus?: SortOrder
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
@@ -31511,7 +31583,7 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
-    venueVerified?: SortOrder
+    venueVerificationStatus?: SortOrder
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
@@ -31535,7 +31607,7 @@ export namespace Prisma {
     latitude?: SortOrder
     longitude?: SortOrder
     currency?: SortOrder
-    venueVerified?: SortOrder
+    venueVerificationStatus?: SortOrder
     venueRecommended?: SortOrder
     venueSponsored?: SortOrder
     hostId?: SortOrder
@@ -32684,6 +32756,10 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
+  }
+
+  export type EnumVerificationStatusFieldUpdateOperationsInput = {
+    set?: $Enums.VerificationStatus
   }
 
   export type NullableFloatFieldUpdateOperationsInput = {
@@ -33906,6 +33982,13 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedEnumVerificationStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusFilter<$PrismaModel> | $Enums.VerificationStatus
+  }
+
   export type NestedFloatNullableFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel> | null
     in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
@@ -34017,6 +34100,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.VerificationStatus | EnumVerificationStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.VerificationStatus[] | ListEnumVerificationStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumVerificationStatusWithAggregatesFilter<$PrismaModel> | $Enums.VerificationStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumVerificationStatusFilter<$PrismaModel>
+    _max?: NestedEnumVerificationStatusFilter<$PrismaModel>
   }
 
   export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -34429,7 +34522,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     timezone?: string
@@ -34458,7 +34551,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     timezone?: string
@@ -34952,7 +35045,7 @@ export namespace Prisma {
     latitude?: FloatNullableFilter<"Venue"> | number | null
     longitude?: FloatNullableFilter<"Venue"> | number | null
     currency?: EnumCurrencyFilter<"Venue"> | $Enums.Currency
-    venueVerified?: BoolFilter<"Venue"> | boolean
+    venueVerificationStatus?: EnumVerificationStatusFilter<"Venue"> | $Enums.VerificationStatus
     venueRecommended?: BoolFilter<"Venue"> | boolean
     venueSponsored?: BoolFilter<"Venue"> | boolean
     hostId?: StringFilter<"Venue"> | string
@@ -35190,6 +35283,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35224,6 +35318,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35274,6 +35369,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35308,6 +35404,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35342,6 +35439,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35376,6 +35474,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35426,6 +35525,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35460,6 +35560,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35494,6 +35595,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35528,6 +35630,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35578,6 +35681,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35612,6 +35716,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35646,6 +35751,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35680,6 +35786,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35730,6 +35837,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35764,6 +35872,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35798,6 +35907,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35832,6 +35942,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35882,6 +35993,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35916,6 +36028,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -35950,6 +36063,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -35984,6 +36098,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -36115,6 +36230,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36149,6 +36265,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36199,6 +36316,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -36233,6 +36351,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -36273,7 +36392,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     timezone?: string
@@ -36302,7 +36421,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     hostId: string
@@ -36562,6 +36681,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36596,6 +36716,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -36642,7 +36763,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
@@ -36671,7 +36792,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostId?: StringFieldUpdateOperationsInput | string
@@ -37777,6 +37898,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -37811,6 +37933,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -37850,6 +37973,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -37884,6 +38008,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -38038,6 +38163,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38072,6 +38198,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38117,6 +38244,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38151,6 +38279,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38301,6 +38430,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -38335,6 +38465,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -38526,6 +38657,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38560,6 +38692,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38747,6 +38880,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -38781,6 +38915,7 @@ export namespace Prisma {
     tokensValidAfter?: Date | string | null
     deletedAt?: Date | string | null
     hostVerified?: boolean
+    hostVerificationStatus?: $Enums.VerificationStatus
     hostRecommended?: boolean
     hostSponsored?: boolean
     hostingSince?: Date | string | null
@@ -38831,6 +38966,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38865,6 +39001,7 @@ export namespace Prisma {
     tokensValidAfter?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     hostVerified?: BoolFieldUpdateOperationsInput | boolean
+    hostVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     hostRecommended?: BoolFieldUpdateOperationsInput | boolean
     hostSponsored?: BoolFieldUpdateOperationsInput | boolean
     hostingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -38935,7 +39072,7 @@ export namespace Prisma {
     latitude?: number | null
     longitude?: number | null
     currency?: $Enums.Currency
-    venueVerified?: boolean
+    venueVerificationStatus?: $Enums.VerificationStatus
     venueRecommended?: boolean
     venueSponsored?: boolean
     timezone?: string
@@ -39188,7 +39325,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
@@ -39217,7 +39354,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
@@ -39246,7 +39383,7 @@ export namespace Prisma {
     latitude?: NullableFloatFieldUpdateOperationsInput | number | null
     longitude?: NullableFloatFieldUpdateOperationsInput | number | null
     currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
-    venueVerified?: BoolFieldUpdateOperationsInput | boolean
+    venueVerificationStatus?: EnumVerificationStatusFieldUpdateOperationsInput | $Enums.VerificationStatus
     venueRecommended?: BoolFieldUpdateOperationsInput | boolean
     venueSponsored?: BoolFieldUpdateOperationsInput | boolean
     timezone?: StringFieldUpdateOperationsInput | string
