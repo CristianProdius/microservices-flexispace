@@ -16,6 +16,7 @@ import LocationMapLoader from "./LocationMapLoader";
 import { getTranslations } from "next-intl/server";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
 import { parseImages, formatPrice, getPriceDisplay } from "@/lib/utils";
+import { hasBookablePrice } from "@/lib/pricing-availability";
 import { getSpaceCategoryLabel } from "@/lib/taxonomy";
 import { Link } from "@/i18n/navigation";
 import ImageGallery from "@/components/ImageGallery";
@@ -344,7 +345,21 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
         {/* Booking Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-20">
-            <BookingForm space={space} />
+            {hasBookablePrice(space) ? (
+              <BookingForm space={space} />
+            ) : (
+              // A 0/absent hourly-daily rate means the host listed this as
+              // "Contact for pricing" — show a contact panel instead of a
+              // booking widget that would only fail on submit.
+              <div className="rounded-2xl border border-border bg-white p-6 text-center shadow-sm">
+                <p className="text-lg font-semibold text-foreground mb-1">
+                  {tCommon("contactForPricing")}
+                </p>
+                <p className="text-sm text-muted text-pretty">
+                  {t("contactHostForDetails")}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
