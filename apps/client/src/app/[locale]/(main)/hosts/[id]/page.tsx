@@ -68,7 +68,7 @@ export default async function HostProfilePage({ params }: PageProps) {
       icon: Star,
     },
     {
-      visible: host.hostVerified,
+      visible: host.hostVerificationStatus === "VERIFIED",
       label: tVenue("verified"),
       icon: Check,
     },
@@ -128,7 +128,7 @@ export default async function HostProfilePage({ params }: PageProps) {
                   city: venue.city,
                   country: venue.country,
                   images: venue.images,
-                  venueVerified: venue.venueVerified,
+                  venueVerificationStatus: venue.venueVerificationStatus,
                   venueRecommended: venue.venueRecommended,
                   venueSponsored: venue.venueSponsored,
                   spaceCount: venue._count?.spaces ?? 0,

@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { Check, MapPin, Megaphone, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { parseImages } from "@/lib/utils";
+import type { VerificationStatus } from "@repo/types";
 
 interface VenueCardData {
   id: number;
@@ -13,7 +14,7 @@ interface VenueCardData {
   city: string;
   country: string;
   images: string[] | string;
-  venueVerified?: boolean;
+  venueVerificationStatus?: VerificationStatus;
   venueRecommended?: boolean;
   venueSponsored?: boolean;
   spaceCount: number;
@@ -38,7 +39,7 @@ const VenueSpaceCard = ({ venue }: { venue: VenueCardData }) => {
       className: "bg-amber-500/95 text-white",
     },
     {
-      visible: venue.venueVerified,
+      visible: venue.venueVerificationStatus === "VERIFIED",
       label: tVenue("verifiedVenue"),
       icon: Check,
       className: "bg-success/90 text-white",
