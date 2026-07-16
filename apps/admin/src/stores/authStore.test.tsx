@@ -4,6 +4,7 @@ vi.mock("@/lib/auth", () => ({
   login: vi.fn(),
   logout: vi.fn(),
   refreshAccessToken: vi.fn(),
+  bootstrapSessionFromCookie: vi.fn(),
   saveTokens: vi.fn(),
   saveUser: vi.fn(),
   getAccessToken: vi.fn(),
@@ -43,6 +44,9 @@ describe("authStore", () => {
   beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
+    // Reset the URL so route-gated logic (cookie bootstrap) starts from a
+    // neutral, non-protected path unless a test opts in.
+    window.history.pushState({}, "", "/");
     await resetState();
   });
 
@@ -190,6 +194,76 @@ describe("authStore", () => {
       expect(s.isAuthenticated).toBe(true);
       expect(auth.clearAuth).not.toHaveBeenCalled();
       expect(s.isLoading).toBe(false);
+    });
+
+    describe("cross-subdomain SSO cookie bootstrap", () => {
+      const hostUser = {
+        id: "h1",
+        email: "host@b.c",
+        username: "host",
+        name: "Host",
+        role: "HOST",
+        image: null,
+      };
+
+      it("hydrates the session from the .spacefly.ai cookie when localStorage is cold on a protected route", async () => {
+        // Repro: a host logs in on the public client (spacefly.ai) and clicks
+        // "Host Dashboard", arriving at admin.spacefly.ai/host via a full
+        // cross-origin load. This origin's localStorage is empty, but the
+        // browser holds the shared HttpOnly session cookie — hydrate from it
+        // instead of bouncing to /login (the spurious second login).
+        window.history.pushState({}, "", "/host");
+        const fresh = makeJwt(Math.floor(Date.now() / 1000) + 60 * 60);
+        vi.mocked(auth.getStoredUser).mockReturnValue(null);
+        vi.mocked(auth.getAccessToken).mockReturnValue(null);
+        vi.mocked(auth.bootstrapSessionFromCookie).mockResolvedValue({
+          user: hostUser as never,
+          accessToken: fresh,
+          refreshToken: "cookie-refresh",
+        });
+
+        const { default: store } = await import("./authStore");
+        await store.getState().initialize();
+
+        const s = store.getState();
+        expect(s.isAuthenticated).toBe(true);
+        expect(s.isHost).toBe(true);
+        expect(s.isHostOrAdmin).toBe(true);
+        expect(s.token).toBe(fresh);
+        expect(s.isLoading).toBe(false);
+        // Persist the cookie-minted credentials so bearer-based apiFetch works.
+        expect(auth.saveTokens).toHaveBeenCalledWith(fresh, "cookie-refresh");
+        expect(auth.saveUser).toHaveBeenCalledWith(hostUser);
+      });
+
+      it("does NOT probe the cookie on a public route (anon visitor to /login makes no auth-service call)", async () => {
+        window.history.pushState({}, "", "/login");
+        vi.mocked(auth.getStoredUser).mockReturnValue(null);
+        vi.mocked(auth.getAccessToken).mockReturnValue(null);
+
+        const { default: store } = await import("./authStore");
+        await store.getState().initialize();
+
+        const s = store.getState();
+        expect(s.isAuthenticated).toBe(false);
+        expect(s.isLoading).toBe(false);
+        expect(auth.bootstrapSessionFromCookie).not.toHaveBeenCalled();
+      });
+
+      it("stays logged out when no cookie session exists on a protected route", async () => {
+        window.history.pushState({}, "", "/host");
+        vi.mocked(auth.getStoredUser).mockReturnValue(null);
+        vi.mocked(auth.getAccessToken).mockReturnValue(null);
+        vi.mocked(auth.bootstrapSessionFromCookie).mockResolvedValue(null);
+
+        const { default: store } = await import("./authStore");
+        await store.getState().initialize();
+
+        const s = store.getState();
+        expect(s.isAuthenticated).toBe(false);
+        expect(s.user).toBeNull();
+        expect(s.isLoading).toBe(false);
+      });
     });
   });
 

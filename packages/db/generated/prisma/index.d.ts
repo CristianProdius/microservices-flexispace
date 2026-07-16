@@ -89,6 +89,11 @@ export type SpaceAmenity = $Result.DefaultSelection<Prisma.$SpaceAmenityPayload>
  */
 export type PricingTier = $Result.DefaultSelection<Prisma.$PricingTierPayload>
 /**
+ * Model MonthlyPlan
+ * 
+ */
+export type MonthlyPlan = $Result.DefaultSelection<Prisma.$MonthlyPlanPayload>
+/**
  * Model Availability
  * 
  */
@@ -524,6 +529,16 @@ export class PrismaClient<
     * ```
     */
   get pricingTier(): Prisma.PricingTierDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.monthlyPlan`: Exposes CRUD operations for the **MonthlyPlan** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more MonthlyPlans
+    * const monthlyPlans = await prisma.monthlyPlan.findMany()
+    * ```
+    */
+  get monthlyPlan(): Prisma.MonthlyPlanDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.availability`: Exposes CRUD operations for the **Availability** model.
@@ -1029,6 +1044,7 @@ export namespace Prisma {
     Amenity: 'Amenity',
     SpaceAmenity: 'SpaceAmenity',
     PricingTier: 'PricingTier',
+    MonthlyPlan: 'MonthlyPlan',
     Availability: 'Availability',
     BlockedDate: 'BlockedDate',
     Booking: 'Booking',
@@ -1052,7 +1068,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "session" | "refreshToken" | "hostApplication" | "passwordResetUse" | "invite" | "revokedAccessToken" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "availability" | "blockedDate" | "booking" | "review" | "payout"
+      modelProps: "user" | "session" | "refreshToken" | "hostApplication" | "passwordResetUse" | "invite" | "revokedAccessToken" | "venue" | "exchangeRate" | "space" | "spaceCategory" | "spaceCategoryGroup" | "amenity" | "spaceAmenity" | "pricingTier" | "monthlyPlan" | "availability" | "blockedDate" | "booking" | "review" | "payout"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2166,6 +2182,80 @@ export namespace Prisma {
           }
         }
       }
+      MonthlyPlan: {
+        payload: Prisma.$MonthlyPlanPayload<ExtArgs>
+        fields: Prisma.MonthlyPlanFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.MonthlyPlanFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.MonthlyPlanFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          findFirst: {
+            args: Prisma.MonthlyPlanFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.MonthlyPlanFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          findMany: {
+            args: Prisma.MonthlyPlanFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>[]
+          }
+          create: {
+            args: Prisma.MonthlyPlanCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          createMany: {
+            args: Prisma.MonthlyPlanCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.MonthlyPlanCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>[]
+          }
+          delete: {
+            args: Prisma.MonthlyPlanDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          update: {
+            args: Prisma.MonthlyPlanUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          deleteMany: {
+            args: Prisma.MonthlyPlanDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.MonthlyPlanUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.MonthlyPlanUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>[]
+          }
+          upsert: {
+            args: Prisma.MonthlyPlanUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MonthlyPlanPayload>
+          }
+          aggregate: {
+            args: Prisma.MonthlyPlanAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateMonthlyPlan>
+          }
+          groupBy: {
+            args: Prisma.MonthlyPlanGroupByArgs<ExtArgs>
+            result: $Utils.Optional<MonthlyPlanGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.MonthlyPlanCountArgs<ExtArgs>
+            result: $Utils.Optional<MonthlyPlanCountAggregateOutputType> | number
+          }
+        }
+      }
       Availability: {
         payload: Prisma.$AvailabilityPayload<ExtArgs>
         fields: Prisma.AvailabilityFieldRefs
@@ -2647,6 +2737,7 @@ export namespace Prisma {
     amenity?: AmenityOmit
     spaceAmenity?: SpaceAmenityOmit
     pricingTier?: PricingTierOmit
+    monthlyPlan?: MonthlyPlanOmit
     availability?: AvailabilityOmit
     blockedDate?: BlockedDateOmit
     booking?: BookingOmit
@@ -2886,6 +2977,7 @@ export namespace Prisma {
   export type SpaceCountOutputType = {
     amenities: number
     pricingTiers: number
+    monthlyPlans: number
     availability: number
     blockedDates: number
     bookings: number
@@ -2895,6 +2987,7 @@ export namespace Prisma {
   export type SpaceCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     amenities?: boolean | SpaceCountOutputTypeCountAmenitiesArgs
     pricingTiers?: boolean | SpaceCountOutputTypeCountPricingTiersArgs
+    monthlyPlans?: boolean | SpaceCountOutputTypeCountMonthlyPlansArgs
     availability?: boolean | SpaceCountOutputTypeCountAvailabilityArgs
     blockedDates?: boolean | SpaceCountOutputTypeCountBlockedDatesArgs
     bookings?: boolean | SpaceCountOutputTypeCountBookingsArgs
@@ -2924,6 +3017,13 @@ export namespace Prisma {
    */
   export type SpaceCountOutputTypeCountPricingTiersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PricingTierWhereInput
+  }
+
+  /**
+   * SpaceCountOutputType without action
+   */
+  export type SpaceCountOutputTypeCountMonthlyPlansArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MonthlyPlanWhereInput
   }
 
   /**
@@ -3045,6 +3145,37 @@ export namespace Prisma {
    */
   export type AmenityCountOutputTypeCountSpacesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: SpaceAmenityWhereInput
+  }
+
+
+  /**
+   * Count Type MonthlyPlanCountOutputType
+   */
+
+  export type MonthlyPlanCountOutputType = {
+    bookings: number
+  }
+
+  export type MonthlyPlanCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    bookings?: boolean | MonthlyPlanCountOutputTypeCountBookingsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * MonthlyPlanCountOutputType without action
+   */
+  export type MonthlyPlanCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlanCountOutputType
+     */
+    select?: MonthlyPlanCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * MonthlyPlanCountOutputType without action
+   */
+  export type MonthlyPlanCountOutputTypeCountBookingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: BookingWhereInput
   }
 
 
@@ -13900,6 +14031,7 @@ export namespace Prisma {
     category?: boolean | SpaceCategoryDefaultArgs<ExtArgs>
     amenities?: boolean | Space$amenitiesArgs<ExtArgs>
     pricingTiers?: boolean | Space$pricingTiersArgs<ExtArgs>
+    monthlyPlans?: boolean | Space$monthlyPlansArgs<ExtArgs>
     availability?: boolean | Space$availabilityArgs<ExtArgs>
     blockedDates?: boolean | Space$blockedDatesArgs<ExtArgs>
     bookings?: boolean | Space$bookingsArgs<ExtArgs>
@@ -14013,6 +14145,7 @@ export namespace Prisma {
     category?: boolean | SpaceCategoryDefaultArgs<ExtArgs>
     amenities?: boolean | Space$amenitiesArgs<ExtArgs>
     pricingTiers?: boolean | Space$pricingTiersArgs<ExtArgs>
+    monthlyPlans?: boolean | Space$monthlyPlansArgs<ExtArgs>
     availability?: boolean | Space$availabilityArgs<ExtArgs>
     blockedDates?: boolean | Space$blockedDatesArgs<ExtArgs>
     bookings?: boolean | Space$bookingsArgs<ExtArgs>
@@ -14038,6 +14171,7 @@ export namespace Prisma {
       category: Prisma.$SpaceCategoryPayload<ExtArgs>
       amenities: Prisma.$SpaceAmenityPayload<ExtArgs>[]
       pricingTiers: Prisma.$PricingTierPayload<ExtArgs>[]
+      monthlyPlans: Prisma.$MonthlyPlanPayload<ExtArgs>[]
       availability: Prisma.$AvailabilityPayload<ExtArgs>[]
       blockedDates: Prisma.$BlockedDatePayload<ExtArgs>[]
       bookings: Prisma.$BookingPayload<ExtArgs>[]
@@ -14471,6 +14605,7 @@ export namespace Prisma {
     category<T extends SpaceCategoryDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SpaceCategoryDefaultArgs<ExtArgs>>): Prisma__SpaceCategoryClient<$Result.GetResult<Prisma.$SpaceCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     amenities<T extends Space$amenitiesArgs<ExtArgs> = {}>(args?: Subset<T, Space$amenitiesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpaceAmenityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     pricingTiers<T extends Space$pricingTiersArgs<ExtArgs> = {}>(args?: Subset<T, Space$pricingTiersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PricingTierPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    monthlyPlans<T extends Space$monthlyPlansArgs<ExtArgs> = {}>(args?: Subset<T, Space$monthlyPlansArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     availability<T extends Space$availabilityArgs<ExtArgs> = {}>(args?: Subset<T, Space$availabilityArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AvailabilityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     blockedDates<T extends Space$blockedDatesArgs<ExtArgs> = {}>(args?: Subset<T, Space$blockedDatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BlockedDatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     bookings<T extends Space$bookingsArgs<ExtArgs> = {}>(args?: Subset<T, Space$bookingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BookingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -14973,6 +15108,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PricingTierScalarFieldEnum | PricingTierScalarFieldEnum[]
+  }
+
+  /**
+   * Space.monthlyPlans
+   */
+  export type Space$monthlyPlansArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    where?: MonthlyPlanWhereInput
+    orderBy?: MonthlyPlanOrderByWithRelationInput | MonthlyPlanOrderByWithRelationInput[]
+    cursor?: MonthlyPlanWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: MonthlyPlanScalarFieldEnum | MonthlyPlanScalarFieldEnum[]
   }
 
   /**
@@ -20637,6 +20796,1153 @@ export namespace Prisma {
 
 
   /**
+   * Model MonthlyPlan
+   */
+
+  export type AggregateMonthlyPlan = {
+    _count: MonthlyPlanCountAggregateOutputType | null
+    _avg: MonthlyPlanAvgAggregateOutputType | null
+    _sum: MonthlyPlanSumAggregateOutputType | null
+    _min: MonthlyPlanMinAggregateOutputType | null
+    _max: MonthlyPlanMaxAggregateOutputType | null
+  }
+
+  export type MonthlyPlanAvgAggregateOutputType = {
+    id: number | null
+    spaceId: number | null
+    pricePerMonth: number | null
+    sortOrder: number | null
+  }
+
+  export type MonthlyPlanSumAggregateOutputType = {
+    id: number | null
+    spaceId: number | null
+    pricePerMonth: number | null
+    sortOrder: number | null
+  }
+
+  export type MonthlyPlanMinAggregateOutputType = {
+    id: number | null
+    spaceId: number | null
+    name: string | null
+    pricePerMonth: number | null
+    description: string | null
+    sortOrder: number | null
+  }
+
+  export type MonthlyPlanMaxAggregateOutputType = {
+    id: number | null
+    spaceId: number | null
+    name: string | null
+    pricePerMonth: number | null
+    description: string | null
+    sortOrder: number | null
+  }
+
+  export type MonthlyPlanCountAggregateOutputType = {
+    id: number
+    spaceId: number
+    name: number
+    pricePerMonth: number
+    description: number
+    sortOrder: number
+    _all: number
+  }
+
+
+  export type MonthlyPlanAvgAggregateInputType = {
+    id?: true
+    spaceId?: true
+    pricePerMonth?: true
+    sortOrder?: true
+  }
+
+  export type MonthlyPlanSumAggregateInputType = {
+    id?: true
+    spaceId?: true
+    pricePerMonth?: true
+    sortOrder?: true
+  }
+
+  export type MonthlyPlanMinAggregateInputType = {
+    id?: true
+    spaceId?: true
+    name?: true
+    pricePerMonth?: true
+    description?: true
+    sortOrder?: true
+  }
+
+  export type MonthlyPlanMaxAggregateInputType = {
+    id?: true
+    spaceId?: true
+    name?: true
+    pricePerMonth?: true
+    description?: true
+    sortOrder?: true
+  }
+
+  export type MonthlyPlanCountAggregateInputType = {
+    id?: true
+    spaceId?: true
+    name?: true
+    pricePerMonth?: true
+    description?: true
+    sortOrder?: true
+    _all?: true
+  }
+
+  export type MonthlyPlanAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MonthlyPlan to aggregate.
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MonthlyPlans to fetch.
+     */
+    orderBy?: MonthlyPlanOrderByWithRelationInput | MonthlyPlanOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: MonthlyPlanWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MonthlyPlans from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MonthlyPlans.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned MonthlyPlans
+    **/
+    _count?: true | MonthlyPlanCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: MonthlyPlanAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: MonthlyPlanSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: MonthlyPlanMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: MonthlyPlanMaxAggregateInputType
+  }
+
+  export type GetMonthlyPlanAggregateType<T extends MonthlyPlanAggregateArgs> = {
+        [P in keyof T & keyof AggregateMonthlyPlan]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateMonthlyPlan[P]>
+      : GetScalarType<T[P], AggregateMonthlyPlan[P]>
+  }
+
+
+
+
+  export type MonthlyPlanGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MonthlyPlanWhereInput
+    orderBy?: MonthlyPlanOrderByWithAggregationInput | MonthlyPlanOrderByWithAggregationInput[]
+    by: MonthlyPlanScalarFieldEnum[] | MonthlyPlanScalarFieldEnum
+    having?: MonthlyPlanScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: MonthlyPlanCountAggregateInputType | true
+    _avg?: MonthlyPlanAvgAggregateInputType
+    _sum?: MonthlyPlanSumAggregateInputType
+    _min?: MonthlyPlanMinAggregateInputType
+    _max?: MonthlyPlanMaxAggregateInputType
+  }
+
+  export type MonthlyPlanGroupByOutputType = {
+    id: number
+    spaceId: number
+    name: string
+    pricePerMonth: number
+    description: string | null
+    sortOrder: number
+    _count: MonthlyPlanCountAggregateOutputType | null
+    _avg: MonthlyPlanAvgAggregateOutputType | null
+    _sum: MonthlyPlanSumAggregateOutputType | null
+    _min: MonthlyPlanMinAggregateOutputType | null
+    _max: MonthlyPlanMaxAggregateOutputType | null
+  }
+
+  type GetMonthlyPlanGroupByPayload<T extends MonthlyPlanGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<MonthlyPlanGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof MonthlyPlanGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MonthlyPlanGroupByOutputType[P]>
+            : GetScalarType<T[P], MonthlyPlanGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type MonthlyPlanSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    spaceId?: boolean
+    name?: boolean
+    pricePerMonth?: boolean
+    description?: boolean
+    sortOrder?: boolean
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+    bookings?: boolean | MonthlyPlan$bookingsArgs<ExtArgs>
+    _count?: boolean | MonthlyPlanCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["monthlyPlan"]>
+
+  export type MonthlyPlanSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    spaceId?: boolean
+    name?: boolean
+    pricePerMonth?: boolean
+    description?: boolean
+    sortOrder?: boolean
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["monthlyPlan"]>
+
+  export type MonthlyPlanSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    spaceId?: boolean
+    name?: boolean
+    pricePerMonth?: boolean
+    description?: boolean
+    sortOrder?: boolean
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["monthlyPlan"]>
+
+  export type MonthlyPlanSelectScalar = {
+    id?: boolean
+    spaceId?: boolean
+    name?: boolean
+    pricePerMonth?: boolean
+    description?: boolean
+    sortOrder?: boolean
+  }
+
+  export type MonthlyPlanOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "spaceId" | "name" | "pricePerMonth" | "description" | "sortOrder", ExtArgs["result"]["monthlyPlan"]>
+  export type MonthlyPlanInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+    bookings?: boolean | MonthlyPlan$bookingsArgs<ExtArgs>
+    _count?: boolean | MonthlyPlanCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type MonthlyPlanIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+  }
+  export type MonthlyPlanIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    space?: boolean | SpaceDefaultArgs<ExtArgs>
+  }
+
+  export type $MonthlyPlanPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "MonthlyPlan"
+    objects: {
+      space: Prisma.$SpacePayload<ExtArgs>
+      bookings: Prisma.$BookingPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      spaceId: number
+      name: string
+      pricePerMonth: number
+      description: string | null
+      sortOrder: number
+    }, ExtArgs["result"]["monthlyPlan"]>
+    composites: {}
+  }
+
+  type MonthlyPlanGetPayload<S extends boolean | null | undefined | MonthlyPlanDefaultArgs> = $Result.GetResult<Prisma.$MonthlyPlanPayload, S>
+
+  type MonthlyPlanCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<MonthlyPlanFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: MonthlyPlanCountAggregateInputType | true
+    }
+
+  export interface MonthlyPlanDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['MonthlyPlan'], meta: { name: 'MonthlyPlan' } }
+    /**
+     * Find zero or one MonthlyPlan that matches the filter.
+     * @param {MonthlyPlanFindUniqueArgs} args - Arguments to find a MonthlyPlan
+     * @example
+     * // Get one MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends MonthlyPlanFindUniqueArgs>(args: SelectSubset<T, MonthlyPlanFindUniqueArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one MonthlyPlan that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {MonthlyPlanFindUniqueOrThrowArgs} args - Arguments to find a MonthlyPlan
+     * @example
+     * // Get one MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends MonthlyPlanFindUniqueOrThrowArgs>(args: SelectSubset<T, MonthlyPlanFindUniqueOrThrowArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MonthlyPlan that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanFindFirstArgs} args - Arguments to find a MonthlyPlan
+     * @example
+     * // Get one MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends MonthlyPlanFindFirstArgs>(args?: SelectSubset<T, MonthlyPlanFindFirstArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MonthlyPlan that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanFindFirstOrThrowArgs} args - Arguments to find a MonthlyPlan
+     * @example
+     * // Get one MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends MonthlyPlanFindFirstOrThrowArgs>(args?: SelectSubset<T, MonthlyPlanFindFirstOrThrowArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more MonthlyPlans that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all MonthlyPlans
+     * const monthlyPlans = await prisma.monthlyPlan.findMany()
+     * 
+     * // Get first 10 MonthlyPlans
+     * const monthlyPlans = await prisma.monthlyPlan.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const monthlyPlanWithIdOnly = await prisma.monthlyPlan.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends MonthlyPlanFindManyArgs>(args?: SelectSubset<T, MonthlyPlanFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a MonthlyPlan.
+     * @param {MonthlyPlanCreateArgs} args - Arguments to create a MonthlyPlan.
+     * @example
+     * // Create one MonthlyPlan
+     * const MonthlyPlan = await prisma.monthlyPlan.create({
+     *   data: {
+     *     // ... data to create a MonthlyPlan
+     *   }
+     * })
+     * 
+     */
+    create<T extends MonthlyPlanCreateArgs>(args: SelectSubset<T, MonthlyPlanCreateArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many MonthlyPlans.
+     * @param {MonthlyPlanCreateManyArgs} args - Arguments to create many MonthlyPlans.
+     * @example
+     * // Create many MonthlyPlans
+     * const monthlyPlan = await prisma.monthlyPlan.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends MonthlyPlanCreateManyArgs>(args?: SelectSubset<T, MonthlyPlanCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many MonthlyPlans and returns the data saved in the database.
+     * @param {MonthlyPlanCreateManyAndReturnArgs} args - Arguments to create many MonthlyPlans.
+     * @example
+     * // Create many MonthlyPlans
+     * const monthlyPlan = await prisma.monthlyPlan.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many MonthlyPlans and only return the `id`
+     * const monthlyPlanWithIdOnly = await prisma.monthlyPlan.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends MonthlyPlanCreateManyAndReturnArgs>(args?: SelectSubset<T, MonthlyPlanCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a MonthlyPlan.
+     * @param {MonthlyPlanDeleteArgs} args - Arguments to delete one MonthlyPlan.
+     * @example
+     * // Delete one MonthlyPlan
+     * const MonthlyPlan = await prisma.monthlyPlan.delete({
+     *   where: {
+     *     // ... filter to delete one MonthlyPlan
+     *   }
+     * })
+     * 
+     */
+    delete<T extends MonthlyPlanDeleteArgs>(args: SelectSubset<T, MonthlyPlanDeleteArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one MonthlyPlan.
+     * @param {MonthlyPlanUpdateArgs} args - Arguments to update one MonthlyPlan.
+     * @example
+     * // Update one MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends MonthlyPlanUpdateArgs>(args: SelectSubset<T, MonthlyPlanUpdateArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more MonthlyPlans.
+     * @param {MonthlyPlanDeleteManyArgs} args - Arguments to filter MonthlyPlans to delete.
+     * @example
+     * // Delete a few MonthlyPlans
+     * const { count } = await prisma.monthlyPlan.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends MonthlyPlanDeleteManyArgs>(args?: SelectSubset<T, MonthlyPlanDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MonthlyPlans.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many MonthlyPlans
+     * const monthlyPlan = await prisma.monthlyPlan.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends MonthlyPlanUpdateManyArgs>(args: SelectSubset<T, MonthlyPlanUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MonthlyPlans and returns the data updated in the database.
+     * @param {MonthlyPlanUpdateManyAndReturnArgs} args - Arguments to update many MonthlyPlans.
+     * @example
+     * // Update many MonthlyPlans
+     * const monthlyPlan = await prisma.monthlyPlan.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more MonthlyPlans and only return the `id`
+     * const monthlyPlanWithIdOnly = await prisma.monthlyPlan.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends MonthlyPlanUpdateManyAndReturnArgs>(args: SelectSubset<T, MonthlyPlanUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one MonthlyPlan.
+     * @param {MonthlyPlanUpsertArgs} args - Arguments to update or create a MonthlyPlan.
+     * @example
+     * // Update or create a MonthlyPlan
+     * const monthlyPlan = await prisma.monthlyPlan.upsert({
+     *   create: {
+     *     // ... data to create a MonthlyPlan
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the MonthlyPlan we want to update
+     *   }
+     * })
+     */
+    upsert<T extends MonthlyPlanUpsertArgs>(args: SelectSubset<T, MonthlyPlanUpsertArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of MonthlyPlans.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanCountArgs} args - Arguments to filter MonthlyPlans to count.
+     * @example
+     * // Count the number of MonthlyPlans
+     * const count = await prisma.monthlyPlan.count({
+     *   where: {
+     *     // ... the filter for the MonthlyPlans we want to count
+     *   }
+     * })
+    **/
+    count<T extends MonthlyPlanCountArgs>(
+      args?: Subset<T, MonthlyPlanCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], MonthlyPlanCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a MonthlyPlan.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends MonthlyPlanAggregateArgs>(args: Subset<T, MonthlyPlanAggregateArgs>): Prisma.PrismaPromise<GetMonthlyPlanAggregateType<T>>
+
+    /**
+     * Group by MonthlyPlan.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MonthlyPlanGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends MonthlyPlanGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: MonthlyPlanGroupByArgs['orderBy'] }
+        : { orderBy?: MonthlyPlanGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, MonthlyPlanGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMonthlyPlanGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the MonthlyPlan model
+   */
+  readonly fields: MonthlyPlanFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for MonthlyPlan.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__MonthlyPlanClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    space<T extends SpaceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SpaceDefaultArgs<ExtArgs>>): Prisma__SpaceClient<$Result.GetResult<Prisma.$SpacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    bookings<T extends MonthlyPlan$bookingsArgs<ExtArgs> = {}>(args?: Subset<T, MonthlyPlan$bookingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$BookingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the MonthlyPlan model
+   */
+  interface MonthlyPlanFieldRefs {
+    readonly id: FieldRef<"MonthlyPlan", 'Int'>
+    readonly spaceId: FieldRef<"MonthlyPlan", 'Int'>
+    readonly name: FieldRef<"MonthlyPlan", 'String'>
+    readonly pricePerMonth: FieldRef<"MonthlyPlan", 'Float'>
+    readonly description: FieldRef<"MonthlyPlan", 'String'>
+    readonly sortOrder: FieldRef<"MonthlyPlan", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * MonthlyPlan findUnique
+   */
+  export type MonthlyPlanFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter, which MonthlyPlan to fetch.
+     */
+    where: MonthlyPlanWhereUniqueInput
+  }
+
+  /**
+   * MonthlyPlan findUniqueOrThrow
+   */
+  export type MonthlyPlanFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter, which MonthlyPlan to fetch.
+     */
+    where: MonthlyPlanWhereUniqueInput
+  }
+
+  /**
+   * MonthlyPlan findFirst
+   */
+  export type MonthlyPlanFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter, which MonthlyPlan to fetch.
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MonthlyPlans to fetch.
+     */
+    orderBy?: MonthlyPlanOrderByWithRelationInput | MonthlyPlanOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MonthlyPlans.
+     */
+    cursor?: MonthlyPlanWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MonthlyPlans from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MonthlyPlans.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MonthlyPlans.
+     */
+    distinct?: MonthlyPlanScalarFieldEnum | MonthlyPlanScalarFieldEnum[]
+  }
+
+  /**
+   * MonthlyPlan findFirstOrThrow
+   */
+  export type MonthlyPlanFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter, which MonthlyPlan to fetch.
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MonthlyPlans to fetch.
+     */
+    orderBy?: MonthlyPlanOrderByWithRelationInput | MonthlyPlanOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MonthlyPlans.
+     */
+    cursor?: MonthlyPlanWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MonthlyPlans from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MonthlyPlans.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MonthlyPlans.
+     */
+    distinct?: MonthlyPlanScalarFieldEnum | MonthlyPlanScalarFieldEnum[]
+  }
+
+  /**
+   * MonthlyPlan findMany
+   */
+  export type MonthlyPlanFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter, which MonthlyPlans to fetch.
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MonthlyPlans to fetch.
+     */
+    orderBy?: MonthlyPlanOrderByWithRelationInput | MonthlyPlanOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing MonthlyPlans.
+     */
+    cursor?: MonthlyPlanWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MonthlyPlans from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MonthlyPlans.
+     */
+    skip?: number
+    distinct?: MonthlyPlanScalarFieldEnum | MonthlyPlanScalarFieldEnum[]
+  }
+
+  /**
+   * MonthlyPlan create
+   */
+  export type MonthlyPlanCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * The data needed to create a MonthlyPlan.
+     */
+    data: XOR<MonthlyPlanCreateInput, MonthlyPlanUncheckedCreateInput>
+  }
+
+  /**
+   * MonthlyPlan createMany
+   */
+  export type MonthlyPlanCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many MonthlyPlans.
+     */
+    data: MonthlyPlanCreateManyInput | MonthlyPlanCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * MonthlyPlan createManyAndReturn
+   */
+  export type MonthlyPlanCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * The data used to create many MonthlyPlans.
+     */
+    data: MonthlyPlanCreateManyInput | MonthlyPlanCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * MonthlyPlan update
+   */
+  export type MonthlyPlanUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * The data needed to update a MonthlyPlan.
+     */
+    data: XOR<MonthlyPlanUpdateInput, MonthlyPlanUncheckedUpdateInput>
+    /**
+     * Choose, which MonthlyPlan to update.
+     */
+    where: MonthlyPlanWhereUniqueInput
+  }
+
+  /**
+   * MonthlyPlan updateMany
+   */
+  export type MonthlyPlanUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update MonthlyPlans.
+     */
+    data: XOR<MonthlyPlanUpdateManyMutationInput, MonthlyPlanUncheckedUpdateManyInput>
+    /**
+     * Filter which MonthlyPlans to update
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * Limit how many MonthlyPlans to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * MonthlyPlan updateManyAndReturn
+   */
+  export type MonthlyPlanUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * The data used to update MonthlyPlans.
+     */
+    data: XOR<MonthlyPlanUpdateManyMutationInput, MonthlyPlanUncheckedUpdateManyInput>
+    /**
+     * Filter which MonthlyPlans to update
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * Limit how many MonthlyPlans to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * MonthlyPlan upsert
+   */
+  export type MonthlyPlanUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * The filter to search for the MonthlyPlan to update in case it exists.
+     */
+    where: MonthlyPlanWhereUniqueInput
+    /**
+     * In case the MonthlyPlan found by the `where` argument doesn't exist, create a new MonthlyPlan with this data.
+     */
+    create: XOR<MonthlyPlanCreateInput, MonthlyPlanUncheckedCreateInput>
+    /**
+     * In case the MonthlyPlan was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<MonthlyPlanUpdateInput, MonthlyPlanUncheckedUpdateInput>
+  }
+
+  /**
+   * MonthlyPlan delete
+   */
+  export type MonthlyPlanDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    /**
+     * Filter which MonthlyPlan to delete.
+     */
+    where: MonthlyPlanWhereUniqueInput
+  }
+
+  /**
+   * MonthlyPlan deleteMany
+   */
+  export type MonthlyPlanDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MonthlyPlans to delete
+     */
+    where?: MonthlyPlanWhereInput
+    /**
+     * Limit how many MonthlyPlans to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * MonthlyPlan.bookings
+   */
+  export type MonthlyPlan$bookingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Booking
+     */
+    select?: BookingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Booking
+     */
+    omit?: BookingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: BookingInclude<ExtArgs> | null
+    where?: BookingWhereInput
+    orderBy?: BookingOrderByWithRelationInput | BookingOrderByWithRelationInput[]
+    cursor?: BookingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: BookingScalarFieldEnum | BookingScalarFieldEnum[]
+  }
+
+  /**
+   * MonthlyPlan without action
+   */
+  export type MonthlyPlanDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Availability
    */
 
@@ -22846,6 +24152,7 @@ export namespace Prisma {
 
   export type BookingAvgAggregateOutputType = {
     spaceId: number | null
+    monthlyPlanId: number | null
     guests: number | null
     subtotal: number | null
     cleaningFee: number | null
@@ -22856,6 +24163,7 @@ export namespace Prisma {
 
   export type BookingSumAggregateOutputType = {
     spaceId: number | null
+    monthlyPlanId: number | null
     guests: number | null
     subtotal: number | null
     cleaningFee: number | null
@@ -22869,6 +24177,8 @@ export namespace Prisma {
     guestId: string | null
     hostId: string | null
     spaceId: number | null
+    monthlyPlanId: number | null
+    monthlyPlanName: string | null
     startDate: Date | null
     endDate: Date | null
     startTime: string | null
@@ -22899,6 +24209,8 @@ export namespace Prisma {
     guestId: string | null
     hostId: string | null
     spaceId: number | null
+    monthlyPlanId: number | null
+    monthlyPlanName: string | null
     startDate: Date | null
     endDate: Date | null
     startTime: string | null
@@ -22929,6 +24241,8 @@ export namespace Prisma {
     guestId: number
     hostId: number
     spaceId: number
+    monthlyPlanId: number
+    monthlyPlanName: number
     startDate: number
     endDate: number
     startTime: number
@@ -22958,6 +24272,7 @@ export namespace Prisma {
 
   export type BookingAvgAggregateInputType = {
     spaceId?: true
+    monthlyPlanId?: true
     guests?: true
     subtotal?: true
     cleaningFee?: true
@@ -22968,6 +24283,7 @@ export namespace Prisma {
 
   export type BookingSumAggregateInputType = {
     spaceId?: true
+    monthlyPlanId?: true
     guests?: true
     subtotal?: true
     cleaningFee?: true
@@ -22981,6 +24297,8 @@ export namespace Prisma {
     guestId?: true
     hostId?: true
     spaceId?: true
+    monthlyPlanId?: true
+    monthlyPlanName?: true
     startDate?: true
     endDate?: true
     startTime?: true
@@ -23011,6 +24329,8 @@ export namespace Prisma {
     guestId?: true
     hostId?: true
     spaceId?: true
+    monthlyPlanId?: true
+    monthlyPlanName?: true
     startDate?: true
     endDate?: true
     startTime?: true
@@ -23041,6 +24361,8 @@ export namespace Prisma {
     guestId?: true
     hostId?: true
     spaceId?: true
+    monthlyPlanId?: true
+    monthlyPlanName?: true
     startDate?: true
     endDate?: true
     startTime?: true
@@ -23158,6 +24480,8 @@ export namespace Prisma {
     guestId: string
     hostId: string
     spaceId: number
+    monthlyPlanId: number | null
+    monthlyPlanName: string | null
     startDate: Date
     endDate: Date
     startTime: string | null
@@ -23207,6 +24531,8 @@ export namespace Prisma {
     guestId?: boolean
     hostId?: boolean
     spaceId?: boolean
+    monthlyPlanId?: boolean
+    monthlyPlanName?: boolean
     startDate?: boolean
     endDate?: boolean
     startTime?: boolean
@@ -23233,6 +24559,7 @@ export namespace Prisma {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
     review?: boolean | Booking$reviewArgs<ExtArgs>
   }, ExtArgs["result"]["booking"]>
 
@@ -23241,6 +24568,8 @@ export namespace Prisma {
     guestId?: boolean
     hostId?: boolean
     spaceId?: boolean
+    monthlyPlanId?: boolean
+    monthlyPlanName?: boolean
     startDate?: boolean
     endDate?: boolean
     startTime?: boolean
@@ -23267,6 +24596,7 @@ export namespace Prisma {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
   }, ExtArgs["result"]["booking"]>
 
   export type BookingSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -23274,6 +24604,8 @@ export namespace Prisma {
     guestId?: boolean
     hostId?: boolean
     spaceId?: boolean
+    monthlyPlanId?: boolean
+    monthlyPlanName?: boolean
     startDate?: boolean
     endDate?: boolean
     startTime?: boolean
@@ -23300,6 +24632,7 @@ export namespace Prisma {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
   }, ExtArgs["result"]["booking"]>
 
   export type BookingSelectScalar = {
@@ -23307,6 +24640,8 @@ export namespace Prisma {
     guestId?: boolean
     hostId?: boolean
     spaceId?: boolean
+    monthlyPlanId?: boolean
+    monthlyPlanName?: boolean
     startDate?: boolean
     endDate?: boolean
     startTime?: boolean
@@ -23332,22 +24667,25 @@ export namespace Prisma {
     completedAt?: boolean
   }
 
-  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "holdExpiresAt" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
+  export type BookingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "guestId" | "hostId" | "spaceId" | "monthlyPlanId" | "monthlyPlanName" | "startDate" | "endDate" | "startTime" | "endTime" | "guests" | "isHourly" | "subtotal" | "cleaningFee" | "serviceFee" | "totalAmount" | "currency" | "exchangeRate" | "status" | "guestMessage" | "hostMessage" | "holdExpiresAt" | "cancelledByRole" | "cancellationReason" | "createdAt" | "updatedAt" | "approvedAt" | "cancelledAt" | "completedAt", ExtArgs["result"]["booking"]>
   export type BookingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
     review?: boolean | Booking$reviewArgs<ExtArgs>
   }
   export type BookingIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
   }
   export type BookingIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     guest?: boolean | UserDefaultArgs<ExtArgs>
     host?: boolean | UserDefaultArgs<ExtArgs>
     space?: boolean | SpaceDefaultArgs<ExtArgs>
+    monthlyPlan?: boolean | Booking$monthlyPlanArgs<ExtArgs>
   }
 
   export type $BookingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -23356,6 +24694,7 @@ export namespace Prisma {
       guest: Prisma.$UserPayload<ExtArgs>
       host: Prisma.$UserPayload<ExtArgs>
       space: Prisma.$SpacePayload<ExtArgs>
+      monthlyPlan: Prisma.$MonthlyPlanPayload<ExtArgs> | null
       review: Prisma.$ReviewPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -23363,6 +24702,8 @@ export namespace Prisma {
       guestId: string
       hostId: string
       spaceId: number
+      monthlyPlanId: number | null
+      monthlyPlanName: string | null
       startDate: Date
       endDate: Date
       startTime: string | null
@@ -23783,6 +25124,7 @@ export namespace Prisma {
     guest<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     host<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     space<T extends SpaceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SpaceDefaultArgs<ExtArgs>>): Prisma__SpaceClient<$Result.GetResult<Prisma.$SpacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    monthlyPlan<T extends Booking$monthlyPlanArgs<ExtArgs> = {}>(args?: Subset<T, Booking$monthlyPlanArgs<ExtArgs>>): Prisma__MonthlyPlanClient<$Result.GetResult<Prisma.$MonthlyPlanPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     review<T extends Booking$reviewArgs<ExtArgs> = {}>(args?: Subset<T, Booking$reviewArgs<ExtArgs>>): Prisma__ReviewClient<$Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -23817,6 +25159,8 @@ export namespace Prisma {
     readonly guestId: FieldRef<"Booking", 'String'>
     readonly hostId: FieldRef<"Booking", 'String'>
     readonly spaceId: FieldRef<"Booking", 'Int'>
+    readonly monthlyPlanId: FieldRef<"Booking", 'Int'>
+    readonly monthlyPlanName: FieldRef<"Booking", 'String'>
     readonly startDate: FieldRef<"Booking", 'DateTime'>
     readonly endDate: FieldRef<"Booking", 'DateTime'>
     readonly startTime: FieldRef<"Booking", 'String'>
@@ -24233,6 +25577,25 @@ export namespace Prisma {
      * Limit how many Bookings to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Booking.monthlyPlan
+   */
+  export type Booking$monthlyPlanArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MonthlyPlan
+     */
+    select?: MonthlyPlanSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MonthlyPlan
+     */
+    omit?: MonthlyPlanOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MonthlyPlanInclude<ExtArgs> | null
+    where?: MonthlyPlanWhereInput
   }
 
   /**
@@ -26879,6 +28242,18 @@ export namespace Prisma {
   export type PricingTierScalarFieldEnum = (typeof PricingTierScalarFieldEnum)[keyof typeof PricingTierScalarFieldEnum]
 
 
+  export const MonthlyPlanScalarFieldEnum: {
+    id: 'id',
+    spaceId: 'spaceId',
+    name: 'name',
+    pricePerMonth: 'pricePerMonth',
+    description: 'description',
+    sortOrder: 'sortOrder'
+  };
+
+  export type MonthlyPlanScalarFieldEnum = (typeof MonthlyPlanScalarFieldEnum)[keyof typeof MonthlyPlanScalarFieldEnum]
+
+
   export const AvailabilityScalarFieldEnum: {
     id: 'id',
     spaceId: 'spaceId',
@@ -26906,6 +28281,8 @@ export namespace Prisma {
     guestId: 'guestId',
     hostId: 'hostId',
     spaceId: 'spaceId',
+    monthlyPlanId: 'monthlyPlanId',
+    monthlyPlanName: 'monthlyPlanName',
     startDate: 'startDate',
     endDate: 'endDate',
     startTime: 'startTime',
@@ -28065,6 +29442,7 @@ export namespace Prisma {
     category?: XOR<SpaceCategoryScalarRelationFilter, SpaceCategoryWhereInput>
     amenities?: SpaceAmenityListRelationFilter
     pricingTiers?: PricingTierListRelationFilter
+    monthlyPlans?: MonthlyPlanListRelationFilter
     availability?: AvailabilityListRelationFilter
     blockedDates?: BlockedDateListRelationFilter
     bookings?: BookingListRelationFilter
@@ -28105,6 +29483,7 @@ export namespace Prisma {
     category?: SpaceCategoryOrderByWithRelationInput
     amenities?: SpaceAmenityOrderByRelationAggregateInput
     pricingTiers?: PricingTierOrderByRelationAggregateInput
+    monthlyPlans?: MonthlyPlanOrderByRelationAggregateInput
     availability?: AvailabilityOrderByRelationAggregateInput
     blockedDates?: BlockedDateOrderByRelationAggregateInput
     bookings?: BookingOrderByRelationAggregateInput
@@ -28148,6 +29527,7 @@ export namespace Prisma {
     category?: XOR<SpaceCategoryScalarRelationFilter, SpaceCategoryWhereInput>
     amenities?: SpaceAmenityListRelationFilter
     pricingTiers?: PricingTierListRelationFilter
+    monthlyPlans?: MonthlyPlanListRelationFilter
     availability?: AvailabilityListRelationFilter
     blockedDates?: BlockedDateListRelationFilter
     bookings?: BookingListRelationFilter
@@ -28517,6 +29897,72 @@ export namespace Prisma {
     comment?: StringNullableWithAggregatesFilter<"PricingTier"> | string | null
   }
 
+  export type MonthlyPlanWhereInput = {
+    AND?: MonthlyPlanWhereInput | MonthlyPlanWhereInput[]
+    OR?: MonthlyPlanWhereInput[]
+    NOT?: MonthlyPlanWhereInput | MonthlyPlanWhereInput[]
+    id?: IntFilter<"MonthlyPlan"> | number
+    spaceId?: IntFilter<"MonthlyPlan"> | number
+    name?: StringFilter<"MonthlyPlan"> | string
+    pricePerMonth?: FloatFilter<"MonthlyPlan"> | number
+    description?: StringNullableFilter<"MonthlyPlan"> | string | null
+    sortOrder?: IntFilter<"MonthlyPlan"> | number
+    space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
+    bookings?: BookingListRelationFilter
+  }
+
+  export type MonthlyPlanOrderByWithRelationInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    name?: SortOrder
+    pricePerMonth?: SortOrder
+    description?: SortOrderInput | SortOrder
+    sortOrder?: SortOrder
+    space?: SpaceOrderByWithRelationInput
+    bookings?: BookingOrderByRelationAggregateInput
+  }
+
+  export type MonthlyPlanWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    spaceId_name?: MonthlyPlanSpaceIdNameCompoundUniqueInput
+    AND?: MonthlyPlanWhereInput | MonthlyPlanWhereInput[]
+    OR?: MonthlyPlanWhereInput[]
+    NOT?: MonthlyPlanWhereInput | MonthlyPlanWhereInput[]
+    spaceId?: IntFilter<"MonthlyPlan"> | number
+    name?: StringFilter<"MonthlyPlan"> | string
+    pricePerMonth?: FloatFilter<"MonthlyPlan"> | number
+    description?: StringNullableFilter<"MonthlyPlan"> | string | null
+    sortOrder?: IntFilter<"MonthlyPlan"> | number
+    space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
+    bookings?: BookingListRelationFilter
+  }, "id" | "spaceId_name">
+
+  export type MonthlyPlanOrderByWithAggregationInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    name?: SortOrder
+    pricePerMonth?: SortOrder
+    description?: SortOrderInput | SortOrder
+    sortOrder?: SortOrder
+    _count?: MonthlyPlanCountOrderByAggregateInput
+    _avg?: MonthlyPlanAvgOrderByAggregateInput
+    _max?: MonthlyPlanMaxOrderByAggregateInput
+    _min?: MonthlyPlanMinOrderByAggregateInput
+    _sum?: MonthlyPlanSumOrderByAggregateInput
+  }
+
+  export type MonthlyPlanScalarWhereWithAggregatesInput = {
+    AND?: MonthlyPlanScalarWhereWithAggregatesInput | MonthlyPlanScalarWhereWithAggregatesInput[]
+    OR?: MonthlyPlanScalarWhereWithAggregatesInput[]
+    NOT?: MonthlyPlanScalarWhereWithAggregatesInput | MonthlyPlanScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"MonthlyPlan"> | number
+    spaceId?: IntWithAggregatesFilter<"MonthlyPlan"> | number
+    name?: StringWithAggregatesFilter<"MonthlyPlan"> | string
+    pricePerMonth?: FloatWithAggregatesFilter<"MonthlyPlan"> | number
+    description?: StringNullableWithAggregatesFilter<"MonthlyPlan"> | string | null
+    sortOrder?: IntWithAggregatesFilter<"MonthlyPlan"> | number
+  }
+
   export type AvailabilityWhereInput = {
     AND?: AvailabilityWhereInput | AvailabilityWhereInput[]
     OR?: AvailabilityWhereInput[]
@@ -28640,6 +30086,8 @@ export namespace Prisma {
     guestId?: StringFilter<"Booking"> | string
     hostId?: StringFilter<"Booking"> | string
     spaceId?: IntFilter<"Booking"> | number
+    monthlyPlanId?: IntNullableFilter<"Booking"> | number | null
+    monthlyPlanName?: StringNullableFilter<"Booking"> | string | null
     startDate?: DateTimeFilter<"Booking"> | Date | string
     endDate?: DateTimeFilter<"Booking"> | Date | string
     startTime?: StringNullableFilter<"Booking"> | string | null
@@ -28666,6 +30114,7 @@ export namespace Prisma {
     guest?: XOR<UserScalarRelationFilter, UserWhereInput>
     host?: XOR<UserScalarRelationFilter, UserWhereInput>
     space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
+    monthlyPlan?: XOR<MonthlyPlanNullableScalarRelationFilter, MonthlyPlanWhereInput> | null
     review?: XOR<ReviewNullableScalarRelationFilter, ReviewWhereInput> | null
   }
 
@@ -28674,6 +30123,8 @@ export namespace Prisma {
     guestId?: SortOrder
     hostId?: SortOrder
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrderInput | SortOrder
+    monthlyPlanName?: SortOrderInput | SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     startTime?: SortOrderInput | SortOrder
@@ -28700,6 +30151,7 @@ export namespace Prisma {
     guest?: UserOrderByWithRelationInput
     host?: UserOrderByWithRelationInput
     space?: SpaceOrderByWithRelationInput
+    monthlyPlan?: MonthlyPlanOrderByWithRelationInput
     review?: ReviewOrderByWithRelationInput
   }
 
@@ -28711,6 +30163,8 @@ export namespace Prisma {
     guestId?: StringFilter<"Booking"> | string
     hostId?: StringFilter<"Booking"> | string
     spaceId?: IntFilter<"Booking"> | number
+    monthlyPlanId?: IntNullableFilter<"Booking"> | number | null
+    monthlyPlanName?: StringNullableFilter<"Booking"> | string | null
     startDate?: DateTimeFilter<"Booking"> | Date | string
     endDate?: DateTimeFilter<"Booking"> | Date | string
     startTime?: StringNullableFilter<"Booking"> | string | null
@@ -28737,6 +30191,7 @@ export namespace Prisma {
     guest?: XOR<UserScalarRelationFilter, UserWhereInput>
     host?: XOR<UserScalarRelationFilter, UserWhereInput>
     space?: XOR<SpaceScalarRelationFilter, SpaceWhereInput>
+    monthlyPlan?: XOR<MonthlyPlanNullableScalarRelationFilter, MonthlyPlanWhereInput> | null
     review?: XOR<ReviewNullableScalarRelationFilter, ReviewWhereInput> | null
   }, "id">
 
@@ -28745,6 +30200,8 @@ export namespace Prisma {
     guestId?: SortOrder
     hostId?: SortOrder
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrderInput | SortOrder
+    monthlyPlanName?: SortOrderInput | SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     startTime?: SortOrderInput | SortOrder
@@ -28783,6 +30240,8 @@ export namespace Prisma {
     guestId?: StringWithAggregatesFilter<"Booking"> | string
     hostId?: StringWithAggregatesFilter<"Booking"> | string
     spaceId?: IntWithAggregatesFilter<"Booking"> | number
+    monthlyPlanId?: IntNullableWithAggregatesFilter<"Booking"> | number | null
+    monthlyPlanName?: StringNullableWithAggregatesFilter<"Booking"> | string | null
     startDate?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
     endDate?: DateTimeWithAggregatesFilter<"Booking"> | Date | string
     startTime?: StringNullableWithAggregatesFilter<"Booking"> | string | null
@@ -29896,6 +31355,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -29933,6 +31393,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -29969,6 +31430,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -30006,6 +31468,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -30375,6 +31838,69 @@ export namespace Prisma {
     comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type MonthlyPlanCreateInput = {
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+    space: SpaceCreateNestedOneWithoutMonthlyPlansInput
+    bookings?: BookingCreateNestedManyWithoutMonthlyPlanInput
+  }
+
+  export type MonthlyPlanUncheckedCreateInput = {
+    id?: number
+    spaceId: number
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+    bookings?: BookingUncheckedCreateNestedManyWithoutMonthlyPlanInput
+  }
+
+  export type MonthlyPlanUpdateInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+    space?: SpaceUpdateOneRequiredWithoutMonthlyPlansNestedInput
+    bookings?: BookingUpdateManyWithoutMonthlyPlanNestedInput
+  }
+
+  export type MonthlyPlanUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    spaceId?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+    bookings?: BookingUncheckedUpdateManyWithoutMonthlyPlanNestedInput
+  }
+
+  export type MonthlyPlanCreateManyInput = {
+    id?: number
+    spaceId: number
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+  }
+
+  export type MonthlyPlanUpdateManyMutationInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type MonthlyPlanUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    spaceId?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+  }
+
   export type AvailabilityCreateInput = {
     dayOfWeek: number
     startTime: string
@@ -30481,6 +32007,7 @@ export namespace Prisma {
 
   export type BookingCreateInput = {
     id?: string
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -30507,6 +32034,7 @@ export namespace Prisma {
     guest: UserCreateNestedOneWithoutBookingsAsGuestInput
     host: UserCreateNestedOneWithoutBookingsAsHostInput
     space: SpaceCreateNestedOneWithoutBookingsInput
+    monthlyPlan?: MonthlyPlanCreateNestedOneWithoutBookingsInput
     review?: ReviewCreateNestedOneWithoutBookingInput
   }
 
@@ -30515,6 +32043,8 @@ export namespace Prisma {
     guestId: string
     hostId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -30543,6 +32073,7 @@ export namespace Prisma {
 
   export type BookingUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30569,6 +32100,7 @@ export namespace Prisma {
     guest?: UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput
     host?: UserUpdateOneRequiredWithoutBookingsAsHostNestedInput
     space?: SpaceUpdateOneRequiredWithoutBookingsNestedInput
+    monthlyPlan?: MonthlyPlanUpdateOneWithoutBookingsNestedInput
     review?: ReviewUpdateOneWithoutBookingNestedInput
   }
 
@@ -30577,6 +32109,8 @@ export namespace Prisma {
     guestId?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30608,6 +32142,8 @@ export namespace Prisma {
     guestId: string
     hostId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -30635,6 +32171,7 @@ export namespace Prisma {
 
   export type BookingUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -30665,6 +32202,8 @@ export namespace Prisma {
     guestId?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -31809,6 +33348,12 @@ export namespace Prisma {
     none?: PricingTierWhereInput
   }
 
+  export type MonthlyPlanListRelationFilter = {
+    every?: MonthlyPlanWhereInput
+    some?: MonthlyPlanWhereInput
+    none?: MonthlyPlanWhereInput
+  }
+
   export type AvailabilityListRelationFilter = {
     every?: AvailabilityWhereInput
     some?: AvailabilityWhereInput
@@ -31826,6 +33371,10 @@ export namespace Prisma {
   }
 
   export type PricingTierOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type MonthlyPlanOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -32223,6 +33772,52 @@ export namespace Prisma {
     price?: SortOrder
   }
 
+  export type MonthlyPlanSpaceIdNameCompoundUniqueInput = {
+    spaceId: number
+    name: string
+  }
+
+  export type MonthlyPlanCountOrderByAggregateInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    name?: SortOrder
+    pricePerMonth?: SortOrder
+    description?: SortOrder
+    sortOrder?: SortOrder
+  }
+
+  export type MonthlyPlanAvgOrderByAggregateInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    pricePerMonth?: SortOrder
+    sortOrder?: SortOrder
+  }
+
+  export type MonthlyPlanMaxOrderByAggregateInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    name?: SortOrder
+    pricePerMonth?: SortOrder
+    description?: SortOrder
+    sortOrder?: SortOrder
+  }
+
+  export type MonthlyPlanMinOrderByAggregateInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    name?: SortOrder
+    pricePerMonth?: SortOrder
+    description?: SortOrder
+    sortOrder?: SortOrder
+  }
+
+  export type MonthlyPlanSumOrderByAggregateInput = {
+    id?: SortOrder
+    spaceId?: SortOrder
+    pricePerMonth?: SortOrder
+    sortOrder?: SortOrder
+  }
+
   export type AvailabilitySpaceIdDayOfWeekCompoundUniqueInput = {
     spaceId: number
     dayOfWeek: number
@@ -32312,6 +33907,11 @@ export namespace Prisma {
     not?: NestedEnumBookingActorNullableFilter<$PrismaModel> | $Enums.BookingActor | null
   }
 
+  export type MonthlyPlanNullableScalarRelationFilter = {
+    is?: MonthlyPlanWhereInput | null
+    isNot?: MonthlyPlanWhereInput | null
+  }
+
   export type ReviewNullableScalarRelationFilter = {
     is?: ReviewWhereInput | null
     isNot?: ReviewWhereInput | null
@@ -32322,6 +33922,8 @@ export namespace Prisma {
     guestId?: SortOrder
     hostId?: SortOrder
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrder
+    monthlyPlanName?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     startTime?: SortOrder
@@ -32349,6 +33951,7 @@ export namespace Prisma {
 
   export type BookingAvgOrderByAggregateInput = {
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrder
     guests?: SortOrder
     subtotal?: SortOrder
     cleaningFee?: SortOrder
@@ -32362,6 +33965,8 @@ export namespace Prisma {
     guestId?: SortOrder
     hostId?: SortOrder
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrder
+    monthlyPlanName?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     startTime?: SortOrder
@@ -32392,6 +33997,8 @@ export namespace Prisma {
     guestId?: SortOrder
     hostId?: SortOrder
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrder
+    monthlyPlanName?: SortOrder
     startDate?: SortOrder
     endDate?: SortOrder
     startTime?: SortOrder
@@ -32419,6 +34026,7 @@ export namespace Prisma {
 
   export type BookingSumOrderByAggregateInput = {
     spaceId?: SortOrder
+    monthlyPlanId?: SortOrder
     guests?: SortOrder
     subtotal?: SortOrder
     cleaningFee?: SortOrder
@@ -33260,6 +34868,13 @@ export namespace Prisma {
     connect?: PricingTierWhereUniqueInput | PricingTierWhereUniqueInput[]
   }
 
+  export type MonthlyPlanCreateNestedManyWithoutSpaceInput = {
+    create?: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput> | MonthlyPlanCreateWithoutSpaceInput[] | MonthlyPlanUncheckedCreateWithoutSpaceInput[]
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutSpaceInput | MonthlyPlanCreateOrConnectWithoutSpaceInput[]
+    createMany?: MonthlyPlanCreateManySpaceInputEnvelope
+    connect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+  }
+
   export type AvailabilityCreateNestedManyWithoutSpaceInput = {
     create?: XOR<AvailabilityCreateWithoutSpaceInput, AvailabilityUncheckedCreateWithoutSpaceInput> | AvailabilityCreateWithoutSpaceInput[] | AvailabilityUncheckedCreateWithoutSpaceInput[]
     connectOrCreate?: AvailabilityCreateOrConnectWithoutSpaceInput | AvailabilityCreateOrConnectWithoutSpaceInput[]
@@ -33300,6 +34915,13 @@ export namespace Prisma {
     connectOrCreate?: PricingTierCreateOrConnectWithoutSpaceInput | PricingTierCreateOrConnectWithoutSpaceInput[]
     createMany?: PricingTierCreateManySpaceInputEnvelope
     connect?: PricingTierWhereUniqueInput | PricingTierWhereUniqueInput[]
+  }
+
+  export type MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput = {
+    create?: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput> | MonthlyPlanCreateWithoutSpaceInput[] | MonthlyPlanUncheckedCreateWithoutSpaceInput[]
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutSpaceInput | MonthlyPlanCreateOrConnectWithoutSpaceInput[]
+    createMany?: MonthlyPlanCreateManySpaceInputEnvelope
+    connect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
   }
 
   export type AvailabilityUncheckedCreateNestedManyWithoutSpaceInput = {
@@ -33410,6 +35032,20 @@ export namespace Prisma {
     deleteMany?: PricingTierScalarWhereInput | PricingTierScalarWhereInput[]
   }
 
+  export type MonthlyPlanUpdateManyWithoutSpaceNestedInput = {
+    create?: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput> | MonthlyPlanCreateWithoutSpaceInput[] | MonthlyPlanUncheckedCreateWithoutSpaceInput[]
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutSpaceInput | MonthlyPlanCreateOrConnectWithoutSpaceInput[]
+    upsert?: MonthlyPlanUpsertWithWhereUniqueWithoutSpaceInput | MonthlyPlanUpsertWithWhereUniqueWithoutSpaceInput[]
+    createMany?: MonthlyPlanCreateManySpaceInputEnvelope
+    set?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    disconnect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    delete?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    connect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    update?: MonthlyPlanUpdateWithWhereUniqueWithoutSpaceInput | MonthlyPlanUpdateWithWhereUniqueWithoutSpaceInput[]
+    updateMany?: MonthlyPlanUpdateManyWithWhereWithoutSpaceInput | MonthlyPlanUpdateManyWithWhereWithoutSpaceInput[]
+    deleteMany?: MonthlyPlanScalarWhereInput | MonthlyPlanScalarWhereInput[]
+  }
+
   export type AvailabilityUpdateManyWithoutSpaceNestedInput = {
     create?: XOR<AvailabilityCreateWithoutSpaceInput, AvailabilityUncheckedCreateWithoutSpaceInput> | AvailabilityCreateWithoutSpaceInput[] | AvailabilityUncheckedCreateWithoutSpaceInput[]
     connectOrCreate?: AvailabilityCreateOrConnectWithoutSpaceInput | AvailabilityCreateOrConnectWithoutSpaceInput[]
@@ -33492,6 +35128,20 @@ export namespace Prisma {
     update?: PricingTierUpdateWithWhereUniqueWithoutSpaceInput | PricingTierUpdateWithWhereUniqueWithoutSpaceInput[]
     updateMany?: PricingTierUpdateManyWithWhereWithoutSpaceInput | PricingTierUpdateManyWithWhereWithoutSpaceInput[]
     deleteMany?: PricingTierScalarWhereInput | PricingTierScalarWhereInput[]
+  }
+
+  export type MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput = {
+    create?: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput> | MonthlyPlanCreateWithoutSpaceInput[] | MonthlyPlanUncheckedCreateWithoutSpaceInput[]
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutSpaceInput | MonthlyPlanCreateOrConnectWithoutSpaceInput[]
+    upsert?: MonthlyPlanUpsertWithWhereUniqueWithoutSpaceInput | MonthlyPlanUpsertWithWhereUniqueWithoutSpaceInput[]
+    createMany?: MonthlyPlanCreateManySpaceInputEnvelope
+    set?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    disconnect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    delete?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    connect?: MonthlyPlanWhereUniqueInput | MonthlyPlanWhereUniqueInput[]
+    update?: MonthlyPlanUpdateWithWhereUniqueWithoutSpaceInput | MonthlyPlanUpdateWithWhereUniqueWithoutSpaceInput[]
+    updateMany?: MonthlyPlanUpdateManyWithWhereWithoutSpaceInput | MonthlyPlanUpdateManyWithWhereWithoutSpaceInput[]
+    deleteMany?: MonthlyPlanScalarWhereInput | MonthlyPlanScalarWhereInput[]
   }
 
   export type AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput = {
@@ -33741,6 +35391,62 @@ export namespace Prisma {
     update?: XOR<XOR<SpaceUpdateToOneWithWhereWithoutPricingTiersInput, SpaceUpdateWithoutPricingTiersInput>, SpaceUncheckedUpdateWithoutPricingTiersInput>
   }
 
+  export type SpaceCreateNestedOneWithoutMonthlyPlansInput = {
+    create?: XOR<SpaceCreateWithoutMonthlyPlansInput, SpaceUncheckedCreateWithoutMonthlyPlansInput>
+    connectOrCreate?: SpaceCreateOrConnectWithoutMonthlyPlansInput
+    connect?: SpaceWhereUniqueInput
+  }
+
+  export type BookingCreateNestedManyWithoutMonthlyPlanInput = {
+    create?: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput> | BookingCreateWithoutMonthlyPlanInput[] | BookingUncheckedCreateWithoutMonthlyPlanInput[]
+    connectOrCreate?: BookingCreateOrConnectWithoutMonthlyPlanInput | BookingCreateOrConnectWithoutMonthlyPlanInput[]
+    createMany?: BookingCreateManyMonthlyPlanInputEnvelope
+    connect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+  }
+
+  export type BookingUncheckedCreateNestedManyWithoutMonthlyPlanInput = {
+    create?: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput> | BookingCreateWithoutMonthlyPlanInput[] | BookingUncheckedCreateWithoutMonthlyPlanInput[]
+    connectOrCreate?: BookingCreateOrConnectWithoutMonthlyPlanInput | BookingCreateOrConnectWithoutMonthlyPlanInput[]
+    createMany?: BookingCreateManyMonthlyPlanInputEnvelope
+    connect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+  }
+
+  export type SpaceUpdateOneRequiredWithoutMonthlyPlansNestedInput = {
+    create?: XOR<SpaceCreateWithoutMonthlyPlansInput, SpaceUncheckedCreateWithoutMonthlyPlansInput>
+    connectOrCreate?: SpaceCreateOrConnectWithoutMonthlyPlansInput
+    upsert?: SpaceUpsertWithoutMonthlyPlansInput
+    connect?: SpaceWhereUniqueInput
+    update?: XOR<XOR<SpaceUpdateToOneWithWhereWithoutMonthlyPlansInput, SpaceUpdateWithoutMonthlyPlansInput>, SpaceUncheckedUpdateWithoutMonthlyPlansInput>
+  }
+
+  export type BookingUpdateManyWithoutMonthlyPlanNestedInput = {
+    create?: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput> | BookingCreateWithoutMonthlyPlanInput[] | BookingUncheckedCreateWithoutMonthlyPlanInput[]
+    connectOrCreate?: BookingCreateOrConnectWithoutMonthlyPlanInput | BookingCreateOrConnectWithoutMonthlyPlanInput[]
+    upsert?: BookingUpsertWithWhereUniqueWithoutMonthlyPlanInput | BookingUpsertWithWhereUniqueWithoutMonthlyPlanInput[]
+    createMany?: BookingCreateManyMonthlyPlanInputEnvelope
+    set?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    disconnect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    delete?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    connect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    update?: BookingUpdateWithWhereUniqueWithoutMonthlyPlanInput | BookingUpdateWithWhereUniqueWithoutMonthlyPlanInput[]
+    updateMany?: BookingUpdateManyWithWhereWithoutMonthlyPlanInput | BookingUpdateManyWithWhereWithoutMonthlyPlanInput[]
+    deleteMany?: BookingScalarWhereInput | BookingScalarWhereInput[]
+  }
+
+  export type BookingUncheckedUpdateManyWithoutMonthlyPlanNestedInput = {
+    create?: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput> | BookingCreateWithoutMonthlyPlanInput[] | BookingUncheckedCreateWithoutMonthlyPlanInput[]
+    connectOrCreate?: BookingCreateOrConnectWithoutMonthlyPlanInput | BookingCreateOrConnectWithoutMonthlyPlanInput[]
+    upsert?: BookingUpsertWithWhereUniqueWithoutMonthlyPlanInput | BookingUpsertWithWhereUniqueWithoutMonthlyPlanInput[]
+    createMany?: BookingCreateManyMonthlyPlanInputEnvelope
+    set?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    disconnect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    delete?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    connect?: BookingWhereUniqueInput | BookingWhereUniqueInput[]
+    update?: BookingUpdateWithWhereUniqueWithoutMonthlyPlanInput | BookingUpdateWithWhereUniqueWithoutMonthlyPlanInput[]
+    updateMany?: BookingUpdateManyWithWhereWithoutMonthlyPlanInput | BookingUpdateManyWithWhereWithoutMonthlyPlanInput[]
+    deleteMany?: BookingScalarWhereInput | BookingScalarWhereInput[]
+  }
+
   export type SpaceCreateNestedOneWithoutAvailabilityInput = {
     create?: XOR<SpaceCreateWithoutAvailabilityInput, SpaceUncheckedCreateWithoutAvailabilityInput>
     connectOrCreate?: SpaceCreateOrConnectWithoutAvailabilityInput
@@ -33787,6 +35493,12 @@ export namespace Prisma {
     connect?: SpaceWhereUniqueInput
   }
 
+  export type MonthlyPlanCreateNestedOneWithoutBookingsInput = {
+    create?: XOR<MonthlyPlanCreateWithoutBookingsInput, MonthlyPlanUncheckedCreateWithoutBookingsInput>
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutBookingsInput
+    connect?: MonthlyPlanWhereUniqueInput
+  }
+
   export type ReviewCreateNestedOneWithoutBookingInput = {
     create?: XOR<ReviewCreateWithoutBookingInput, ReviewUncheckedCreateWithoutBookingInput>
     connectOrCreate?: ReviewCreateOrConnectWithoutBookingInput
@@ -33829,6 +35541,16 @@ export namespace Prisma {
     upsert?: SpaceUpsertWithoutBookingsInput
     connect?: SpaceWhereUniqueInput
     update?: XOR<XOR<SpaceUpdateToOneWithWhereWithoutBookingsInput, SpaceUpdateWithoutBookingsInput>, SpaceUncheckedUpdateWithoutBookingsInput>
+  }
+
+  export type MonthlyPlanUpdateOneWithoutBookingsNestedInput = {
+    create?: XOR<MonthlyPlanCreateWithoutBookingsInput, MonthlyPlanUncheckedCreateWithoutBookingsInput>
+    connectOrCreate?: MonthlyPlanCreateOrConnectWithoutBookingsInput
+    upsert?: MonthlyPlanUpsertWithoutBookingsInput
+    disconnect?: MonthlyPlanWhereInput | boolean
+    delete?: MonthlyPlanWhereInput | boolean
+    connect?: MonthlyPlanWhereUniqueInput
+    update?: XOR<XOR<MonthlyPlanUpdateToOneWithWhereWithoutBookingsInput, MonthlyPlanUpdateWithoutBookingsInput>, MonthlyPlanUncheckedUpdateWithoutBookingsInput>
   }
 
   export type ReviewUpdateOneWithoutBookingNestedInput = {
@@ -34600,6 +36322,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -34636,6 +36359,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -34654,6 +36378,7 @@ export namespace Prisma {
 
   export type BookingCreateWithoutGuestInput = {
     id?: string
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -34679,6 +36404,7 @@ export namespace Prisma {
     completedAt?: Date | string | null
     host: UserCreateNestedOneWithoutBookingsAsHostInput
     space: SpaceCreateNestedOneWithoutBookingsInput
+    monthlyPlan?: MonthlyPlanCreateNestedOneWithoutBookingsInput
     review?: ReviewCreateNestedOneWithoutBookingInput
   }
 
@@ -34686,6 +36412,8 @@ export namespace Prisma {
     id?: string
     hostId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -34724,6 +36452,7 @@ export namespace Prisma {
 
   export type BookingCreateWithoutHostInput = {
     id?: string
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -34749,6 +36478,7 @@ export namespace Prisma {
     completedAt?: Date | string | null
     guest: UserCreateNestedOneWithoutBookingsAsGuestInput
     space: SpaceCreateNestedOneWithoutBookingsInput
+    monthlyPlan?: MonthlyPlanCreateNestedOneWithoutBookingsInput
     review?: ReviewCreateNestedOneWithoutBookingInput
   }
 
@@ -34756,6 +36486,8 @@ export namespace Prisma {
     id?: string
     guestId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -35129,6 +36861,8 @@ export namespace Prisma {
     guestId?: StringFilter<"Booking"> | string
     hostId?: StringFilter<"Booking"> | string
     spaceId?: IntFilter<"Booking"> | number
+    monthlyPlanId?: IntNullableFilter<"Booking"> | number | null
+    monthlyPlanName?: StringNullableFilter<"Booking"> | string | null
     startDate?: DateTimeFilter<"Booking"> | Date | string
     endDate?: DateTimeFilter<"Booking"> | Date | string
     startTime?: StringNullableFilter<"Booking"> | string | null
@@ -36150,6 +37884,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -36186,6 +37921,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -36504,6 +38240,33 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type MonthlyPlanCreateWithoutSpaceInput = {
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+    bookings?: BookingCreateNestedManyWithoutMonthlyPlanInput
+  }
+
+  export type MonthlyPlanUncheckedCreateWithoutSpaceInput = {
+    id?: number
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+    bookings?: BookingUncheckedCreateNestedManyWithoutMonthlyPlanInput
+  }
+
+  export type MonthlyPlanCreateOrConnectWithoutSpaceInput = {
+    where: MonthlyPlanWhereUniqueInput
+    create: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput>
+  }
+
+  export type MonthlyPlanCreateManySpaceInputEnvelope = {
+    data: MonthlyPlanCreateManySpaceInput | MonthlyPlanCreateManySpaceInput[]
+    skipDuplicates?: boolean
+  }
+
   export type AvailabilityCreateWithoutSpaceInput = {
     dayOfWeek: number
     startTime: string
@@ -36552,6 +38315,7 @@ export namespace Prisma {
 
   export type BookingCreateWithoutSpaceInput = {
     id?: string
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -36577,6 +38341,7 @@ export namespace Prisma {
     completedAt?: Date | string | null
     guest: UserCreateNestedOneWithoutBookingsAsGuestInput
     host: UserCreateNestedOneWithoutBookingsAsHostInput
+    monthlyPlan?: MonthlyPlanCreateNestedOneWithoutBookingsInput
     review?: ReviewCreateNestedOneWithoutBookingInput
   }
 
@@ -36584,6 +38349,8 @@ export namespace Prisma {
     id?: string
     guestId: string
     hostId: string
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -36885,6 +38652,34 @@ export namespace Prisma {
     comment?: StringNullableFilter<"PricingTier"> | string | null
   }
 
+  export type MonthlyPlanUpsertWithWhereUniqueWithoutSpaceInput = {
+    where: MonthlyPlanWhereUniqueInput
+    update: XOR<MonthlyPlanUpdateWithoutSpaceInput, MonthlyPlanUncheckedUpdateWithoutSpaceInput>
+    create: XOR<MonthlyPlanCreateWithoutSpaceInput, MonthlyPlanUncheckedCreateWithoutSpaceInput>
+  }
+
+  export type MonthlyPlanUpdateWithWhereUniqueWithoutSpaceInput = {
+    where: MonthlyPlanWhereUniqueInput
+    data: XOR<MonthlyPlanUpdateWithoutSpaceInput, MonthlyPlanUncheckedUpdateWithoutSpaceInput>
+  }
+
+  export type MonthlyPlanUpdateManyWithWhereWithoutSpaceInput = {
+    where: MonthlyPlanScalarWhereInput
+    data: XOR<MonthlyPlanUpdateManyMutationInput, MonthlyPlanUncheckedUpdateManyWithoutSpaceInput>
+  }
+
+  export type MonthlyPlanScalarWhereInput = {
+    AND?: MonthlyPlanScalarWhereInput | MonthlyPlanScalarWhereInput[]
+    OR?: MonthlyPlanScalarWhereInput[]
+    NOT?: MonthlyPlanScalarWhereInput | MonthlyPlanScalarWhereInput[]
+    id?: IntFilter<"MonthlyPlan"> | number
+    spaceId?: IntFilter<"MonthlyPlan"> | number
+    name?: StringFilter<"MonthlyPlan"> | string
+    pricePerMonth?: FloatFilter<"MonthlyPlan"> | number
+    description?: StringNullableFilter<"MonthlyPlan"> | string | null
+    sortOrder?: IntFilter<"MonthlyPlan"> | number
+  }
+
   export type AvailabilityUpsertWithWhereUniqueWithoutSpaceInput = {
     where: AvailabilityWhereUniqueInput
     update: XOR<AvailabilityUpdateWithoutSpaceInput, AvailabilityUncheckedUpdateWithoutSpaceInput>
@@ -37018,6 +38813,7 @@ export namespace Prisma {
     venue: VenueCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -37054,6 +38850,7 @@ export namespace Prisma {
     venueId: number
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -37232,6 +39029,7 @@ export namespace Prisma {
     venue: VenueCreateNestedOneWithoutSpacesInput
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -37268,6 +39066,7 @@ export namespace Prisma {
     venueId: number
     categorySlug: string
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -37339,6 +39138,7 @@ export namespace Prisma {
     venue?: VenueUpdateOneRequiredWithoutSpacesNestedInput
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -37375,6 +39175,7 @@ export namespace Prisma {
     venueId?: IntFieldUpdateOperationsInput | number
     categorySlug?: StringFieldUpdateOperationsInput | string
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -37436,6 +39237,7 @@ export namespace Prisma {
     venue: VenueCreateNestedOneWithoutSpacesInput
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -37472,6 +39274,7 @@ export namespace Prisma {
     venueId: number
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -37523,6 +39326,7 @@ export namespace Prisma {
     venue?: VenueUpdateOneRequiredWithoutSpacesNestedInput
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -37559,10 +39363,263 @@ export namespace Prisma {
     venueId?: IntFieldUpdateOperationsInput | number
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutSpaceNestedInput
+  }
+
+  export type SpaceCreateWithoutMonthlyPlansInput = {
+    name: string
+    shortDescription: string
+    description: string
+    nameTranslations?: NullableJsonNullValueInput | InputJsonValue
+    shortDescTranslations?: NullableJsonNullValueInput | InputJsonValue
+    descriptionTranslations?: NullableJsonNullValueInput | InputJsonValue
+    spaceType: $Enums.SpaceType
+    pricingType: $Enums.PricingType
+    pricePerHour?: number | null
+    pricePerDay?: number | null
+    pricePerMonth?: number | null
+    cleaningFee?: number
+    currency?: $Enums.Currency
+    capacity: number
+    minBookingHours?: number | null
+    maxBookingHours?: number | null
+    images: JsonNullValueInput | InputJsonValue
+    videoUrl?: string | null
+    isActive?: boolean
+    instantBook?: boolean
+    cancellationPolicy?: $Enums.CancellationPolicy
+    houseRules?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    host: UserCreateNestedOneWithoutSpacesInput
+    venue: VenueCreateNestedOneWithoutSpacesInput
+    category: SpaceCategoryCreateNestedOneWithoutSpacesInput
+    amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
+    pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    availability?: AvailabilityCreateNestedManyWithoutSpaceInput
+    blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
+    bookings?: BookingCreateNestedManyWithoutSpaceInput
+    reviews?: ReviewCreateNestedManyWithoutSpaceInput
+  }
+
+  export type SpaceUncheckedCreateWithoutMonthlyPlansInput = {
+    id?: number
+    name: string
+    shortDescription: string
+    description: string
+    nameTranslations?: NullableJsonNullValueInput | InputJsonValue
+    shortDescTranslations?: NullableJsonNullValueInput | InputJsonValue
+    descriptionTranslations?: NullableJsonNullValueInput | InputJsonValue
+    spaceType: $Enums.SpaceType
+    pricingType: $Enums.PricingType
+    pricePerHour?: number | null
+    pricePerDay?: number | null
+    pricePerMonth?: number | null
+    cleaningFee?: number
+    currency?: $Enums.Currency
+    capacity: number
+    minBookingHours?: number | null
+    maxBookingHours?: number | null
+    images: JsonNullValueInput | InputJsonValue
+    videoUrl?: string | null
+    isActive?: boolean
+    instantBook?: boolean
+    cancellationPolicy?: $Enums.CancellationPolicy
+    houseRules?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    hostId: string
+    venueId: number
+    categorySlug: string
+    amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
+    pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
+    blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
+    bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
+    reviews?: ReviewUncheckedCreateNestedManyWithoutSpaceInput
+  }
+
+  export type SpaceCreateOrConnectWithoutMonthlyPlansInput = {
+    where: SpaceWhereUniqueInput
+    create: XOR<SpaceCreateWithoutMonthlyPlansInput, SpaceUncheckedCreateWithoutMonthlyPlansInput>
+  }
+
+  export type BookingCreateWithoutMonthlyPlanInput = {
+    id?: string
+    monthlyPlanName?: string | null
+    startDate: Date | string
+    endDate: Date | string
+    startTime?: string | null
+    endTime?: string | null
+    guests?: number
+    isHourly: boolean
+    subtotal: number
+    cleaningFee?: number
+    serviceFee: number
+    totalAmount: number
+    currency?: $Enums.Currency
+    exchangeRate?: Decimal | DecimalJsLike | number | string
+    status?: $Enums.BookingStatus
+    guestMessage?: string | null
+    hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
+    cancelledByRole?: $Enums.BookingActor | null
+    cancellationReason?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    approvedAt?: Date | string | null
+    cancelledAt?: Date | string | null
+    completedAt?: Date | string | null
+    guest: UserCreateNestedOneWithoutBookingsAsGuestInput
+    host: UserCreateNestedOneWithoutBookingsAsHostInput
+    space: SpaceCreateNestedOneWithoutBookingsInput
+    review?: ReviewCreateNestedOneWithoutBookingInput
+  }
+
+  export type BookingUncheckedCreateWithoutMonthlyPlanInput = {
+    id?: string
+    guestId: string
+    hostId: string
+    spaceId: number
+    monthlyPlanName?: string | null
+    startDate: Date | string
+    endDate: Date | string
+    startTime?: string | null
+    endTime?: string | null
+    guests?: number
+    isHourly: boolean
+    subtotal: number
+    cleaningFee?: number
+    serviceFee: number
+    totalAmount: number
+    currency?: $Enums.Currency
+    exchangeRate?: Decimal | DecimalJsLike | number | string
+    status?: $Enums.BookingStatus
+    guestMessage?: string | null
+    hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
+    cancelledByRole?: $Enums.BookingActor | null
+    cancellationReason?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    approvedAt?: Date | string | null
+    cancelledAt?: Date | string | null
+    completedAt?: Date | string | null
+    review?: ReviewUncheckedCreateNestedOneWithoutBookingInput
+  }
+
+  export type BookingCreateOrConnectWithoutMonthlyPlanInput = {
+    where: BookingWhereUniqueInput
+    create: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput>
+  }
+
+  export type BookingCreateManyMonthlyPlanInputEnvelope = {
+    data: BookingCreateManyMonthlyPlanInput | BookingCreateManyMonthlyPlanInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SpaceUpsertWithoutMonthlyPlansInput = {
+    update: XOR<SpaceUpdateWithoutMonthlyPlansInput, SpaceUncheckedUpdateWithoutMonthlyPlansInput>
+    create: XOR<SpaceCreateWithoutMonthlyPlansInput, SpaceUncheckedCreateWithoutMonthlyPlansInput>
+    where?: SpaceWhereInput
+  }
+
+  export type SpaceUpdateToOneWithWhereWithoutMonthlyPlansInput = {
+    where?: SpaceWhereInput
+    data: XOR<SpaceUpdateWithoutMonthlyPlansInput, SpaceUncheckedUpdateWithoutMonthlyPlansInput>
+  }
+
+  export type SpaceUpdateWithoutMonthlyPlansInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    shortDescription?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    nameTranslations?: NullableJsonNullValueInput | InputJsonValue
+    shortDescTranslations?: NullableJsonNullValueInput | InputJsonValue
+    descriptionTranslations?: NullableJsonNullValueInput | InputJsonValue
+    spaceType?: EnumSpaceTypeFieldUpdateOperationsInput | $Enums.SpaceType
+    pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
+    pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
+    cleaningFee?: FloatFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    capacity?: IntFieldUpdateOperationsInput | number
+    minBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
+    maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
+    images?: JsonNullValueInput | InputJsonValue
+    videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    instantBook?: BoolFieldUpdateOperationsInput | boolean
+    cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
+    houseRules?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    host?: UserUpdateOneRequiredWithoutSpacesNestedInput
+    venue?: VenueUpdateOneRequiredWithoutSpacesNestedInput
+    category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
+    amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
+    pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
+    blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
+    bookings?: BookingUpdateManyWithoutSpaceNestedInput
+    reviews?: ReviewUpdateManyWithoutSpaceNestedInput
+  }
+
+  export type SpaceUncheckedUpdateWithoutMonthlyPlansInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    shortDescription?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    nameTranslations?: NullableJsonNullValueInput | InputJsonValue
+    shortDescTranslations?: NullableJsonNullValueInput | InputJsonValue
+    descriptionTranslations?: NullableJsonNullValueInput | InputJsonValue
+    spaceType?: EnumSpaceTypeFieldUpdateOperationsInput | $Enums.SpaceType
+    pricingType?: EnumPricingTypeFieldUpdateOperationsInput | $Enums.PricingType
+    pricePerHour?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerDay?: NullableFloatFieldUpdateOperationsInput | number | null
+    pricePerMonth?: NullableFloatFieldUpdateOperationsInput | number | null
+    cleaningFee?: FloatFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    capacity?: IntFieldUpdateOperationsInput | number
+    minBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
+    maxBookingHours?: NullableIntFieldUpdateOperationsInput | number | null
+    images?: JsonNullValueInput | InputJsonValue
+    videoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    instantBook?: BoolFieldUpdateOperationsInput | boolean
+    cancellationPolicy?: EnumCancellationPolicyFieldUpdateOperationsInput | $Enums.CancellationPolicy
+    houseRules?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    hostId?: StringFieldUpdateOperationsInput | string
+    venueId?: IntFieldUpdateOperationsInput | number
+    categorySlug?: StringFieldUpdateOperationsInput | string
+    amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
+    pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
+    blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
+    bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
+    reviews?: ReviewUncheckedUpdateManyWithoutSpaceNestedInput
+  }
+
+  export type BookingUpsertWithWhereUniqueWithoutMonthlyPlanInput = {
+    where: BookingWhereUniqueInput
+    update: XOR<BookingUpdateWithoutMonthlyPlanInput, BookingUncheckedUpdateWithoutMonthlyPlanInput>
+    create: XOR<BookingCreateWithoutMonthlyPlanInput, BookingUncheckedCreateWithoutMonthlyPlanInput>
+  }
+
+  export type BookingUpdateWithWhereUniqueWithoutMonthlyPlanInput = {
+    where: BookingWhereUniqueInput
+    data: XOR<BookingUpdateWithoutMonthlyPlanInput, BookingUncheckedUpdateWithoutMonthlyPlanInput>
+  }
+
+  export type BookingUpdateManyWithWhereWithoutMonthlyPlanInput = {
+    where: BookingScalarWhereInput
+    data: XOR<BookingUpdateManyMutationInput, BookingUncheckedUpdateManyWithoutMonthlyPlanInput>
   }
 
   export type SpaceCreateWithoutAvailabilityInput = {
@@ -37595,6 +39652,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
     reviews?: ReviewCreateNestedManyWithoutSpaceInput
@@ -37631,6 +39689,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutSpaceInput
@@ -37682,6 +39741,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUpdateManyWithoutSpaceNestedInput
@@ -37718,6 +39778,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutSpaceNestedInput
@@ -37753,6 +39814,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
     reviews?: ReviewCreateNestedManyWithoutSpaceInput
@@ -37789,6 +39851,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutSpaceInput
@@ -37840,6 +39903,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUpdateManyWithoutSpaceNestedInput
@@ -37876,6 +39940,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutSpaceNestedInput
@@ -38061,6 +40126,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     reviews?: ReviewCreateNestedManyWithoutSpaceInput
@@ -38097,6 +40163,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     reviews?: ReviewUncheckedCreateNestedManyWithoutSpaceInput
@@ -38105,6 +40172,28 @@ export namespace Prisma {
   export type SpaceCreateOrConnectWithoutBookingsInput = {
     where: SpaceWhereUniqueInput
     create: XOR<SpaceCreateWithoutBookingsInput, SpaceUncheckedCreateWithoutBookingsInput>
+  }
+
+  export type MonthlyPlanCreateWithoutBookingsInput = {
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+    space: SpaceCreateNestedOneWithoutMonthlyPlansInput
+  }
+
+  export type MonthlyPlanUncheckedCreateWithoutBookingsInput = {
+    id?: number
+    spaceId: number
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+  }
+
+  export type MonthlyPlanCreateOrConnectWithoutBookingsInput = {
+    where: MonthlyPlanWhereUniqueInput
+    create: XOR<MonthlyPlanCreateWithoutBookingsInput, MonthlyPlanUncheckedCreateWithoutBookingsInput>
   }
 
   export type ReviewCreateWithoutBookingInput = {
@@ -38338,6 +40427,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUpdateManyWithoutSpaceNestedInput
@@ -38374,9 +40464,38 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutSpaceNestedInput
+  }
+
+  export type MonthlyPlanUpsertWithoutBookingsInput = {
+    update: XOR<MonthlyPlanUpdateWithoutBookingsInput, MonthlyPlanUncheckedUpdateWithoutBookingsInput>
+    create: XOR<MonthlyPlanCreateWithoutBookingsInput, MonthlyPlanUncheckedCreateWithoutBookingsInput>
+    where?: MonthlyPlanWhereInput
+  }
+
+  export type MonthlyPlanUpdateToOneWithWhereWithoutBookingsInput = {
+    where?: MonthlyPlanWhereInput
+    data: XOR<MonthlyPlanUpdateWithoutBookingsInput, MonthlyPlanUncheckedUpdateWithoutBookingsInput>
+  }
+
+  export type MonthlyPlanUpdateWithoutBookingsInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+    space?: SpaceUpdateOneRequiredWithoutMonthlyPlansNestedInput
+  }
+
+  export type MonthlyPlanUncheckedUpdateWithoutBookingsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    spaceId?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
   }
 
   export type ReviewUpsertWithoutBookingInput = {
@@ -38518,6 +40637,7 @@ export namespace Prisma {
     category: SpaceCategoryCreateNestedOneWithoutSpacesInput
     amenities?: SpaceAmenityCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateCreateNestedManyWithoutSpaceInput
     bookings?: BookingCreateNestedManyWithoutSpaceInput
@@ -38554,6 +40674,7 @@ export namespace Prisma {
     categorySlug: string
     amenities?: SpaceAmenityUncheckedCreateNestedManyWithoutSpaceInput
     pricingTiers?: PricingTierUncheckedCreateNestedManyWithoutSpaceInput
+    monthlyPlans?: MonthlyPlanUncheckedCreateNestedManyWithoutSpaceInput
     availability?: AvailabilityUncheckedCreateNestedManyWithoutSpaceInput
     blockedDates?: BlockedDateUncheckedCreateNestedManyWithoutSpaceInput
     bookings?: BookingUncheckedCreateNestedManyWithoutSpaceInput
@@ -38566,6 +40687,7 @@ export namespace Prisma {
 
   export type BookingCreateWithoutReviewInput = {
     id?: string
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -38592,6 +40714,7 @@ export namespace Prisma {
     guest: UserCreateNestedOneWithoutBookingsAsGuestInput
     host: UserCreateNestedOneWithoutBookingsAsHostInput
     space: SpaceCreateNestedOneWithoutBookingsInput
+    monthlyPlan?: MonthlyPlanCreateNestedOneWithoutBookingsInput
   }
 
   export type BookingUncheckedCreateWithoutReviewInput = {
@@ -38599,6 +40722,8 @@ export namespace Prisma {
     guestId: string
     hostId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -38751,6 +40876,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -38787,6 +40913,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -38805,6 +40932,7 @@ export namespace Prisma {
 
   export type BookingUpdateWithoutReviewInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -38831,6 +40959,7 @@ export namespace Prisma {
     guest?: UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput
     host?: UserUpdateOneRequiredWithoutBookingsAsHostNestedInput
     space?: SpaceUpdateOneRequiredWithoutBookingsNestedInput
+    monthlyPlan?: MonthlyPlanUpdateOneWithoutBookingsNestedInput
   }
 
   export type BookingUncheckedUpdateWithoutReviewInput = {
@@ -38838,6 +40967,8 @@ export namespace Prisma {
     guestId?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39115,6 +41246,8 @@ export namespace Prisma {
     id?: string
     hostId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -39144,6 +41277,8 @@ export namespace Prisma {
     id?: string
     guestId: string
     spaceId: number
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -39421,6 +41556,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -39457,6 +41593,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -39495,6 +41632,7 @@ export namespace Prisma {
 
   export type BookingUpdateWithoutGuestInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39520,6 +41658,7 @@ export namespace Prisma {
     completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     host?: UserUpdateOneRequiredWithoutBookingsAsHostNestedInput
     space?: SpaceUpdateOneRequiredWithoutBookingsNestedInput
+    monthlyPlan?: MonthlyPlanUpdateOneWithoutBookingsNestedInput
     review?: ReviewUpdateOneWithoutBookingNestedInput
   }
 
@@ -39527,6 +41666,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39557,6 +41698,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39584,6 +41727,7 @@ export namespace Prisma {
 
   export type BookingUpdateWithoutHostInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39609,6 +41753,7 @@ export namespace Prisma {
     completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     guest?: UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput
     space?: SpaceUpdateOneRequiredWithoutBookingsNestedInput
+    monthlyPlan?: MonthlyPlanUpdateOneWithoutBookingsNestedInput
     review?: ReviewUpdateOneWithoutBookingNestedInput
   }
 
@@ -39616,6 +41761,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     guestId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39646,6 +41793,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     guestId?: StringFieldUpdateOperationsInput | string
     spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -39837,6 +41986,7 @@ export namespace Prisma {
     category?: SpaceCategoryUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -39873,6 +42023,7 @@ export namespace Prisma {
     categorySlug?: StringFieldUpdateOperationsInput | string
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -39922,6 +42073,14 @@ export namespace Prisma {
     comment?: string | null
   }
 
+  export type MonthlyPlanCreateManySpaceInput = {
+    id?: number
+    name: string
+    pricePerMonth: number
+    description?: string | null
+    sortOrder?: number
+  }
+
   export type AvailabilityCreateManySpaceInput = {
     id?: number
     dayOfWeek: number
@@ -39940,6 +42099,8 @@ export namespace Prisma {
     id?: string
     guestId: string
     hostId: string
+    monthlyPlanId?: number | null
+    monthlyPlanName?: string | null
     startDate: Date | string
     endDate: Date | string
     startTime?: string | null
@@ -40014,6 +42175,31 @@ export namespace Prisma {
     comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type MonthlyPlanUpdateWithoutSpaceInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+    bookings?: BookingUpdateManyWithoutMonthlyPlanNestedInput
+  }
+
+  export type MonthlyPlanUncheckedUpdateWithoutSpaceInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+    bookings?: BookingUncheckedUpdateManyWithoutMonthlyPlanNestedInput
+  }
+
+  export type MonthlyPlanUncheckedUpdateManyWithoutSpaceInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    pricePerMonth?: FloatFieldUpdateOperationsInput | number
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    sortOrder?: IntFieldUpdateOperationsInput | number
+  }
+
   export type AvailabilityUpdateWithoutSpaceInput = {
     dayOfWeek?: IntFieldUpdateOperationsInput | number
     startTime?: StringFieldUpdateOperationsInput | string
@@ -40056,6 +42242,7 @@ export namespace Prisma {
 
   export type BookingUpdateWithoutSpaceInput = {
     id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40081,6 +42268,7 @@ export namespace Prisma {
     completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     guest?: UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput
     host?: UserUpdateOneRequiredWithoutBookingsAsHostNestedInput
+    monthlyPlan?: MonthlyPlanUpdateOneWithoutBookingsNestedInput
     review?: ReviewUpdateOneWithoutBookingNestedInput
   }
 
@@ -40088,6 +42276,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     guestId?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40118,6 +42308,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     guestId?: StringFieldUpdateOperationsInput | string
     hostId?: StringFieldUpdateOperationsInput | string
+    monthlyPlanId?: NullableIntFieldUpdateOperationsInput | number | null
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
     startDate?: DateTimeFieldUpdateOperationsInput | Date | string
     endDate?: DateTimeFieldUpdateOperationsInput | Date | string
     startTime?: NullableStringFieldUpdateOperationsInput | string | null
@@ -40237,6 +42429,7 @@ export namespace Prisma {
     venue?: VenueUpdateOneRequiredWithoutSpacesNestedInput
     amenities?: SpaceAmenityUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUpdateManyWithoutSpaceNestedInput
@@ -40273,6 +42466,7 @@ export namespace Prisma {
     venueId?: IntFieldUpdateOperationsInput | number
     amenities?: SpaceAmenityUncheckedUpdateManyWithoutSpaceNestedInput
     pricingTiers?: PricingTierUncheckedUpdateManyWithoutSpaceNestedInput
+    monthlyPlans?: MonthlyPlanUncheckedUpdateManyWithoutSpaceNestedInput
     availability?: AvailabilityUncheckedUpdateManyWithoutSpaceNestedInput
     blockedDates?: BlockedDateUncheckedUpdateManyWithoutSpaceNestedInput
     bookings?: BookingUncheckedUpdateManyWithoutSpaceNestedInput
@@ -40363,6 +42557,132 @@ export namespace Prisma {
   export type SpaceAmenityUncheckedUpdateManyWithoutAmenityInput = {
     id?: IntFieldUpdateOperationsInput | number
     spaceId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type BookingCreateManyMonthlyPlanInput = {
+    id?: string
+    guestId: string
+    hostId: string
+    spaceId: number
+    monthlyPlanName?: string | null
+    startDate: Date | string
+    endDate: Date | string
+    startTime?: string | null
+    endTime?: string | null
+    guests?: number
+    isHourly: boolean
+    subtotal: number
+    cleaningFee?: number
+    serviceFee: number
+    totalAmount: number
+    currency?: $Enums.Currency
+    exchangeRate?: Decimal | DecimalJsLike | number | string
+    status?: $Enums.BookingStatus
+    guestMessage?: string | null
+    hostMessage?: string | null
+    holdExpiresAt?: Date | string | null
+    cancelledByRole?: $Enums.BookingActor | null
+    cancellationReason?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    approvedAt?: Date | string | null
+    cancelledAt?: Date | string | null
+    completedAt?: Date | string | null
+  }
+
+  export type BookingUpdateWithoutMonthlyPlanInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    endDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    startTime?: NullableStringFieldUpdateOperationsInput | string | null
+    endTime?: NullableStringFieldUpdateOperationsInput | string | null
+    guests?: IntFieldUpdateOperationsInput | number
+    isHourly?: BoolFieldUpdateOperationsInput | boolean
+    subtotal?: FloatFieldUpdateOperationsInput | number
+    cleaningFee?: FloatFieldUpdateOperationsInput | number
+    serviceFee?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+    guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    guest?: UserUpdateOneRequiredWithoutBookingsAsGuestNestedInput
+    host?: UserUpdateOneRequiredWithoutBookingsAsHostNestedInput
+    space?: SpaceUpdateOneRequiredWithoutBookingsNestedInput
+    review?: ReviewUpdateOneWithoutBookingNestedInput
+  }
+
+  export type BookingUncheckedUpdateWithoutMonthlyPlanInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    guestId?: StringFieldUpdateOperationsInput | string
+    hostId?: StringFieldUpdateOperationsInput | string
+    spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    endDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    startTime?: NullableStringFieldUpdateOperationsInput | string | null
+    endTime?: NullableStringFieldUpdateOperationsInput | string | null
+    guests?: IntFieldUpdateOperationsInput | number
+    isHourly?: BoolFieldUpdateOperationsInput | boolean
+    subtotal?: FloatFieldUpdateOperationsInput | number
+    cleaningFee?: FloatFieldUpdateOperationsInput | number
+    serviceFee?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+    guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    review?: ReviewUncheckedUpdateOneWithoutBookingNestedInput
+  }
+
+  export type BookingUncheckedUpdateManyWithoutMonthlyPlanInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    guestId?: StringFieldUpdateOperationsInput | string
+    hostId?: StringFieldUpdateOperationsInput | string
+    spaceId?: IntFieldUpdateOperationsInput | number
+    monthlyPlanName?: NullableStringFieldUpdateOperationsInput | string | null
+    startDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    endDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    startTime?: NullableStringFieldUpdateOperationsInput | string | null
+    endTime?: NullableStringFieldUpdateOperationsInput | string | null
+    guests?: IntFieldUpdateOperationsInput | number
+    isHourly?: BoolFieldUpdateOperationsInput | boolean
+    subtotal?: FloatFieldUpdateOperationsInput | number
+    cleaningFee?: FloatFieldUpdateOperationsInput | number
+    serviceFee?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    currency?: EnumCurrencyFieldUpdateOperationsInput | $Enums.Currency
+    exchangeRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    status?: EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+    guestMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    hostMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    holdExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledByRole?: NullableEnumBookingActorFieldUpdateOperationsInput | $Enums.BookingActor | null
+    cancellationReason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    cancelledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    completedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
 

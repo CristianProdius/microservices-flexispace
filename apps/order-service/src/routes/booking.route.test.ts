@@ -463,6 +463,158 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // MONTHLY PLANS (T4): a MONTHLY space with plans requires a valid
+  // monthlyPlanId, prices from that plan's rate, and snapshots the plan name.
+  const openAllWeekMonthly = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    endTime: "23:59",
+    isOpen: true,
+    startTime: "00:00",
+  }));
+
+  const monthlySpaceWithPlans = {
+    ...baseSpace,
+    availability: openAllWeekMonthly,
+    maxBookingHours: null,
+    pricePerDay: null,
+    pricePerHour: null,
+    pricePerMonth: 2000,
+    pricingType: "MONTHLY",
+    monthlyPlans: [
+      { id: 100, name: "Hot desk", pricePerMonth: 1500, sortOrder: 0 },
+      { id: 101, name: "Private office", pricePerMonth: 3000, sortOrder: 1 },
+    ],
+  };
+
+  it("prices a MONTHLY space from the selected plan and snapshots its name", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(monthlySpaceWithPlans);
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        // 2026-05-18 -> 2026-06-17 = exactly one calendar month.
+        endDate: "2026-06-17",
+        guests: 1,
+        monthlyPlanId: 101,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: false,
+          monthlyPlanId: 101,
+          monthlyPlanName: "Private office",
+          subtotal: 3000, // 1 month * plan rate $3000 (not space's $2000)
+          totalAmount: 3000,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
+  it("rejects a MONTHLY-with-plans booking that omits monthlyPlanId", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(monthlySpaceWithPlans);
+    mocks.bookingFindMany.mockResolvedValue([]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: "2026-06-17",
+        guests: 1,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: "monthlyPlanId is required for this space",
+    });
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("rejects a monthlyPlanId that does not belong to this space", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(monthlySpaceWithPlans);
+    mocks.bookingFindMany.mockResolvedValue([]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: "2026-06-17",
+        guests: 1,
+        monthlyPlanId: 999, // belongs to another space
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: "Selected monthly plan is not available for this space",
+    });
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
+  it("falls back to pricePerMonth when a MONTHLY space has no plans (monthlyPlanId null)", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: openAllWeekMonthly,
+      maxBookingHours: null,
+      pricePerDay: null,
+      pricePerHour: null,
+      pricePerMonth: 2000,
+      pricingType: "MONTHLY",
+      monthlyPlans: [],
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: "2026-06-17",
+        guests: 1,
+        // monthlyPlanId provided but ignored — space has no plans.
+        monthlyPlanId: 555,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          monthlyPlanId: null,
+          monthlyPlanName: null,
+          subtotal: 2000, // space pricePerMonth
+          totalAmount: 2000,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {

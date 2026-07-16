@@ -47,6 +47,11 @@ vi.mock("@repo/db", async () => {
       findMany: vi.fn(),
     },
     pricingTier: { createMany: vi.fn(), deleteMany: vi.fn() },
+    monthlyPlan: {
+      createMany: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
     venue: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), count: vi.fn() },
     spaceAmenity: { deleteMany: vi.fn(), createMany: vi.fn() },
@@ -76,6 +81,7 @@ const {
   updateSpace,
   updateAvailability,
   validatePricingTiers,
+  validateMonthlyPlans,
   validateAmenityIds,
   deleteSpace,
   getMySpaces,
@@ -657,6 +663,121 @@ describe("validatePricingTiers - AUD-008", () => {
   });
 });
 
+// Monthly plans: a MONTHLY space may offer several named subscription plans,
+// each a name + pricePerMonth (+ optional description). validateMonthlyPlans
+// mirrors validatePricingTiers' shape (array guard, count cap, per-entry rules)
+// so a malformed/oversized body can't reach `monthlyPlan.createMany`.
+describe("validateMonthlyPlans - monthly plans T3", () => {
+  it("accepts well-formed plans", () => {
+    const result = validateMonthlyPlans([
+      { name: "Basic", pricePerMonth: 200 },
+      { name: "Pro", pricePerMonth: 500, description: "Dedicated desk" },
+    ]);
+    expect(result).toEqual({
+      ok: true,
+      value: [
+        { name: "Basic", pricePerMonth: 200, description: undefined },
+        { name: "Pro", pricePerMonth: 500, description: "Dedicated desk" },
+      ],
+    });
+  });
+
+  it("rejects non-array input", () => {
+    expect(validateMonthlyPlans("nope")).toEqual({
+      ok: false,
+      message: expect.stringContaining("array") as unknown as string,
+    });
+  });
+
+  it("caps plan count at 20", () => {
+    const plans = Array.from({ length: 21 }, (_, i) => ({
+      name: `Plan ${i}`,
+      pricePerMonth: 100,
+    }));
+    expect(validateMonthlyPlans(plans).ok).toBe(false);
+  });
+
+  it("rejects an empty / whitespace-only name", () => {
+    expect(
+      validateMonthlyPlans([{ name: "   ", pricePerMonth: 100 }]).ok,
+    ).toBe(false);
+  });
+
+  it("rejects a name over 60 characters", () => {
+    const result = validateMonthlyPlans([
+      { name: "a".repeat(61), pricePerMonth: 100 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("60");
+    }
+  });
+
+  it("trims the name", () => {
+    const result = validateMonthlyPlans([
+      { name: "  Basic  ", pricePerMonth: 100 },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value[0]?.name).toBe("Basic");
+    }
+  });
+
+  it("rejects a price below 0.01", () => {
+    const result = validateMonthlyPlans([{ name: "Basic", pricePerMonth: 0 }]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("0.01");
+    }
+  });
+
+  it("rejects a non-finite price", () => {
+    expect(
+      validateMonthlyPlans([{ name: "Basic", pricePerMonth: NaN }]).ok,
+    ).toBe(false);
+    expect(
+      validateMonthlyPlans([{ name: "Basic", pricePerMonth: Infinity }]).ok,
+    ).toBe(false);
+  });
+
+  it("rejects a description over 300 characters", () => {
+    const result = validateMonthlyPlans([
+      { name: "Basic", pricePerMonth: 100, description: "a".repeat(301) },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("300");
+    }
+  });
+
+  it("treats an empty / whitespace-only description as absent", () => {
+    const result = validateMonthlyPlans([
+      { name: "Basic", pricePerMonth: 100, description: "   " },
+    ]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value[0]?.description).toBeUndefined();
+    }
+  });
+
+  // The DB enforces @@unique([spaceId, name]) on MonthlyPlan, so two plans with
+  // the same (trimmed) name would fail the createMany with a P2002 and surface
+  // as an opaque 409/500. Reject the duplicate up front with a clean 400 —
+  // comparison is case-sensitive to match the DB unique constraint.
+  it("rejects duplicate plan names (post-trim, case-sensitive)", () => {
+    const result = validateMonthlyPlans([
+      { name: "Basic", pricePerMonth: 200 },
+      { name: "  Basic  ", pricePerMonth: 500 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe(
+        "monthlyPlans.name values must be unique",
+      );
+    }
+  });
+});
+
 // Mirror of the updateVenue regression at c353c9d: if a stale client posts
 // location fields like `address/city/country` (left over from before DB-010
 // moved them off Space onto Venue), createSpace must filter them out via
@@ -777,14 +898,33 @@ describe("createSpace - H2 numeric base-rate validation", () => {
     expect(prisma.space.create).not.toHaveBeenCalled();
   });
 
-  it("rejects a zero base rate with 400 (a rate must be positive)", async () => {
+  it("accepts a zero pricePerHour (0 means 'Contact for pricing', not bookable online)", async () => {
+    // A host may set an hourly/daily rate to 0 to list a space as "Contact for
+    // pricing": the public site renders that label and the order-service fails
+    // closed on a zero-candidate price set, so it can't be booked at $0.
     const res = buildRes();
     await createSpace(
       buildReq({ body: buildCreateBody({ pricePerHour: 0 }) }),
       res as never,
     );
-    expect(res.statusCode).toBe(400);
-    expect(prisma.space.create).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
+  });
+
+  it("accepts a zero pricePerDay for a DAILY space (Contact for pricing)", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "DAILY",
+          pricePerDay: 0,
+          pricePerHour: null,
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalled();
   });
 
   it("accepts a null blank rate (regression: DAILY-only space with pricePerHour:null)", async () => {
@@ -962,6 +1102,214 @@ describe("updateSpace - H2 numeric base-rate validation", () => {
     );
     expect(res.statusCode).toBe(400);
     expect(prisma.space.update).not.toHaveBeenCalled();
+  });
+});
+
+// Monthly-plan persistence + the relaxed MONTHLY validation rule: a MONTHLY
+// space is valid with a positive pricePerMonth OR >= 1 valid monthly plan.
+describe("createSpace - monthly plans persistence (T3)", () => {
+  beforeEach(() => {
+    (prisma.venue.findUnique as AnyMock).mockResolvedValue({
+      id: 1,
+      hostId: "user-1",
+      isActive: true,
+    });
+    (prisma.space.create as AnyMock).mockResolvedValue({
+      id: 42,
+      category: null,
+      amenities: [],
+    });
+  });
+
+  it("persists monthlyPlans with sortOrder indices for a MONTHLY space", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "MONTHLY",
+          pricePerMonth: 500,
+          monthlyPlans: [
+            { name: "Basic", pricePerMonth: 200 },
+            { name: "Pro", pricePerMonth: 500, description: "Dedicated desk" },
+          ],
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
+    const args = (prisma.monthlyPlan.createMany as AnyMock).mock.calls[0]?.[0];
+    expect(args.data).toEqual([
+      {
+        spaceId: 42,
+        name: "Basic",
+        pricePerMonth: 200,
+        description: undefined,
+        sortOrder: 0,
+      },
+      {
+        spaceId: 42,
+        name: "Pro",
+        pricePerMonth: 500,
+        description: "Dedicated desk",
+        sortOrder: 1,
+      },
+    ]);
+  });
+
+  it("accepts a MONTHLY space with plans but no pricePerMonth", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "MONTHLY",
+          monthlyPlans: [{ name: "Basic", pricePerMonth: 200 }],
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalledTimes(1);
+    expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a MONTHLY space with neither pricePerMonth nor plans", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({ pricingType: "MONTHLY" }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
+  });
+
+  it("does not persist plans for a non-MONTHLY space", async () => {
+    const res = buildRes();
+    await createSpace(
+      buildReq({
+        body: buildCreateBody({
+          pricingType: "HOURLY",
+          pricePerHour: 10,
+          monthlyPlans: [{ name: "Basic", pricePerMonth: 200 }],
+        }),
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(201);
+    expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateSpace - monthly plans persistence (T3)", () => {
+  it("replaces plans (deleteMany + createMany) for a MONTHLY space", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock)
+      .mockResolvedValueOnce({
+        id: 8,
+        hostId: "user-1",
+        venueId: 1,
+        pricingType: "MONTHLY",
+        pricePerMonth: 500,
+      })
+      .mockResolvedValueOnce({ id: 8, category: null });
+    await updateSpace(
+      buildReq({
+        params: { id: "8" },
+        body: {
+          monthlyPlans: [
+            { name: "Basic", pricePerMonth: 200 },
+            { name: "Pro", pricePerMonth: 500 },
+          ],
+        },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.monthlyPlan.deleteMany).toHaveBeenCalledWith({
+      where: { spaceId: 8 },
+    });
+    expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
+    const args = (prisma.monthlyPlan.createMany as AnyMock).mock.calls[0]?.[0];
+    expect(args.data.map((p: { sortOrder: number }) => p.sortOrder)).toEqual([
+      0, 1,
+    ]);
+  });
+
+  it("clears plans (deleteMany, no createMany) when switching to a non-MONTHLY type", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock)
+      .mockResolvedValueOnce({
+        id: 9,
+        hostId: "user-1",
+        venueId: 1,
+        pricingType: "MONTHLY",
+        pricePerMonth: 500,
+      })
+      .mockResolvedValueOnce({ id: 9, category: null });
+    await updateSpace(
+      buildReq({
+        params: { id: "9" },
+        body: { pricingType: "HOURLY", pricePerHour: 10 },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.monthlyPlan.deleteMany).toHaveBeenCalledWith({
+      where: { spaceId: 9 },
+    });
+    expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
+  });
+
+  // A partial update of a MONTHLY space that doesn't touch monthlyPlans must
+  // preserve the existing plans — the controller must neither delete nor
+  // recreate them when the field is absent from the body.
+  it("preserves plans when a MONTHLY update omits monthlyPlans", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock)
+      .mockResolvedValueOnce({
+        id: 10,
+        hostId: "user-1",
+        venueId: 1,
+        pricingType: "MONTHLY",
+        pricePerMonth: 500,
+      })
+      .mockResolvedValueOnce({ id: 10, category: null });
+    await updateSpace(
+      buildReq({
+        params: { id: "10" },
+        body: { name: "Renamed monthly space" },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.monthlyPlan.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("getSpace - includes ordered monthlyPlans (T3)", () => {
+  it("includes monthlyPlans ordered by sortOrder then id", async () => {
+    (prisma.space.findFirst as AnyMock).mockResolvedValue({
+      id: 3,
+      venue: {},
+      monthlyPlans: [],
+    });
+    (prisma.review.aggregate as AnyMock).mockResolvedValue({
+      _avg: { rating: null },
+    });
+    (prisma.review.count as AnyMock).mockResolvedValue(0);
+
+    await getSpace(
+      buildReq({ params: { id: "3" } }),
+      buildRes() as never,
+    );
+
+    const args = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
+    expect(args.include.monthlyPlans).toEqual({
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    });
   });
 });
 

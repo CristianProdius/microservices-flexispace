@@ -200,6 +200,108 @@ export const validatePricingTiers = (
   return { ok: true, value };
 };
 
+// Monthly plans: a MONTHLY space may offer several named subscription plans
+// (name + pricePerMonth + optional description), and a booking references the
+// chosen plan. Like pricingTiers, these arrive over an unvalidated JSON body,
+// so mirror validatePricingTiers' guards (array, count cap, per-entry rules).
+// Values match the @repo/types monthlyPlanInputSchema (name <= 60, price >=
+// 0.01, description <= 300) but are inline-validated here to stay consistent
+// with validatePricingTiers and avoid a runtime dependency on @repo/types.
+const MONTHLY_PLANS_MAX_COUNT = 20;
+const MONTHLY_PLAN_NAME_MAX_LENGTH = 60;
+const MONTHLY_PLAN_DESCRIPTION_MAX_LENGTH = 300;
+
+export type MonthlyPlanInput = {
+  name: string;
+  pricePerMonth: number;
+  description?: string;
+};
+
+export const validateMonthlyPlans = (
+  plans: unknown,
+):
+  | { ok: true; value: MonthlyPlanInput[] }
+  | { ok: false; message: string } => {
+  if (!Array.isArray(plans)) {
+    return { ok: false, message: "monthlyPlans must be an array" };
+  }
+  if (plans.length > MONTHLY_PLANS_MAX_COUNT) {
+    return {
+      ok: false,
+      message: `monthlyPlans must contain at most ${MONTHLY_PLANS_MAX_COUNT} entries`,
+    };
+  }
+  const value: MonthlyPlanInput[] = [];
+  for (const raw of plans) {
+    if (!raw || typeof raw !== "object") {
+      return { ok: false, message: "monthlyPlans entries must be objects" };
+    }
+    const name = (raw as { name?: unknown }).name;
+    const pricePerMonth = (raw as { pricePerMonth?: unknown }).pricePerMonth;
+    if (typeof name !== "string") {
+      return { ok: false, message: "monthlyPlans.name must be a string" };
+    }
+    const trimmedName = name.trim();
+    if (trimmedName.length === 0) {
+      return { ok: false, message: "monthlyPlans.name must not be empty" };
+    }
+    if (trimmedName.length > MONTHLY_PLAN_NAME_MAX_LENGTH) {
+      return {
+        ok: false,
+        message: `monthlyPlans.name must be at most ${MONTHLY_PLAN_NAME_MAX_LENGTH} characters`,
+      };
+    }
+    // Floor at 0.01 so a sub-cent price can't round to a $0.00 monthly charge.
+    if (
+      typeof pricePerMonth !== "number" ||
+      !Number.isFinite(pricePerMonth) ||
+      pricePerMonth < 0.01
+    ) {
+      return {
+        ok: false,
+        message: "monthlyPlans.pricePerMonth must be a finite number >= 0.01",
+      };
+    }
+    // Optional description: string capped at 300 chars; empty/whitespace-only
+    // is treated as absent (undefined) so a blank form box doesn't persist.
+    const descriptionRaw = (raw as { description?: unknown }).description;
+    let description: string | undefined;
+    if (descriptionRaw !== undefined && descriptionRaw !== null) {
+      if (typeof descriptionRaw !== "string") {
+        return {
+          ok: false,
+          message: "monthlyPlans.description must be a string",
+        };
+      }
+      if (descriptionRaw.length > MONTHLY_PLAN_DESCRIPTION_MAX_LENGTH) {
+        return {
+          ok: false,
+          message: `monthlyPlans.description must be at most ${MONTHLY_PLAN_DESCRIPTION_MAX_LENGTH} characters`,
+        };
+      }
+      const trimmedDescription = descriptionRaw.trim();
+      description =
+        trimmedDescription.length > 0 ? trimmedDescription : undefined;
+    }
+    value.push({ name: trimmedName, pricePerMonth, description });
+  }
+  // Reject duplicate plan names up front so we return a clean 400 instead of
+  // letting the DB's @@unique([spaceId, name]) constraint blow up the
+  // createMany with a P2002 (opaque 409/500). Compare trimmed names
+  // case-sensitively to match the constraint's exact semantics.
+  const seenNames = new Set<string>();
+  for (const plan of value) {
+    if (seenNames.has(plan.name)) {
+      return {
+        ok: false,
+        message: "monthlyPlans.name values must be unique",
+      };
+    }
+    seenNames.add(plan.name);
+  }
+  return { ok: true, value };
+};
+
 // H2: validate the numeric base-rate fields before they reach Prisma. The DB
 // columns are unconstrained `Float?`, so without this a host could persist a
 // negative pricePerHour/pricePerDay/cleaningFee and drive a booking total
@@ -220,17 +322,28 @@ const validateSpaceNumericFields = (
   // the admin form always posts pricePerHour/pricePerDay as `number | null`.)
   const isAbsent = (v: unknown) => v === undefined || v === null;
 
-  // pricePerHour / pricePerDay / pricePerMonth: a base rate, when present, must
-  // be a finite number > 0 — a booking can never be priced on a zero/negative
-  // base rate (order-service rejects a zero-candidate set), so 0 is not a valid
-  // rate. A space priced only via pricingTiers simply leaves them null.
-  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
-  // calendar month, pro-rated for the remainder), so it follows the same rule.
-  for (const key of ["pricePerHour", "pricePerDay", "pricePerMonth"] as const) {
+  // pricePerHour / pricePerDay: a base rate that, when present, must be a finite
+  // number >= 0. A host may deliberately set it to 0 to list the space as
+  // "Contact for pricing": the public site renders that label (getPriceDisplay
+  // treats a 0/falsy rate as unpriced) and the order-service fails closed on a
+  // zero-candidate price set, so a 0-rate space can never be booked at $0.
+  // Negative or non-finite is still invalid. A space priced only via
+  // pricingTiers simply leaves these null.
+  for (const key of ["pricePerHour", "pricePerDay"] as const) {
     const raw = data[key];
     if (isAbsent(raw)) continue;
+    if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0) {
+      return { message: `${key} must be a finite number >= 0` };
+    }
+  }
+
+  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
+  // calendar month, pro-rated for the remainder). A monthly listing is priced
+  // by this rate, so when present it must be a real positive number > 0.
+  if (!isAbsent(data.pricePerMonth)) {
+    const raw = data.pricePerMonth;
     if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
-      return { message: `${key} must be a finite number > 0` };
+      return { message: "pricePerMonth must be a finite number > 0" };
     }
   }
 
@@ -676,6 +789,9 @@ export const getSpaces = async (req: Request, res: Response) => {
       },
     },
     pricingTiers: { orderBy: { minutes: "asc" as const } },
+    monthlyPlans: {
+      orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+    },
     _count: {
       select: { reviews: true },
     },
@@ -842,6 +958,7 @@ export const getSpace = async (req: Request, res: Response) => {
         },
       },
       pricingTiers: { orderBy: { minutes: "asc" } },
+      monthlyPlans: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
       availability: true,
       blockedDates: {
         where: {
@@ -927,7 +1044,8 @@ const SPACE_WRITE_KEYS = [
 // Create space (HOST only)
 export const createSpace = async (req: Request, res: Response) => {
   const hostId = req.userId!;
-  const { amenityIds, venueId, pricingTiers, availability } = req.body;
+  const { amenityIds, venueId, pricingTiers, monthlyPlans, availability } =
+    req.body;
   // Whitelist-pluck so a stale payload with location fields (or any other
   // non-whitelisted property) can't reach `tx.space.create` and trigger
   // "Unknown argument" 500s. See updateSpace for the same pattern. Typed as
@@ -949,14 +1067,29 @@ export const createSpace = async (req: Request, res: Response) => {
   if (numericError) {
     return res.status(400).json({ message: numericError.message });
   }
-  // A MONTHLY space is priced solely by pricePerMonth (booking skips tiers for
-  // it), so it must have a positive monthly rate or it would be unbookable.
+  // AUD-008 (monthly plans): validate the monthly plans array before opening a
+  // transaction, mirroring pricingTiers. Needed here so the relaxed MONTHLY
+  // check below can count valid plans.
+  let normalizedMonthlyPlans: MonthlyPlanInput[] | null = null;
+  if (monthlyPlans !== undefined) {
+    const planResult = validateMonthlyPlans(monthlyPlans);
+    if (!planResult.ok) {
+      return res.status(400).json({ message: planResult.message });
+    }
+    normalizedMonthlyPlans = planResult.value;
+  }
+
+  // A MONTHLY space is bookable via a base pricePerMonth OR via one of its named
+  // monthly plans, so it's valid when it has a positive monthly rate OR >= 1
+  // valid plan; otherwise it would be unbookable.
   if (
     spaceData.pricingType === "MONTHLY" &&
-    !((spaceData.pricePerMonth as number) > 0)
+    !((spaceData.pricePerMonth as number) > 0) &&
+    !(normalizedMonthlyPlans && normalizedMonthlyPlans.length > 0)
   ) {
     return res.status(400).json({
-      message: "A monthly space requires a price per month greater than 0",
+      message:
+        "A monthly space requires a price per month greater than 0 or at least one monthly plan",
     });
   }
 
@@ -1075,6 +1208,25 @@ export const createSpace = async (req: Request, res: Response) => {
       });
     }
 
+    // Monthly plans only make sense for a MONTHLY space; persist them (with
+    // sortOrder = array index) when this is a MONTHLY listing. For any other
+    // type there's nothing to clear on create (a brand-new row has no plans).
+    if (
+      spaceData.pricingType === "MONTHLY" &&
+      normalizedMonthlyPlans &&
+      normalizedMonthlyPlans.length > 0
+    ) {
+      await tx.monthlyPlan.createMany({
+        data: normalizedMonthlyPlans.map((plan, index) => ({
+          spaceId: created.id,
+          name: plan.name,
+          pricePerMonth: plan.pricePerMonth,
+          description: plan.description,
+          sortOrder: index,
+        })),
+      });
+    }
+
     return created;
   });
 
@@ -1122,7 +1274,8 @@ export const updateSpace = async (req: Request, res: Response) => {
       .json({ message: "Not authorized to update this space" });
   }
 
-  const { amenityIds, venueId, pricingTiers, availability, ...body } = req.body;
+  const { amenityIds, venueId, pricingTiers, monthlyPlans, availability, ...body } =
+    req.body;
   const availabilityResult =
     availability !== undefined ? normalizeAvailability(availability) : null;
 
@@ -1140,6 +1293,18 @@ export const updateSpace = async (req: Request, res: Response) => {
       return res.status(400).json({ message: tierResult.message });
     }
     normalizedPricingTiers = tierResult.value;
+  }
+
+  // AUD-008 (monthly plans): validate the monthly plans array up front, before
+  // opening a transaction, so we don't delete the existing plans and then
+  // discover the new payload is garbage.
+  let normalizedMonthlyPlans: MonthlyPlanInput[] | null = null;
+  if (monthlyPlans !== undefined) {
+    const planResult = validateMonthlyPlans(monthlyPlans);
+    if (!planResult.ok) {
+      return res.status(400).json({ message: planResult.message });
+    }
+    normalizedMonthlyPlans = planResult.value;
   }
 
   // LOW: validate amenityIds (untrusted array from the body) before the
@@ -1182,9 +1347,19 @@ export const updateSpace = async (req: Request, res: Response) => {
     effectivePricingType === "MONTHLY" &&
     !((effectivePricePerMonth as number) > 0)
   ) {
-    return res.status(400).json({
-      message: "A monthly space requires a price per month greater than 0",
-    });
+    // Relaxed rule (see createSpace): a MONTHLY space is also valid when it has
+    // >= 1 monthly plan. The effective plan count is the new payload's plans
+    // when it touches them, else the space's currently-stored plans.
+    const effectivePlanCount =
+      normalizedMonthlyPlans !== null
+        ? normalizedMonthlyPlans.length
+        : await prisma.monthlyPlan.count({ where: { spaceId } });
+    if (effectivePlanCount === 0) {
+      return res.status(400).json({
+        message:
+          "A monthly space requires a price per month greater than 0 or at least one monthly plan",
+      });
+    }
   }
 
   // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
@@ -1276,6 +1451,30 @@ export const updateSpace = async (req: Request, res: Response) => {
       }
     }
 
+    // Monthly plans: when the effective type is MONTHLY, replace the space's
+    // plans with the new payload (deleteMany then createMany, sortOrder = index)
+    // if one was provided. When the effective type is NOT MONTHLY, drop any
+    // existing plans so a space switched off monthly pricing can't keep stale
+    // plans a booking could reference.
+    if (effectivePricingType === "MONTHLY") {
+      if (normalizedMonthlyPlans !== null) {
+        await tx.monthlyPlan.deleteMany({ where: { spaceId } });
+        if (normalizedMonthlyPlans.length > 0) {
+          await tx.monthlyPlan.createMany({
+            data: normalizedMonthlyPlans.map((plan, index) => ({
+              spaceId,
+              name: plan.name,
+              pricePerMonth: plan.pricePerMonth,
+              description: plan.description,
+              sortOrder: index,
+            })),
+          });
+        }
+      }
+    } else {
+      await tx.monthlyPlan.deleteMany({ where: { spaceId } });
+    }
+
     if (availabilityResult && "availability" in availabilityResult) {
       await tx.availability.deleteMany({ where: { spaceId } });
       await tx.availability.createMany({
@@ -1295,6 +1494,7 @@ export const updateSpace = async (req: Request, res: Response) => {
         venue: venueInclude,
         amenities: { include: { amenity: true } },
         pricingTiers: { orderBy: { minutes: "asc" } },
+        monthlyPlans: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
         availability: { orderBy: { dayOfWeek: "asc" } },
       },
     });
@@ -1411,6 +1611,7 @@ export const getMySpaces = async (req: Request, res: Response) => {
       category: true,
       venue: venueInclude,
       pricingTiers: { orderBy: { minutes: "asc" } },
+      monthlyPlans: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
       _count: {
         select: {
           bookings: true,

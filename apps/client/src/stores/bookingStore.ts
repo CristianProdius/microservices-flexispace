@@ -20,6 +20,9 @@ export interface BookingDraft {
   serviceFee: number;
   totalAmount: number;
   currency: string;
+  // Set only for a MONTHLY space that offers named plans; the server requires
+  // it in that case and prices from the chosen plan.
+  monthlyPlanId?: number;
 }
 
 interface BookingState {

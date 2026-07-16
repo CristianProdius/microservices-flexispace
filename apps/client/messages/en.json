@@ -237,7 +237,10 @@
     "bookingRequestSent": "Booking Request Sent!",
     "bookingRequestSentDesc": "Your booking request has been sent. The host will review your request and respond within 24 hours.",
     "viewMyBookings": "View My Bookings",
-    "browseMoreSpaces": "Browse More Spaces"
+    "browseMoreSpaces": "Browse More Spaces",
+    "choosePlan": "Choose a plan",
+    "selectPlanFirst": "Select a plan to continue",
+    "fromPerMonth": "From {price}/mo"
   },
   "bookings": {
     "title": "My Bookings",

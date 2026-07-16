@@ -178,6 +178,74 @@ export async function refreshAccessToken(refreshToken: string): Promise<RefreshR
   };
 }
 
+/**
+ * Cross-subdomain SSO bootstrap.
+ *
+ * When the admin origin's `localStorage` is cold — e.g. a host logged in on the
+ * public client (`spacefly.ai`) and clicked "Host Dashboard", landing on
+ * `admin.spacefly.ai/host` via a full cross-origin page load — the browser
+ * still holds the shared HttpOnly `spacefly_access` / `spacefly_refresh`
+ * cookies scoped to `.spacefly.ai`. The edge middleware lets the shell render
+ * off that cookie, but the client-side `authStore` previously had no way to
+ * establish a session from it, so every guard bounced to `/login` (the
+ * "second login"). This mints a fresh access token from the refresh cookie and
+ * loads the account entirely via `credentials:"include"` — no user action.
+ *
+ * Returns `null` when there is no usable cookie session (genuinely logged out,
+ * or the auth-service is unreachable) so the caller can fall back cleanly.
+ */
+export async function bootstrapSessionFromCookie(): Promise<{
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+} | null> {
+  // Cookie-first: send NO body so the auth-service authenticates purely off the
+  // HttpOnly refresh cookie (fetchAuth adds credentials:"include"). A logged-out
+  // browser has no cookie → 400/401 → treat as "no session".
+  let refreshRes: Response;
+  try {
+    refreshRes = await fetchAuth("/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch {
+    // auth-service unreachable: not a definitive logout, but nothing to hydrate.
+    return null;
+  }
+  if (!refreshRes.ok) return null;
+
+  const data = await refreshRes.json().catch(() => null);
+  const accessToken: unknown = data?.accessToken;
+  const refreshToken: unknown = data?.refreshToken;
+  // Only claim a session when we got a full, storable credential pair. The
+  // rotating /refresh path always returns both; the legacy (jti-less) path
+  // returns only an access token and can't sustain a bearer session, so we bail.
+  if (typeof accessToken !== "string" || typeof refreshToken !== "string") {
+    return null;
+  }
+
+  // Load the account off the freshly-minted access cookie.
+  let me: MeResponse;
+  try {
+    me = await getMe();
+  } catch {
+    return null;
+  }
+
+  return {
+    user: {
+      id: me.id,
+      email: me.email,
+      username: me.username,
+      name: me.name,
+      role: me.role,
+      image: me.image,
+    },
+    accessToken,
+    refreshToken,
+  };
+}
+
 // Token storage helpers.
 //
 // TRANSITIONAL (ADMIN-004): tokens are also persisted to localStorage so
