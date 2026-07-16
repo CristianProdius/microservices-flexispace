@@ -218,8 +218,8 @@ describe("getSpaces - PRODSVC-021 sort=featured", () => {
       { host: { hostSponsored: "desc" } },
       { venue: { venueRecommended: "desc" } },
       { host: { hostRecommended: "desc" } },
-      { venue: { venueVerified: "desc" } },
-      { host: { hostVerified: "desc" } },
+      { venue: { venueVerificationStatus: "desc" } },
+      { host: { hostVerificationStatus: "desc" } },
       { host: { hostingSince: "asc" } },
       { createdAt: "desc" },
     ]);

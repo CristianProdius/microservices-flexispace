@@ -74,6 +74,11 @@ enum BookingActor {
   ADMIN
 }
 
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
 // ==================== AUTH ====================
 
 model User {
@@ -104,11 +109,12 @@ model User {
   deletedAt DateTime?
 
   // Host-specific fields
-  hostVerified           Boolean   @default(false)
-  hostRecommended        Boolean   @default(false)
-  hostSponsored          Boolean   @default(false)
+  hostVerified           Boolean            @default(false)
+  hostVerificationStatus VerificationStatus @default(UNVERIFIED)
+  hostRecommended        Boolean            @default(false)
+  hostSponsored          Boolean            @default(false)
   hostingSince           DateTime?
-  hostApplicationPending Boolean   @default(false)
+  hostApplicationPending Boolean            @default(false)
   // Per-host platform commission as a fraction (0.1 = 10%). Null means use the
   // platform-wide DEFAULT_COMMISSION_RATE env var. The commission is deducted
   // from the host's payout; clients pay the listed price with no extra fee.
@@ -129,7 +135,7 @@ model User {
 
   @@index([role])
   @@index([deletedAt])
-  @@index([hostSponsored, hostRecommended, hostVerified])
+  @@index([hostSponsored, hostRecommended, hostVerificationStatus])
 }
 
 model Session {
@@ -261,9 +267,9 @@ model Venue {
 
   // Platform-admin listing badges. Sponsored outranks recommended, which
   // outranks verified in public featured ordering.
-  venueVerified    Boolean @default(false)
-  venueRecommended Boolean @default(false)
-  venueSponsored   Boolean @default(false)
+  venueVerificationStatus VerificationStatus @default(UNVERIFIED)
+  venueRecommended        Boolean            @default(false)
+  venueSponsored          Boolean            @default(false)
 
   // Owner
   hostId String
@@ -285,7 +291,7 @@ model Venue {
   @@index([city])
   @@index([isActive])
   @@index([latitude, longitude])
-  @@index([venueSponsored, venueRecommended, venueVerified])
+  @@index([venueSponsored, venueRecommended, venueVerificationStatus])
 }
 
 // ==================== EXCHANGE RATES ====================

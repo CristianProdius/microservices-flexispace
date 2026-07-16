@@ -25,16 +25,22 @@ import SetTempPassword from "@/components/SetTempPassword";
 import SendInvite from "@/components/SendInvite";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/AppLineChart";
-import { User } from "@repo/types";
+import { User, VerificationStatus } from "@repo/types";
 import CommissionRateCard from "./CommissionRateCard";
 import HostListingBadgesCard from "./HostListingBadgesCard";
+
+// The admin user detail carries the public "Verified" BADGE status
+// (`hostVerificationStatus`) alongside the `hostVerified` authorization flag.
+type AdminUser = User & {
+  hostVerificationStatus?: VerificationStatus;
+};
 
 const SingleUserPage = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
   const { isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useAuthStore();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
@@ -88,7 +94,7 @@ const SingleUserPage = () => {
 
   const listingBadges = [
     {
-      visible: user.hostVerified,
+      visible: user.hostVerificationStatus === "VERIFIED",
       icon: BadgeCheck,
       title: "Verified host",
       description: "This host has been verified by the platform.",

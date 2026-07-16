@@ -137,6 +137,7 @@ exports.Prisma.UserScalarFieldEnum = {
   tokensValidAfter: 'tokensValidAfter',
   deletedAt: 'deletedAt',
   hostVerified: 'hostVerified',
+  hostVerificationStatus: 'hostVerificationStatus',
   hostRecommended: 'hostRecommended',
   hostSponsored: 'hostSponsored',
   hostingSince: 'hostingSince',
@@ -221,7 +222,7 @@ exports.Prisma.VenueScalarFieldEnum = {
   latitude: 'latitude',
   longitude: 'longitude',
   currency: 'currency',
-  venueVerified: 'venueVerified',
+  venueVerificationStatus: 'venueVerificationStatus',
   venueRecommended: 'venueRecommended',
   venueSponsored: 'venueSponsored',
   hostId: 'hostId',
@@ -428,6 +429,11 @@ exports.Role = exports.$Enums.Role = {
   USER: 'USER',
   HOST: 'HOST',
   ADMIN: 'ADMIN'
+};
+
+exports.VerificationStatus = exports.$Enums.VerificationStatus = {
+  UNVERIFIED: 'UNVERIFIED',
+  VERIFIED: 'VERIFIED'
 };
 
 exports.HostApplicationStatus = exports.$Enums.HostApplicationStatus = {

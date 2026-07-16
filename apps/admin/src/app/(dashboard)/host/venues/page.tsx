@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useAuthStore from "@/stores/authStore";
+import type { VerificationStatus } from "@repo/types";
 import { HostEmptyAdminBanner } from "@/components/HostEmptyAdminBanner";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
 import {
@@ -36,7 +37,7 @@ interface Venue {
   images: string[];
   city: string;
   country: string;
-  venueVerified: boolean;
+  venueVerificationStatus: VerificationStatus;
   venueRecommended: boolean;
   venueSponsored: boolean;
   _count: {
@@ -141,7 +142,7 @@ const HostVenuesPage = () => {
         className: "bg-amber-500/10 text-amber-700 border-amber-500/30",
       },
       {
-        visible: venue.venueVerified,
+        visible: venue.venueVerificationStatus === "VERIFIED",
         label: "Verified",
         icon: BadgeCheck,
         className: "bg-blue-500/10 text-blue-700 border-blue-500/30",

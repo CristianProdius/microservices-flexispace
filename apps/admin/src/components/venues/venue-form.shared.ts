@@ -1,4 +1,4 @@
-import type { Currency } from "@repo/types";
+import type { Currency, VerificationStatus } from "@repo/types";
 
 export const PRODUCT_SERVICE_URL =
   process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL || "http://localhost:8000";
@@ -69,7 +69,7 @@ export interface VenueFormValues {
   videoUrl: string;
   currency: Currency;
   workingHours: WorkingHoursValue;
-  venueVerified: boolean;
+  venueVerificationStatus: VerificationStatus;
   venueRecommended: boolean;
   venueSponsored: boolean;
 }
@@ -92,7 +92,7 @@ export interface VenueFormPayload {
   videoUrl: string | null;
   currency: Currency;
   workingHours: WorkingHoursValue | null;
-  venueVerified?: boolean;
+  venueVerificationStatus?: VerificationStatus;
   venueRecommended?: boolean;
   venueSponsored?: boolean;
   hostId?: string;
@@ -116,7 +116,7 @@ export const createEmptyVenueFormValues = (): VenueFormValues => ({
   videoUrl: "",
   currency: "USD",
   workingHours: createEmptyWorkingHours(),
-  venueVerified: false,
+  venueVerificationStatus: "UNVERIFIED",
   venueRecommended: false,
   venueSponsored: false,
 });
@@ -149,7 +149,7 @@ export const buildVenuePayload = (
   };
 
   if (options.includeListingBadges) {
-    payload.venueVerified = formData.venueVerified;
+    payload.venueVerificationStatus = formData.venueVerificationStatus;
     payload.venueRecommended = formData.venueRecommended;
     payload.venueSponsored = formData.venueSponsored;
   }
@@ -176,7 +176,7 @@ export interface VenueResponse {
   videoUrl?: string | null;
   workingHours?: WorkingHoursValue | null;
   currency: Currency;
-  venueVerified?: boolean;
+  venueVerificationStatus?: VerificationStatus;
   venueRecommended?: boolean;
   venueSponsored?: boolean;
 }
@@ -201,7 +201,7 @@ export const mapVenueToFormValues = (
   videoUrl: venue.videoUrl ?? "",
   currency: venue.currency ?? "USD",
   workingHours: venue.workingHours ?? createEmptyWorkingHours(),
-  venueVerified: venue.venueVerified ?? false,
+  venueVerificationStatus: venue.venueVerificationStatus ?? "UNVERIFIED",
   venueRecommended: venue.venueRecommended ?? false,
   venueSponsored: venue.venueSponsored ?? false,
 });

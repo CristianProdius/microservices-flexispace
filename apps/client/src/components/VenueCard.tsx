@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Check, Megaphone, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
+import type { VerificationStatus } from "@repo/types";
 
 export interface VenueListItem {
   id: number;
@@ -12,7 +13,7 @@ export interface VenueListItem {
   city: string;
   country: string;
   images: string[];
-  venueVerified: boolean;
+  venueVerificationStatus: VerificationStatus;
   venueRecommended: boolean;
   venueSponsored: boolean;
   spaceCount: number;
@@ -22,7 +23,7 @@ export interface VenueListItem {
     username: string;
     image: string | null;
     hostingSince: string | null;
-    hostVerified: boolean;
+    hostVerificationStatus: VerificationStatus;
     hostRecommended: boolean;
     hostSponsored: boolean;
   };
@@ -57,8 +58,8 @@ const VenueCard = ({ venue }: { venue: VenueListItem }) => {
       className: "bg-amber-500/95 text-white",
     },
     {
-      visible: venue.venueVerified || venue.host.hostVerified,
-      label: venue.venueVerified ? tVenue("verifiedVenue") : tVenue("verified"),
+      visible: venue.venueVerificationStatus === "VERIFIED" || venue.host.hostVerificationStatus === "VERIFIED",
+      label: venue.venueVerificationStatus === "VERIFIED" ? tVenue("verifiedVenue") : tVenue("verified"),
       icon: Check,
       className: "bg-success/90 text-white",
     },

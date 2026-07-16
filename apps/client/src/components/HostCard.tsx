@@ -28,7 +28,7 @@ const HostCard = ({ host }: { host: HostSummary }) => {
       className: "bg-amber-500/95 text-white",
     },
     {
-      visible: host.hostVerified,
+      visible: host.hostVerificationStatus === "VERIFIED",
       label: tVenue("verified"),
       icon: Check,
       className: "bg-success/90 text-white",

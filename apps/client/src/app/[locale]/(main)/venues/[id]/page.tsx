@@ -79,7 +79,7 @@ export default async function VenueDetailPage({ params }: PageProps) {
       className: "bg-amber-500/10 text-amber-700 border-amber-500/30",
     },
     {
-      visible: venue.venueVerified,
+      visible: venue.venueVerificationStatus === "VERIFIED",
       label: t("verifiedVenue"),
       icon: Check,
       className: "bg-green-500/10 text-green-700 border-green-500/30",
@@ -97,7 +97,7 @@ export default async function VenueDetailPage({ params }: PageProps) {
       icon: Star,
     },
     {
-      visible: venue.host.hostVerified,
+      visible: venue.host.hostVerificationStatus === "VERIFIED",
       label: t("verified"),
       icon: Check,
     },

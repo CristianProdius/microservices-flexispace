@@ -13,7 +13,9 @@ const HOST_SORT_ORDER_BY: Record<Exclude<HostSortKey, "mostVenues">, HostOrderBy
   featured: [
     { hostSponsored: "desc" },
     { hostRecommended: "desc" },
-    { hostVerified: "desc" },
+    // Verified BADGE tier (enum UNVERIFIED < VERIFIED, so `desc` = VERIFIED
+    // first). This is the public badge status, not the `hostVerified` auth flag.
+    { hostVerificationStatus: "desc" },
     { hostingSince: "asc" },
   ],
   newest: { hostingSince: "desc" },
@@ -45,7 +47,7 @@ interface HostRow {
   image: string | null;
   bio: string | null;
   hostingSince: Date | null;
-  hostVerified: boolean;
+  hostVerificationStatus: "UNVERIFIED" | "VERIFIED";
   hostRecommended: boolean;
   hostSponsored: boolean;
   venues: HostVenueRow[];
@@ -91,7 +93,7 @@ const toHostSummary = (host: HostRow) => {
     coverImage: firstVenueImage(host.venues),
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
-    hostVerified: host.hostVerified,
+    hostVerificationStatus: host.hostVerificationStatus,
     hostRecommended: host.hostRecommended,
     hostSponsored: host.hostSponsored,
     venueCount,
@@ -118,7 +120,7 @@ const fetchHostRows = async (
     image: true,
     bio: true,
     hostingSince: true,
-    hostVerified: true,
+    hostVerificationStatus: true,
     hostRecommended: true,
     hostSponsored: true,
     venues: {
@@ -187,7 +189,7 @@ export const getHosts = async (req: Request, res: Response) => {
         ...(city ? { city } : {}),
       },
     },
-    ...(verifiedOnly ? { hostVerified: true } : {}),
+    ...(verifiedOnly ? { hostVerificationStatus: "VERIFIED" } : {}),
     ...(search
       ? {
           OR: [
@@ -241,7 +243,7 @@ export const getHost = async (req: Request, res: Response) => {
       image: true,
       bio: true,
       hostingSince: true,
-      hostVerified: true,
+      hostVerificationStatus: true,
       hostRecommended: true,
       hostSponsored: true,
       venues: {
@@ -255,7 +257,7 @@ export const getHost = async (req: Request, res: Response) => {
           country: true,
           images: true,
           isActive: true,
-          venueVerified: true,
+          venueVerificationStatus: true,
           venueRecommended: true,
           venueSponsored: true,
           spaces: {
@@ -318,7 +320,7 @@ export const getHost = async (req: Request, res: Response) => {
     coverImage: firstVenueImage(host.venues),
     bio: host.bio,
     hostingSince: host.hostingSince ? host.hostingSince.toISOString() : null,
-    hostVerified: host.hostVerified,
+    hostVerificationStatus: host.hostVerificationStatus,
     hostRecommended: host.hostRecommended,
     hostSponsored: host.hostSponsored,
     venueCount,
@@ -333,8 +335,21 @@ export const updateHostListingBadges = async (req: Request, res: Response) => {
   if (!hostId) return res.status(400).json({ message: "Invalid host id" });
 
   const { hostVerified, hostRecommended, hostSponsored } = req.body ?? {};
+  // The `hostVerified` request field toggles the public "Verified" BADGE. Accept
+  // a boolean (true -> VERIFIED, false -> UNVERIFIED) or the status string
+  // directly; either way it maps to the `hostVerificationStatus` badge column.
+  // It must NOT touch the `hostVerified` AUTHORIZATION column (which gates a
+  // host's listing access via auth-middleware/JWT) — those stay independent.
+  const resolveVerificationStatus = (
+    value: unknown
+  ): "VERIFIED" | "UNVERIFIED" | null => {
+    if (typeof value === "boolean") return value ? "VERIFIED" : "UNVERIFIED";
+    if (value === "VERIFIED" || value === "UNVERIFIED") return value;
+    return null;
+  };
+  const hostVerificationStatus = resolveVerificationStatus(hostVerified);
   if (
-    typeof hostVerified !== "boolean" ||
+    hostVerificationStatus === null ||
     typeof hostRecommended !== "boolean" ||
     typeof hostSponsored !== "boolean"
   ) {
@@ -359,7 +374,9 @@ export const updateHostListingBadges = async (req: Request, res: Response) => {
   const user = await prisma.user.update({
     where: { id: hostId },
     data: {
-      hostVerified,
+      // Badge status only — the `hostVerified` auth flag is intentionally left
+      // untouched here.
+      hostVerificationStatus,
       hostRecommended,
       hostSponsored,
     },
@@ -369,7 +386,7 @@ export const updateHostListingBadges = async (req: Request, res: Response) => {
       username: true,
       name: true,
       role: true,
-      hostVerified: true,
+      hostVerificationStatus: true,
       hostRecommended: true,
       hostSponsored: true,
     },

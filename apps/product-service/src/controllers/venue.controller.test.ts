@@ -470,7 +470,7 @@ describe("venue controller contract", () => {
     expect(mocks.venueUpdate).toHaveBeenCalledWith({
       where: { id: 9 },
       data: expect.objectContaining({
-        venueVerified: true,
+        venueVerificationStatus: "VERIFIED",
         venueRecommended: true,
         venueSponsored: false,
       }),
@@ -556,8 +556,8 @@ describe("getVenuesList listing badges", () => {
           { host: { hostSponsored: "desc" } },
           { venueRecommended: "desc" },
           { host: { hostRecommended: "desc" } },
-          { venueVerified: "desc" },
-          { host: { hostVerified: "desc" } },
+          { venueVerificationStatus: "desc" },
+          { host: { hostVerificationStatus: "desc" } },
           { host: { hostingSince: "asc" } },
           { createdAt: "desc" },
         ],
@@ -575,7 +575,7 @@ describe("getVenuesList listing badges", () => {
           city: "Chisinau",
           country: "Moldova",
           images: ["/venue.jpg"],
-          venueVerified: true,
+          venueVerificationStatus: "VERIFIED",
           venueRecommended: false,
           venueSponsored: true,
           host: {
@@ -584,7 +584,7 @@ describe("getVenuesList listing badges", () => {
             username: "host",
             image: null,
             hostingSince: new Date("2024-01-01"),
-            hostVerified: true,
+            hostVerificationStatus: "VERIFIED",
             hostRecommended: true,
             hostSponsored: false,
           },
@@ -601,12 +601,12 @@ describe("getVenuesList listing badges", () => {
     expect(mocks.venueFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         select: expect.objectContaining({
-          venueVerified: true,
+          venueVerificationStatus: true,
           venueRecommended: true,
           venueSponsored: true,
           host: {
             select: expect.objectContaining({
-              hostVerified: true,
+              hostVerificationStatus: true,
               hostRecommended: true,
               hostSponsored: true,
             }),
@@ -616,11 +616,11 @@ describe("getVenuesList listing badges", () => {
     );
     const payload = res.json.mock.calls[0]![0];
     expect(payload.venues[0]).toMatchObject({
-      venueVerified: true,
+      venueVerificationStatus: "VERIFIED",
       venueRecommended: false,
       venueSponsored: true,
       host: {
-        hostVerified: true,
+        hostVerificationStatus: "VERIFIED",
         hostRecommended: true,
         hostSponsored: false,
       },
@@ -646,7 +646,7 @@ describe("getVenuesList most-spaces sort (AUD-B4)", () => {
     city: "Chisinau",
     country: "Moldova",
     images: [],
-    venueVerified: false,
+    venueVerificationStatus: "UNVERIFIED",
     venueRecommended: false,
     venueSponsored: false,
     host: {
@@ -655,7 +655,7 @@ describe("getVenuesList most-spaces sort (AUD-B4)", () => {
       username: "host",
       image: null,
       hostingSince: null,
-      hostVerified: false,
+      hostVerificationStatus: "UNVERIFIED",
       hostRecommended: false,
       hostSponsored: false,
     },
