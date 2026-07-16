@@ -6,10 +6,18 @@ import { BadgeCheck, Megaphone, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { apiFetch, UnauthenticatedError } from "@/lib/apiFetch";
-import type { User } from "@repo/types";
+import type { User, VerificationStatus } from "@repo/types";
+
+// The admin badge card manages the public "Verified" BADGE
+// (`hostVerificationStatus`), which is distinct from the `hostVerified`
+// authorization flag on `User`. The badge status is not on the shared `User`
+// type, so we widen it here for display/toggle purposes only.
+type HostBadgeUser = User & {
+  hostVerificationStatus?: VerificationStatus;
+};
 
 interface HostListingBadgesCardProps {
-  user: User;
+  user: HostBadgeUser;
   onUpdated: () => void;
 }
 
@@ -35,8 +43,10 @@ const badgeOptions = [
 ] as const;
 
 const HostListingBadgesCard = ({ user, onUpdated }: HostListingBadgesCardProps) => {
+  // The "Verified" toggle reflects the BADGE status, not the auth flag. The PUT
+  // sends a `hostVerified` boolean, which the endpoint maps to the badge status.
   const [values, setValues] = useState({
-    hostVerified: user.hostVerified,
+    hostVerified: user.hostVerificationStatus === "VERIFIED",
     hostRecommended: user.hostRecommended,
     hostSponsored: user.hostSponsored,
   });
@@ -46,11 +56,11 @@ const HostListingBadgesCard = ({ user, onUpdated }: HostListingBadgesCardProps) 
 
   useEffect(() => {
     setValues({
-      hostVerified: user.hostVerified,
+      hostVerified: user.hostVerificationStatus === "VERIFIED",
       hostRecommended: user.hostRecommended,
       hostSponsored: user.hostSponsored,
     });
-  }, [user.hostRecommended, user.hostSponsored, user.hostVerified]);
+  }, [user.hostRecommended, user.hostSponsored, user.hostVerificationStatus]);
 
   const handleSave = async () => {
     setError(null);

@@ -37,13 +37,15 @@ interface VenueFormProps {
   allowListingBadgeControls?: boolean;
 }
 
-const listingBadgeOptions = [
-  {
-    key: "venueVerified",
-    label: "Verified",
-    description: "Marks this venue as checked by the platform.",
-    icon: BadgeCheck,
-  },
+// The "Verified" badge is driven off the `venueVerificationStatus` enum, while
+// Recommended/Sponsored remain booleans on the form values.
+const verifiedBadgeOption = {
+  label: "Verified",
+  description: "Marks this venue as checked by the platform.",
+  icon: BadgeCheck,
+} as const;
+
+const booleanBadgeOptions = [
   {
     key: "venueRecommended",
     label: "Recommended",
@@ -284,7 +286,38 @@ const VenueForm = ({
             description="Sponsored venues rank first, then recommended, then verified."
           >
             <div className="grid gap-3 md:grid-cols-3">
-              {listingBadgeOptions.map(({ key, label, description, icon: Icon }) => (
+              {(() => {
+                const VerifiedIcon = verifiedBadgeOption.icon;
+                return (
+                  <label className="flex items-start gap-3 rounded-md border border-border/60 bg-background px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={formData.venueVerificationStatus === "VERIFIED"}
+                      onChange={(event) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          venueVerificationStatus: event.target.checked
+                            ? "VERIFIED"
+                            : "UNVERIFIED",
+                        }))
+                      }
+                      className="mt-1"
+                    />
+                    <span className="flex min-w-0 gap-3">
+                      <VerifiedIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0">
+                        <span className="text-sm font-medium">
+                          {verifiedBadgeOption.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {verifiedBadgeOption.description}
+                        </span>
+                      </span>
+                    </span>
+                  </label>
+                );
+              })()}
+              {booleanBadgeOptions.map(({ key, label, description, icon: Icon }) => (
                 <label
                   key={key}
                   className="flex items-start gap-3 rounded-md border border-border/60 bg-background px-3 py-3"
