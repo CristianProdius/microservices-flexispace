@@ -66,6 +66,7 @@ enum Currency {
   USD
   EUR
   MDL
+  RON
 }
 
 enum BookingActor {

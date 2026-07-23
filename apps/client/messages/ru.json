@@ -29,6 +29,8 @@
     "guest": "{count, plural, one {# гость} few {# гостя} other {# гостей}}",
     "hourly": "Почасовая",
     "daily": "Посуточная",
+    "monthly": "Абонемент",
+    "perHourDay": "Почасово/посуточно",
     "perHour": "/час",
     "perDay": "/день",
     "perHrShort": "/ч",

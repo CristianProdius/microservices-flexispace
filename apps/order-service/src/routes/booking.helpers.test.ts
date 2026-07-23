@@ -807,26 +807,29 @@ describe("calculateBookingPrice MONTHLY candidate (MONTHLY)", () => {
     expect(result.serviceFee).toBe(450); // 10% of 4500.
   });
 
-  it("ignores the monthly rate override for a non-MONTHLY space", () => {
-    // A DAILY space still prices per-day even if a monthly override is passed.
+  it("prices monthly on a non-MONTHLY space when a plan rate override is supplied", () => {
+    // A mixed (BOTH/DAILY) space can offer named monthly plans. When the route
+    // passes a selected plan's rate as the override, the booking is priced
+    // monthly and the cheaper per-day rate is suppressed so it can't undercut
+    // the subscription.
     const result = calculateBookingPrice(
       {
         availability: [],
         cleaningFee: 0,
         currency: "USD",
-        pricePerDay: 100,
+        pricePerDay: 50, // 31 days * $50 = $1550 < plan; must be suppressed
         pricePerHour: null,
-        pricePerMonth: 2000,
-        pricingType: "DAILY",
+        pricePerMonth: null,
+        pricingType: "BOTH",
       },
       date("2026-05-18"),
-      date("2026-05-18"),
+      date("2026-06-17"), // exactly one calendar month
       null,
       null,
       0,
-      9999
+      2700 // selected plan rate override
     );
-    expect(result.subtotal).toBe(100);
+    expect(result.subtotal).toBe(2700);
   });
 
   it("does not add a monthly candidate for a non-MONTHLY space (daily unaffected)", () => {

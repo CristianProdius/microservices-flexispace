@@ -1208,14 +1208,11 @@ export const createSpace = async (req: Request, res: Response) => {
       });
     }
 
-    // Monthly plans only make sense for a MONTHLY space; persist them (with
-    // sortOrder = array index) when this is a MONTHLY listing. For any other
-    // type there's nothing to clear on create (a brand-new row has no plans).
-    if (
-      spaceData.pricingType === "MONTHLY" &&
-      normalizedMonthlyPlans &&
-      normalizedMonthlyPlans.length > 0
-    ) {
+    // Monthly plans can be attached to any space type: a space may offer named
+    // monthly subscriptions alongside hourly/daily pricing (e.g. a coworking
+    // space bookable by the hour AND by monthly membership). Persist them (with
+    // sortOrder = array index) when the payload provides at least one plan.
+    if (normalizedMonthlyPlans && normalizedMonthlyPlans.length > 0) {
       await tx.monthlyPlan.createMany({
         data: normalizedMonthlyPlans.map((plan, index) => ({
           spaceId: created.id,
@@ -1451,28 +1448,23 @@ export const updateSpace = async (req: Request, res: Response) => {
       }
     }
 
-    // Monthly plans: when the effective type is MONTHLY, replace the space's
-    // plans with the new payload (deleteMany then createMany, sortOrder = index)
-    // if one was provided. When the effective type is NOT MONTHLY, drop any
-    // existing plans so a space switched off monthly pricing can't keep stale
-    // plans a booking could reference.
-    if (effectivePricingType === "MONTHLY") {
-      if (normalizedMonthlyPlans !== null) {
-        await tx.monthlyPlan.deleteMany({ where: { spaceId } });
-        if (normalizedMonthlyPlans.length > 0) {
-          await tx.monthlyPlan.createMany({
-            data: normalizedMonthlyPlans.map((plan, index) => ({
-              spaceId,
-              name: plan.name,
-              pricePerMonth: plan.pricePerMonth,
-              description: plan.description,
-              sortOrder: index,
-            })),
-          });
-        }
-      }
-    } else {
+    // Monthly plans can be attached to any space type. When the payload provides
+    // a monthlyPlans array, replace the space's plans with it (deleteMany then
+    // createMany, sortOrder = index); an empty array clears them. When the field
+    // is omitted (null), leave existing plans untouched — mirrors pricingTiers.
+    if (normalizedMonthlyPlans !== null) {
       await tx.monthlyPlan.deleteMany({ where: { spaceId } });
+      if (normalizedMonthlyPlans.length > 0) {
+        await tx.monthlyPlan.createMany({
+          data: normalizedMonthlyPlans.map((plan, index) => ({
+            spaceId,
+            name: plan.name,
+            pricePerMonth: plan.pricePerMonth,
+            description: plan.description,
+            sortOrder: index,
+          })),
+        });
+      }
     }
 
     if (availabilityResult && "availability" in availabilityResult) {

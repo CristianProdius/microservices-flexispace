@@ -187,17 +187,20 @@ describe("buildSpacePayload monthlyPlans", () => {
     expect(payload.monthlyPlans?.[0]).not.toHaveProperty("description");
   });
 
-  it("sends no monthly plans for non-MONTHLY spaces", () => {
+  it("includes monthly plans on non-MONTHLY spaces (subscriptions alongside hourly/daily)", () => {
     const payload = buildSpacePayload(
       baseValues({
         pricingType: "BOTH",
         monthlyPlans: [
           { name: "Hot desk", pricePerMonth: "150", description: "Flexible" },
+          { name: "", pricePerMonth: "250", description: "" },
         ],
       }),
     );
 
-    expect(payload.monthlyPlans).toEqual([]);
+    expect(payload.monthlyPlans).toEqual([
+      { name: "Hot desk", pricePerMonth: 150, description: "Flexible" },
+    ]);
   });
 });
 

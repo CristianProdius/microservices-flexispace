@@ -736,8 +736,13 @@ export const calculateBookingPrice = (
   // A MONTHLY space is priced SOLELY by its monthly rate: skip tier (and the
   // hourly/daily rate) candidates so a stray/cheap tier can't undercut the
   // monthly price via Math.min.
-  const isMonthlySpace = space.pricingType === "MONTHLY";
-  for (const tier of isMonthlySpace ? [] : space.pricingTiers ?? []) {
+  // A booking is priced monthly when the space is MONTHLY-typed OR the guest
+  // selected a named monthly plan (via monthlyRateOverride) on a mixed space.
+  // In both cases price SOLELY by the monthly rate: skip tier/hourly/daily
+  // candidates so a cheaper short-term rate can't undercut the subscription.
+  const isMonthlyBooking =
+    space.pricingType === "MONTHLY" || typeof monthlyRateOverride === "number";
+  for (const tier of isMonthlyBooking ? [] : space.pricingTiers ?? []) {
     // M6: skip a zero/negative-priced tier the same way the zero-hour hourly
     // candidate is guarded below. A "first hour free" (price <= 0) tier would
     // otherwise win Math.min for an unrelated 30-day booking and zero the
@@ -756,12 +761,17 @@ export const calculateBookingPrice = (
   // push a negative candidate that Math.min selects and the subtotal floor
   // masks to a free, slot-blocking booking. A non-positive rate contributes no
   // candidate, so the space fails closed (zero-candidate -> 400) instead.
+  // When the booking is monthly (MONTHLY space or a selected plan), the
+  // hourly/daily/tier candidates are suppressed so only the monthly rate prices
+  // it — mirroring the tier suppression above.
   const wantsHourly = Boolean(startTime && endTime);
   const allowsHourly =
+    !isMonthlyBooking &&
     wantsHourly &&
     (space.pricePerHour ?? 0) > 0 &&
     (space.pricingType === "HOURLY" || space.pricingType === "BOTH");
   const allowsDaily =
+    !isMonthlyBooking &&
     (space.pricePerDay ?? 0) > 0 &&
     (space.pricingType === "DAILY" || space.pricingType === "BOTH");
   // MONTHLY: a monthly space contributes a calendar-month, pro-rated candidate.
@@ -770,16 +780,17 @@ export const calculateBookingPrice = (
   // space fails closed (zero-candidate -> NoApplicablePriceError -> 400) rather
   // than pricing a free, slot-blocking hold.
   // MONTHLY PLANS: the effective monthly rate is the selected plan's rate when
-  // an override is supplied (MONTHLY spaces only), otherwise the space's base
-  // pricePerMonth. The strictly-positive gate below still applies so a null/
-  // zero/negative rate contributes no candidate and the space fails closed.
+  // an override is supplied (a plan can now be selected on any space type),
+  // otherwise the MONTHLY space's base pricePerMonth. The strictly-positive gate
+  // below still applies so a null/zero/negative rate contributes no candidate
+  // and the space fails closed.
   const effectiveMonthlyRate =
-    space.pricingType === "MONTHLY" &&
     typeof monthlyRateOverride === "number"
       ? monthlyRateOverride
-      : space.pricePerMonth ?? 0;
-  const allowsMonthly =
-    effectiveMonthlyRate > 0 && space.pricingType === "MONTHLY";
+      : space.pricingType === "MONTHLY"
+        ? space.pricePerMonth ?? 0
+        : 0;
+  const allowsMonthly = effectiveMonthlyRate > 0 && isMonthlyBooking;
 
   if (allowsHourly) {
     // BOOKSVC-009: per-day intersection with availability windows.
@@ -943,9 +954,39 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         });
       }
 
-      // A MONTHLY space is booked as a full-period rental — relax the per-day
-      // open-hours and hour-cap checks (only blocked dates apply).
-      const isMonthlyBooking = spaceSupportsMonthly(space);
+      // MONTHLY PLANS: resolve a selected named plan. Plans can now be attached
+      // to ANY space type (a mixed space may sell monthly memberships alongside
+      // hourly/daily). A plan is REQUIRED only for a MONTHLY-typed space that
+      // offers plans; on any other type the plan is optional — selecting one
+      // switches the booking to monthly pricing, omitting it books short-term.
+      let selectedMonthlyPlan:
+        | { id: number; name: string; pricePerMonth: number }
+        | null = null;
+      const monthlyPlans = space.monthlyPlans ?? [];
+      if (monthlyPlans.length > 0) {
+        if (monthlyPlanId !== undefined) {
+          const plan = monthlyPlans.find((p) => p.id === monthlyPlanId);
+          if (!plan) {
+            return reply.status(400).send({
+              message: "Selected monthly plan is not available for this space",
+            });
+          }
+          selectedMonthlyPlan = plan;
+        } else if (space.pricingType === "MONTHLY") {
+          // A MONTHLY-typed space with plans has no base short-term path, so a
+          // selection is mandatory. A mixed space (HOURLY/DAILY/BOTH) with plans
+          // may instead be booked short-term, so omitting the id is allowed.
+          return reply.status(400).send({
+            message: "monthlyPlanId is required for this space",
+          });
+        }
+      }
+
+      // A monthly booking (MONTHLY space or a selected plan) is a full-period
+      // rental — relax the per-day open-hours and hour-cap checks (only blocked
+      // dates apply).
+      const isMonthlyBooking =
+        selectedMonthlyPlan !== null || spaceSupportsMonthly(space);
       const availabilityError = validateAvailabilityRules(
         space,
         requestedStartDate,
@@ -972,30 +1013,12 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // while pricing sums only the per-day availability intersection, so the
       // block window can exceed the priced window (phantom blocking, not
       // underpricing). Tracked in docs/bug-audit-2026-07.md follow-ups.
-      const isHourly = Boolean(startTime && endTime) && spaceSupportsHourly(space);
-
-      // MONTHLY PLANS: resolve the selected plan for a MONTHLY space that offers
-      // named plans. When plans exist a valid monthlyPlanId is REQUIRED and its
-      // rate drives the pricing (via the monthlyRateOverride); the plan name is
-      // snapshotted onto the booking. For a MONTHLY space with no plans, or any
-      // non-MONTHLY space, monthlyPlanId is ignored and no override is applied.
-      let selectedMonthlyPlan: { id: number; name: string; pricePerMonth: number } | null =
-        null;
-      const monthlyPlans = space.monthlyPlans ?? [];
-      if (space.pricingType === "MONTHLY" && monthlyPlans.length > 0) {
-        if (monthlyPlanId === undefined) {
-          return reply.status(400).send({
-            message: "monthlyPlanId is required for this space",
-          });
-        }
-        const plan = monthlyPlans.find((p) => p.id === monthlyPlanId);
-        if (!plan) {
-          return reply.status(400).send({
-            message: "Selected monthly plan is not available for this space",
-          });
-        }
-        selectedMonthlyPlan = plan;
-      }
+      // A monthly-plan booking is a full-day rental even on a BOTH/HOURLY space,
+      // so it is never treated as hourly (the plan was resolved above).
+      const isHourly =
+        !selectedMonthlyPlan &&
+        Boolean(startTime && endTime) &&
+        spaceSupportsHourly(space);
 
       // Calculate pricing
       let pricing: ReturnType<typeof calculateBookingPrice>;

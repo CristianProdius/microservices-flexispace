@@ -1,4 +1,4 @@
-export type Currency = "USD" | "EUR" | "MDL";
+export type Currency = "USD" | "EUR" | "MDL" | "RON";
 
 export interface ExchangeRate {
   id: number;
@@ -18,18 +18,27 @@ export interface PricingTier {
   comment?: string;
 }
 
-export const CURRENCIES: readonly Currency[] = ["USD", "EUR", "MDL"] as const;
+export const CURRENCIES: readonly Currency[] = [
+  "USD",
+  "EUR",
+  "MDL",
+  "RON",
+] as const;
 
+// MDL/RON use their ISO code as the symbol: a bare "L" was ambiguous between
+// Moldovan (MDL) and Romanian (RON) lei. Rendered as a suffix (e.g. "2200 MDL").
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: "$",
   EUR: "€",
-  MDL: "L",
+  MDL: "MDL",
+  RON: "RON",
 };
 
 export const CURRENCY_LABELS: Record<Currency, string> = {
   USD: "US Dollar (USD)",
   EUR: "Euro (EUR)",
   MDL: "Moldovan Leu (MDL)",
+  RON: "Romanian Leu (RON)",
 };
 
 export const PRICING_TIER_PRESETS = [

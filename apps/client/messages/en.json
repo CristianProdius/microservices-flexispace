@@ -29,6 +29,8 @@
     "guest": "{count, plural, one {# guest} other {# guests}}",
     "hourly": "Hourly",
     "daily": "Daily",
+    "monthly": "Monthly",
+    "perHourDay": "Per hour/day",
     "perHour": "/hour",
     "perDay": "/day",
     "perHrShort": "/hr",

@@ -628,7 +628,8 @@ const SpaceForm = ({
               >
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (&euro;)</option>
-                <option value="MDL">MDL (L)</option>
+                <option value="MDL">MDL (Lei MD)</option>
+                <option value="RON">RON (Lei RO)</option>
               </select>
             </div>
 
@@ -723,15 +724,16 @@ const SpaceForm = ({
               )}
             </div>
 
-            {formData.pricingType === "MONTHLY" && (
-              <MonthlyPlansEditor
-                plans={formData.monthlyPlans}
-                onChange={(monthlyPlans) =>
-                  setFormData((prev) => ({ ...prev, monthlyPlans }))
-                }
-                currency={formData.currency}
-              />
-            )}
+            {/* Monthly subscription plans can be offered on ANY space type — a
+                space bookable by the hour/day may also sell monthly memberships.
+                Optional; the editor renders its own empty/add-plan state. */}
+            <MonthlyPlansEditor
+              plans={formData.monthlyPlans}
+              onChange={(monthlyPlans) =>
+                setFormData((prev) => ({ ...prev, monthlyPlans }))
+              }
+              currency={formData.currency}
+            />
 
             <PricingTiersEditor
               tiers={formData.pricingTiers}

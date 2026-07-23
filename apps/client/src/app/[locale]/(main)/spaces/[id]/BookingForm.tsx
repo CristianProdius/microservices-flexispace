@@ -26,13 +26,27 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const t = useTranslations("booking");
   const tCommon = useTranslations("common");
 
-  // A MONTHLY space books as a full-day date range (like DAILY): no time
-  // window, isHourly=false. It just reuses the "daily" UI path here and shows
-  // the per-month rate instead of the per-day rate.
+  const canBookHourly = space.pricingType === "HOURLY" || space.pricingType === "BOTH";
+  const canBookDaily = space.pricingType === "DAILY" || space.pricingType === "BOTH";
+  const canBookShortTerm = canBookHourly || canBookDaily;
+  // Monthly plans can be offered on ANY space type. A space is bookable monthly
+  // when it is MONTHLY-typed OR it carries at least one named plan (e.g. a
+  // coworking space bookable by the hour that also sells monthly memberships).
+  const hasMonthlyPlans = (space.monthlyPlans?.length ?? 0) > 0;
+  const monthlyAvailable = space.pricingType === "MONTHLY" || hasMonthlyPlans;
+  // Show the "Per hour/day" vs "Monthly" tabs only when BOTH a short-term and a
+  // monthly path exist; otherwise the single available mode renders untabbed.
+  const showModeTabs = canBookShortTerm && monthlyAvailable;
+
+  // The active booking mode. A monthly booking reuses the daily date-range UI
+  // (no time window) and shows the per-month rate. Default to short-term when a
+  // short-term path exists and the space isn't monthly-typed; otherwise monthly.
+  const [mode, setMode] = useState<"shortTerm" | "monthly">(
+    !canBookShortTerm || space.pricingType === "MONTHLY" ? "monthly" : "shortTerm"
+  );
+  const isMonthly = mode === "monthly";
   const [bookingType, setBookingType] = useState<"hourly" | "daily">(
-    space.pricingType === "DAILY" || space.pricingType === "MONTHLY"
-      ? "daily"
-      : "hourly"
+    space.pricingType === "DAILY" ? "daily" : "hourly"
   );
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -41,14 +55,11 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const [guests, setGuests] = useState(1);
   const [selectedMonthlyPlanId, setSelectedMonthlyPlanId] = useState<number | null>(null);
 
-  const canBookHourly = space.pricingType === "HOURLY" || space.pricingType === "BOTH";
-  const canBookDaily = space.pricingType === "DAILY" || space.pricingType === "BOTH";
-  const canBookMonthly = space.pricingType === "MONTHLY";
-  // A MONTHLY space may offer several named plans. When it does, the guest must
-  // pick one and it prices the booking; otherwise the single pricePerMonth flow
-  // is used unchanged.
-  const hasMonthlyPlans =
-    canBookMonthly && (space.monthlyPlans?.length ?? 0) > 0;
+  // In monthly mode the date UI is a full-day range (check-in/out) and never
+  // hourly, regardless of the short-term hourly/daily toggle.
+  const isDateRange = isMonthly || bookingType === "daily";
+  const isHourlyUI = !isMonthly && bookingType === "hourly";
+
   // A plans-only listing is allowed to have a null base pricePerMonth, so the
   // headline falls back to the cheapest plan ("from {min}/mo") instead of
   // rendering an empty/NaN base rate.
@@ -85,20 +96,20 @@ const BookingForm = ({ space }: BookingFormProps) => {
   // That pro-ration is done server-side and is authoritative; this is a rough
   // client-side preview so the sidebar can show an approximate subtotal/total.
   const monthlyEstimate = useMemo(() => {
-    if (!canBookMonthly) return null;
+    if (!isMonthly) return null;
     return calculateMonthlyEstimate({
       pricePerMonth: effectiveMonthlyRate,
       cleaningFee: space.cleaningFee,
       startDate,
       endDate,
     });
-  }, [canBookMonthly, effectiveMonthlyRate, space.cleaningFee, startDate, endDate]);
+  }, [isMonthly, effectiveMonthlyRate, space.cleaningFee, startDate, endDate]);
 
   // The breakdown/checkout draft use the monthly estimate for MONTHLY spaces and
   // the standard hourly/daily pricing otherwise.
-  const activePricing = canBookMonthly ? monthlyEstimate : pricing;
+  const activePricing = isMonthly ? monthlyEstimate : pricing;
 
-  const subtotalLabel = canBookMonthly
+  const subtotalLabel = isMonthly
     ? `${formatPrice(effectiveMonthlyRate ?? space.pricePerMonth ?? 0, (space as any).currency)}/mo`
     : pricing?.appliedTier
       ? `${pricing.appliedTier.label} x ${pricing.appliedTier.units}`
@@ -119,8 +130,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
     }
 
     if (!activePricing || !startDate) return;
-    // A MONTHLY space with plans requires a selection before proceeding.
-    if (hasMonthlyPlans && !selectedMonthlyPlanId) return;
+    // A monthly booking with plans requires a plan selection before proceeding.
+    if (isMonthly && hasMonthlyPlans && !selectedMonthlyPlanId) return;
 
     setDraft({
       spaceId: space.id,
@@ -129,21 +140,22 @@ const BookingForm = ({ space }: BookingFormProps) => {
       hostId: space.hostId,
       hostName: space.host?.name || tCommon("unknown"),
       startDate,
-      // MONTHLY reuses the "daily" date-range path, so a full date range is
-      // sent with no time window and isHourly=false for both.
-      endDate: bookingType === "daily" ? endDate : startDate,
-      startTime: bookingType === "hourly" ? startTime : undefined,
-      endTime: bookingType === "hourly" ? endTime : undefined,
+      // A monthly booking reuses the "daily" date-range path, so a full date
+      // range is sent with no time window and isHourly=false.
+      endDate: isDateRange ? endDate : startDate,
+      startTime: isHourlyUI ? startTime : undefined,
+      endTime: isHourlyUI ? endTime : undefined,
       guests,
       pricePerHour: space.pricePerHour || undefined,
       pricePerDay: space.pricePerDay || undefined,
-      isHourly: bookingType === "hourly",
+      isHourly: isHourlyUI,
       subtotal: activePricing.subtotal,
       cleaningFee: activePricing.cleaningFee,
       serviceFee: activePricing.serviceFee,
       totalAmount: activePricing.totalAmount,
       currency: (space as any).currency || "USD",
-      monthlyPlanId: hasMonthlyPlans ? selectedMonthlyPlanId ?? undefined : undefined,
+      monthlyPlanId:
+        isMonthly && hasMonthlyPlans ? selectedMonthlyPlanId ?? undefined : undefined,
     });
 
     router.push("/bookings/checkout");
@@ -157,9 +169,43 @@ const BookingForm = ({ space }: BookingFormProps) => {
 
   return (
     <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
+      {/* Booking Mode Tabs — only for a mixed space that supports BOTH a
+          short-term (hourly/daily) path AND a monthly path (subscription or
+          plans). Switching the mode reshapes the box below. */}
+      {showModeTabs && (
+        <div className="flex gap-2 mb-6" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!isMonthly}
+            onClick={() => setMode("shortTerm")}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+              !isMonthly
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "bg-subtle text-muted hover:bg-border"
+            }`}
+          >
+            {tCommon("perHourDay")}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isMonthly}
+            onClick={() => setMode("monthly")}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+              isMonthly
+                ? "bg-primary text-white shadow-md shadow-primary/20"
+                : "bg-subtle text-muted hover:bg-border"
+            }`}
+          >
+            {tCommon("monthly")}
+          </button>
+        </div>
+      )}
+
       {/* Price Display */}
       <div className="flex items-baseline gap-1 mb-6">
-        {canBookMonthly ? (
+        {isMonthly ? (
           hasMonthlyPlans ? (
             <span className="text-2xl font-bold text-foreground">
               {t("fromPerMonth", {
@@ -178,7 +224,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
               <span className="text-muted">/mo</span>
             </>
           )
-        ) : bookingType === "hourly" && space.pricePerHour ? (
+        ) : isHourlyUI && space.pricePerHour ? (
           <>
             <span className="text-2xl font-bold text-foreground">
               {formatPrice(space.pricePerHour, (space as any).currency)}
@@ -195,8 +241,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
         )}
       </div>
 
-      {/* Monthly Plan Selector — only for a MONTHLY space that offers plans. */}
-      {hasMonthlyPlans && (
+      {/* Monthly Plan Selector — in monthly mode when the space offers plans. */}
+      {isMonthly && hasMonthlyPlans && (
         <div className="mb-6">
           <p className="block text-sm font-medium text-muted mb-2">
             {t("choosePlan")}
@@ -241,8 +287,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
         </div>
       )}
 
-      {/* Booking Type Toggle */}
-      {canBookHourly && canBookDaily && (
+      {/* Booking Type Toggle — short-term only (hidden in monthly mode) */}
+      {!isMonthly && canBookHourly && canBookDaily && (
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setBookingType("hourly")}
@@ -271,14 +317,14 @@ const BookingForm = ({ space }: BookingFormProps) => {
       <div className="space-y-4 mb-6">
         <div>
           <label htmlFor="booking-start-date" className="block text-sm font-medium text-muted mb-1">
-            {bookingType === "hourly" ? t("date") : t("checkIn")}
+            {isHourlyUI ? t("date") : t("checkIn")}
           </label>
           <div className="relative">
             <DatePicker
               id="booking-start-date"
               value={startDate}
               minDate={minDate}
-              placeholder={bookingType === "hourly" ? t("date") : t("checkIn")}
+              placeholder={isHourlyUI ? t("date") : t("checkIn")}
               onChange={(date) => {
                 setStartDate(date);
                 if (!endDate || date > endDate) setEndDate(date);
@@ -287,7 +333,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
           </div>
         </div>
 
-        {bookingType === "daily" && (
+        {isDateRange && (
           <div>
             <label htmlFor="booking-end-date" className="block text-sm font-medium text-muted mb-1">
               {t("checkOut")}
@@ -304,7 +350,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
           </div>
         )}
 
-        {bookingType === "hourly" && (
+        {isHourlyUI && (
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="booking-start-time" className="block text-sm font-medium text-muted mb-1">
@@ -415,7 +461,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
             <span>{tCommon("total")}</span>
             <span>{formatPriceFull(activePricing.totalAmount, (space as any).currency)}</span>
           </div>
-          {canBookMonthly && (
+          {isMonthly && (
             // The monthly subtotal here is a rough client estimate (rate spread
             // over ~30 days); the server prices it per calendar month (pro-rated),
             // so make clear the final total is confirmed at booking.
@@ -431,8 +477,8 @@ const BookingForm = ({ space }: BookingFormProps) => {
         onClick={handleBooking}
         disabled={
           !startDate ||
-          (bookingType === "daily" && !endDate) ||
-          (hasMonthlyPlans && !selectedMonthlyPlanId)
+          (isDateRange && !endDate) ||
+          (isMonthly && hasMonthlyPlans && !selectedMonthlyPlanId)
         }
         className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
       >

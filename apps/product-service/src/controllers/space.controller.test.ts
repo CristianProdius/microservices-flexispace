@@ -1185,7 +1185,7 @@ describe("createSpace - monthly plans persistence (T3)", () => {
     expect(prisma.space.create).not.toHaveBeenCalled();
   });
 
-  it("does not persist plans for a non-MONTHLY space", async () => {
+  it("persists plans for a non-MONTHLY space (subscriptions alongside hourly/daily)", async () => {
     const res = buildRes();
     await createSpace(
       buildReq({
@@ -1198,7 +1198,7 @@ describe("createSpace - monthly plans persistence (T3)", () => {
       res as never,
     );
     expect(res.statusCode).toBe(201);
-    expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
+    expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -1237,7 +1237,7 @@ describe("updateSpace - monthly plans persistence (T3)", () => {
     ]);
   });
 
-  it("clears plans (deleteMany, no createMany) when switching to a non-MONTHLY type", async () => {
+  it("replaces plans on a non-MONTHLY space when the update provides them", async () => {
     const res = buildRes();
     (prisma.space.findUnique as AnyMock)
       .mockResolvedValueOnce({
@@ -1251,7 +1251,11 @@ describe("updateSpace - monthly plans persistence (T3)", () => {
     await updateSpace(
       buildReq({
         params: { id: "9" },
-        body: { pricingType: "HOURLY", pricePerHour: 10 },
+        body: {
+          pricingType: "HOURLY",
+          pricePerHour: 10,
+          monthlyPlans: [{ name: "Member", pricePerMonth: 300 }],
+        },
       }),
       res as never,
     );
@@ -1259,6 +1263,32 @@ describe("updateSpace - monthly plans persistence (T3)", () => {
     expect(prisma.monthlyPlan.deleteMany).toHaveBeenCalledWith({
       where: { spaceId: 9 },
     });
+    expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
+  });
+
+  // A type switch that does NOT touch monthlyPlans must preserve existing plans:
+  // plans are no longer tied to the MONTHLY pricing type, so switching to
+  // HOURLY/DAILY/BOTH must not silently wipe a space's subscriptions.
+  it("preserves plans when switching to a non-MONTHLY type without touching monthlyPlans", async () => {
+    const res = buildRes();
+    (prisma.space.findUnique as AnyMock)
+      .mockResolvedValueOnce({
+        id: 11,
+        hostId: "user-1",
+        venueId: 1,
+        pricingType: "MONTHLY",
+        pricePerMonth: 500,
+      })
+      .mockResolvedValueOnce({ id: 11, category: null });
+    await updateSpace(
+      buildReq({
+        params: { id: "11" },
+        body: { pricingType: "HOURLY", pricePerHour: 10 },
+      }),
+      res as never,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(prisma.monthlyPlan.deleteMany).not.toHaveBeenCalled();
     expect(prisma.monthlyPlan.createMany).not.toHaveBeenCalled();
   });
 

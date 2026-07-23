@@ -615,6 +615,92 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // MONTHLY PLANS on a MIXED space: a BOTH space can offer monthly subscriptions
+  // alongside hourly/daily. Selecting a plan prices the booking monthly and the
+  // cheaper short-term rates must NOT undercut it.
+  const mixedSpaceWithPlans = {
+    ...baseSpace,
+    availability: openAllWeekMonthly,
+    maxBookingHours: null,
+    pricePerHour: 25,
+    pricePerDay: 50, // 31 days * $50 = $1550 < plan; must be suppressed
+    pricePerMonth: null,
+    pricingType: "BOTH",
+    pricingTiers: [],
+    monthlyPlans: [
+      { id: 200, name: "Team desk", pricePerMonth: 2700, sortOrder: 0 },
+    ],
+  };
+
+  it("prices a mixed (BOTH) space from the selected plan, suppressing cheaper daily rate", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(mixedSpaceWithPlans);
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: "2026-06-17", // exactly one calendar month from monday
+        guests: 1,
+        monthlyPlanId: 200,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: false,
+          monthlyPlanId: 200,
+          monthlyPlanName: "Team desk",
+          subtotal: 2700, // plan rate, NOT the $1550 daily extrapolation
+          totalAmount: 2700,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
+  it("books a mixed (BOTH) space short-term when no plan is selected, even though plans exist", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue(mixedSpaceWithPlans);
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        endDate: monday,
+        endTime: "11:00",
+        guests: 1,
+        // no monthlyPlanId — a mixed space with plans may still be booked hourly
+        spaceId: 42,
+        startDate: monday,
+        startTime: "10:00",
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          isHourly: true, // short-term hourly booking
+          monthlyPlanId: null,
+          monthlyPlanName: null,
+          subtotal: 25, // 1h * $25
+        }),
+      }),
+    );
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {
