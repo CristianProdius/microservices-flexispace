@@ -198,7 +198,8 @@ export type HostApplicationStatus = (typeof HostApplicationStatus)[keyof typeof 
 export const Currency: {
   USD: 'USD',
   EUR: 'EUR',
-  MDL: 'MDL'
+  MDL: 'MDL',
+  RON: 'RON'
 };
 
 export type Currency = (typeof Currency)[keyof typeof Currency]

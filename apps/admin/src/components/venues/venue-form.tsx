@@ -271,7 +271,8 @@ const VenueForm = ({
               >
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (&euro;)</option>
-                <option value="MDL">MDL (L)</option>
+                <option value="MDL">MDL (Lei MD)</option>
+                <option value="RON">RON (Lei RO)</option>
               </select>
               <p className="mt-1 text-sm text-muted-foreground">
                 This currency will be used as the default for spaces in this venue.

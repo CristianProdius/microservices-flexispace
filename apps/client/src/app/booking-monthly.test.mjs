@@ -19,27 +19,47 @@ const bookingStore = readFileSync(
   "utf8",
 );
 
-test("booking form derives canBookMonthly from the MONTHLY pricing type", () => {
+test("monthly availability is derived from the pricing type OR named plans", () => {
+  // Monthly plans can now be offered on ANY space type, so a space is bookable
+  // monthly when it is MONTHLY-typed or it simply carries at least one plan.
   assert.match(
     bookingForm,
-    /const canBookMonthly = space\.pricingType === "MONTHLY"/,
-    "canBookMonthly should be true only for MONTHLY spaces",
+    /const hasMonthlyPlans = \(space\.monthlyPlans\?\.length \?\? 0\) > 0/,
+    "hasMonthlyPlans should be true whenever the space carries plans",
+  );
+  assert.match(
+    bookingForm,
+    /const monthlyAvailable = space\.pricingType === "MONTHLY" \|\| hasMonthlyPlans/,
+    "monthlyAvailable should union the MONTHLY type with plan presence",
   );
 });
 
-test("MONTHLY spaces default to the date-range (daily) booking UI", () => {
+test("mode defaults to monthly only when there is no short-term path or the type is MONTHLY", () => {
   assert.match(
     bookingForm,
-    /space\.pricingType === "DAILY" \|\| space\.pricingType === "MONTHLY"\s*\?\s*"daily"/,
-    "MONTHLY should reuse the daily date-range path (no hourly time inputs)",
+    /!canBookShortTerm \|\| space\.pricingType === "MONTHLY"\s*\?\s*"monthly"\s*:\s*"shortTerm"/,
+    "default mode should be short-term for a mixed space, monthly otherwise",
+  );
+});
+
+test("a monthly booking reuses the full-day date-range path (no hourly time inputs)", () => {
+  assert.match(
+    bookingForm,
+    /const isDateRange = isMonthly \|\| bookingType === "daily"/,
+    "monthly mode should force the check-in/check-out date range",
+  );
+  assert.match(
+    bookingForm,
+    /const isHourlyUI = !isMonthly && bookingType === "hourly"/,
+    "monthly mode should never render the hourly time inputs",
   );
 });
 
 test("booking form shows the per-month headline rate with a /mo label", () => {
   assert.match(
     bookingForm,
-    /canBookMonthly \? \(/,
-    "Price display should branch on canBookMonthly first",
+    /isMonthly \? \(/,
+    "Price display should branch on the monthly mode first",
   );
   assert.match(
     bookingForm,
@@ -87,8 +107,8 @@ test("monthly total is previewed client-side but flagged as server-authoritative
   );
   assert.match(
     bookingForm,
-    /const activePricing = canBookMonthly \? monthlyEstimate : pricing/,
-    "The breakdown and checkout draft should use the monthly estimate for MONTHLY spaces",
+    /const activePricing = isMonthly \? monthlyEstimate : pricing/,
+    "The breakdown and checkout draft should use the monthly estimate in monthly mode",
   );
 });
 
@@ -115,8 +135,31 @@ test("booking form only renders the plan selector when the space has plans", () 
   );
   assert.match(
     bookingForm,
-    /const hasMonthlyPlans =\s*canBookMonthly && \(space\.monthlyPlans\?\.length \?\? 0\) > 0/,
-    "hasMonthlyPlans gates the selector on MONTHLY + at least one plan",
+    /const hasMonthlyPlans = \(space\.monthlyPlans\?\.length \?\? 0\) > 0/,
+    "hasMonthlyPlans is true whenever the space carries at least one plan",
+  );
+  assert.match(
+    bookingForm,
+    /\{isMonthly && hasMonthlyPlans && \(/,
+    "the plan selector renders only in monthly mode when plans exist",
+  );
+});
+
+test("mode tabs render only for a mixed space (short-term AND monthly)", () => {
+  assert.match(
+    bookingForm,
+    /const showModeTabs = canBookShortTerm && monthlyAvailable/,
+    "tabs should show only when both a short-term and a monthly path exist",
+  );
+  assert.match(
+    bookingForm,
+    /\{showModeTabs && \(/,
+    "the tab strip should be gated on showModeTabs",
+  );
+  assert.match(
+    bookingForm,
+    /onClick=\{\(\) => setMode\("monthly"\)\}/,
+    "a tab should switch the box into monthly mode",
   );
 });
 
@@ -152,8 +195,8 @@ test("reserve CTA is disabled until a plan is chosen when plans exist", () => {
 test("selected monthlyPlanId is written into the booking draft", () => {
   assert.match(
     bookingForm,
-    /monthlyPlanId: hasMonthlyPlans \? selectedMonthlyPlanId.*: undefined/s,
-    "setDraft should carry the selected monthlyPlanId (only when plans exist)",
+    /monthlyPlanId:\s*isMonthly && hasMonthlyPlans \? selectedMonthlyPlanId.*: undefined/s,
+    "setDraft should carry the selected monthlyPlanId (only in monthly mode with plans)",
   );
 });
 

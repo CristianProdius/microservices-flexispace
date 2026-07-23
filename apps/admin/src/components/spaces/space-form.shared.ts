@@ -244,21 +244,18 @@ export const buildSpacePayload = (
         ...(comment ? { comment } : {}),
       };
     }),
-  // Only persist named monthly plans for MONTHLY spaces; blank rows (empty
+  // Named monthly plans can be offered on any space type; blank rows (empty
   // name) are dropped, and empty/whitespace descriptions are omitted.
-  monthlyPlans:
-    formData.pricingType === "MONTHLY"
-      ? formData.monthlyPlans
-          .filter((plan) => plan.name.trim() !== "")
-          .map((plan) => {
-            const description = plan.description?.trim();
-            return {
-              name: plan.name.trim(),
-              pricePerMonth: Number(plan.pricePerMonth),
-              ...(description ? { description } : {}),
-            };
-          })
-      : [],
+  monthlyPlans: formData.monthlyPlans
+    .filter((plan) => plan.name.trim() !== "")
+    .map((plan) => {
+      const description = plan.description?.trim();
+      return {
+        name: plan.name.trim(),
+        pricePerMonth: Number(plan.pricePerMonth),
+        ...(description ? { description } : {}),
+      };
+    }),
   availability: formData.availability
     .map(({ dayOfWeek, startTime, endTime, isOpen }) => ({
       dayOfWeek,

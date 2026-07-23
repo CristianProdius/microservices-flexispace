@@ -445,7 +445,8 @@ exports.HostApplicationStatus = exports.$Enums.HostApplicationStatus = {
 exports.Currency = exports.$Enums.Currency = {
   USD: 'USD',
   EUR: 'EUR',
-  MDL: 'MDL'
+  MDL: 'MDL',
+  RON: 'RON'
 };
 
 exports.SpaceType = exports.$Enums.SpaceType = {

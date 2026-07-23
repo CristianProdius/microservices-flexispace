@@ -29,6 +29,8 @@
     "guest": "{count, plural, one {# oaspete} few {# oaspeti} other {# oaspeti}}",
     "hourly": "Pe ora",
     "daily": "Pe zi",
+    "monthly": "Abonament",
+    "perHourDay": "Pe ora/zi",
     "perHour": "/ora",
     "perDay": "/zi",
     "perHrShort": "/ora",

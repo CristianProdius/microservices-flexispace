@@ -21,7 +21,7 @@ async function loadRates(): Promise<Map<string, number>> {
     rates.set(`${row.fromCurrency}_${row.toCurrency}`, Number(row.rate));
   }
 
-  for (const c of ["USD", "EUR", "MDL"]) {
+  for (const c of ["USD", "EUR", "MDL", "RON"]) {
     rates.set(`${c}_${c}`, 1.0);
   }
 
