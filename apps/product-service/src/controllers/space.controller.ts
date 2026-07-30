@@ -337,13 +337,14 @@ const validateSpaceNumericFields = (
     }
   }
 
-  // pricePerMonth backs a MONTHLY booking (a full-day date-range priced per
-  // calendar month, pro-rated for the remainder). A monthly listing is priced
-  // by this rate, so when present it must be a real positive number > 0.
+  // pricePerMonth backs a monthly booking (a full-day date-range priced per
+  // calendar month, pro-rated for the remainder). Like the hourly/daily rates it
+  // may be 0 (a request-to-book / free listing); only negative or non-finite is
+  // invalid. A blank field (null) means monthly isn't offered.
   if (!isAbsent(data.pricePerMonth)) {
     const raw = data.pricePerMonth;
-    if (typeof raw !== "number" || !Number.isFinite(raw) || raw <= 0) {
-      return { message: "pricePerMonth must be a finite number > 0" };
+    if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0) {
+      return { message: "pricePerMonth must be a finite number >= 0" };
     }
   }
 
@@ -1079,19 +1080,10 @@ export const createSpace = async (req: Request, res: Response) => {
     normalizedMonthlyPlans = planResult.value;
   }
 
-  // A MONTHLY space is bookable via a base pricePerMonth OR via one of its named
-  // monthly plans, so it's valid when it has a positive monthly rate OR >= 1
-  // valid plan; otherwise it would be unbookable.
-  if (
-    spaceData.pricingType === "MONTHLY" &&
-    !((spaceData.pricePerMonth as number) > 0) &&
-    !(normalizedMonthlyPlans && normalizedMonthlyPlans.length > 0)
-  ) {
-    return res.status(400).json({
-      message:
-        "A monthly space requires a price per month greater than 0 or at least one monthly plan",
-    });
-  }
+  // Flexible pricing: a space may offer any combination of hourly/daily/monthly
+  // rates (each optional) or none at all — an unpriced space simply lists as
+  // "Contact for pricing" on the public site. No single-type minimum is enforced;
+  // the per-rate numeric checks above still apply.
 
   // LOW: validate amenityIds (untrusted array from the body) before it's
   // `.map()`'d into join rows in the transaction below.
@@ -1332,32 +1324,8 @@ export const updateSpace = async (req: Request, res: Response) => {
   if (numericError) {
     return res.status(400).json({ message: numericError.message });
   }
-  // A MONTHLY space must keep a positive pricePerMonth (see createSpace). Use the
-  // effective post-update values so a partial update can't leave it unbookable.
-  const effectivePricingType =
-    (allowed.pricingType as string | undefined) ?? existingSpace.pricingType;
-  const effectivePricePerMonth =
-    allowed.pricePerMonth !== undefined
-      ? (allowed.pricePerMonth as number | null)
-      : existingSpace.pricePerMonth;
-  if (
-    effectivePricingType === "MONTHLY" &&
-    !((effectivePricePerMonth as number) > 0)
-  ) {
-    // Relaxed rule (see createSpace): a MONTHLY space is also valid when it has
-    // >= 1 monthly plan. The effective plan count is the new payload's plans
-    // when it touches them, else the space's currently-stored plans.
-    const effectivePlanCount =
-      normalizedMonthlyPlans !== null
-        ? normalizedMonthlyPlans.length
-        : await prisma.monthlyPlan.count({ where: { spaceId } });
-    if (effectivePlanCount === 0) {
-      return res.status(400).json({
-        message:
-          "A monthly space requires a price per month greater than 0 or at least one monthly plan",
-      });
-    }
-  }
+  // Flexible pricing (see createSpace): no single-type minimum — a space may
+  // offer any combination of rates or none (listing as "Contact for pricing").
 
   // PRODSVC-010: validate videoUrl via URL parser + host allowlist (not regex).
   if (!isValidYouTubeUrl(allowed.videoUrl)) {

@@ -193,6 +193,28 @@ const emptyToNull = (
 ): Record<string, string> | null =>
   Object.keys(obj).length === 0 ? null : obj;
 
+// A blank rate input means "mode not offered" (null); any entered number —
+// including "0" — is a real rate (a 0 is a request-to-book / free listing).
+const parseRateOrNull = (value: string): number | null =>
+  value.trim() === "" ? null : parseFloat(value);
+
+// `pricingType` is now a derived legacy/summary column — the offered modes are
+// read from the rate fields everywhere. Derive a best-effort value from the
+// filled rates so legacy consumers (e.g. search) keep a sensible label.
+const derivePricingType = (formData: SpaceFormValues): PricingType => {
+  const hasHour = parseRateOrNull(formData.pricePerHour) !== null;
+  const hasDay = parseRateOrNull(formData.pricePerDay) !== null;
+  const hasMonth =
+    parseRateOrNull(formData.pricePerMonth) !== null ||
+    formData.monthlyPlans.some((p) => p.name.trim() !== "");
+  if (hasHour && hasDay) return "BOTH";
+  if (hasHour) return "HOURLY";
+  if (hasDay) return "DAILY";
+  if (hasMonth) return "MONTHLY";
+  // Nothing offered yet — keep whatever the form last held.
+  return formData.pricingType;
+};
+
 export const buildSpacePayload = (
   formData: SpaceFormValues,
   category?: Pick<
@@ -213,23 +235,14 @@ export const buildSpacePayload = (
   spaceType: category
     ? resolveLegacySpaceType(category, formData.spaceType)
     : formData.spaceType,
-  // Only persist the rate(s) that apply to the selected pricing type, so a
-  // space that was switched (e.g. an office BOTH -> MONTHLY) doesn't carry
-  // stale hourly/daily rates whose inputs are now hidden.
-  pricePerHour:
-    (formData.pricingType === "HOURLY" || formData.pricingType === "BOTH") &&
-    formData.pricePerHour
-      ? parseFloat(formData.pricePerHour)
-      : null,
-  pricePerDay:
-    (formData.pricingType === "DAILY" || formData.pricingType === "BOTH") &&
-    formData.pricePerDay
-      ? parseFloat(formData.pricePerDay)
-      : null,
-  pricePerMonth:
-    formData.pricingType === "MONTHLY" && formData.pricePerMonth
-      ? parseFloat(formData.pricePerMonth)
-      : null,
+  // Flexible pricing: persist each rate the host actually filled in, independent
+  // of any single pricing type. A blank input means "not offered" (null); a "0"
+  // is a real rate (request-to-book / free). `pricingType` is derived below and
+  // kept only as a legacy/summary column.
+  pricePerHour: parseRateOrNull(formData.pricePerHour),
+  pricePerDay: parseRateOrNull(formData.pricePerDay),
+  pricePerMonth: parseRateOrNull(formData.pricePerMonth),
+  pricingType: derivePricingType(formData),
   capacity: parseInt(formData.capacity, 10),
   venueId: formData.venueId,
   currency: formData.currency,

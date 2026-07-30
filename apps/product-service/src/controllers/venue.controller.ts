@@ -514,12 +514,14 @@ export const updateVenue = async (req: Request, res: Response) => {
     isActive,
     workingHours,
     venueVerified,
+    venueVerificationStatus: venueVerificationStatusInput,
     venueRecommended,
     venueSponsored,
   } = req.body;
 
   const hasVenueListingBadgePatch =
     venueVerified !== undefined ||
+    venueVerificationStatusInput !== undefined ||
     venueRecommended !== undefined ||
     venueSponsored !== undefined;
   const canUpdateVenueListingBadges = userRole === "ADMIN";
@@ -540,11 +542,20 @@ export const updateVenue = async (req: Request, res: Response) => {
     if (value === "VERIFIED" || value === "UNVERIFIED") return value;
     return null;
   };
+  // The form posts the enum `venueVerificationStatus` directly; older callers may
+  // still post a `venueVerified` boolean. Prefer the explicit enum, fall back to
+  // the boolean. Either resolving to null (bad value) is a 400 below.
+  const verificationInput =
+    venueVerificationStatusInput !== undefined
+      ? venueVerificationStatusInput
+      : venueVerified;
   const venueVerificationStatus =
-    venueVerified !== undefined ? resolveVerificationStatus(venueVerified) : undefined;
+    verificationInput !== undefined
+      ? resolveVerificationStatus(verificationInput)
+      : undefined;
   if (
     hasVenueListingBadgePatch &&
-    ((venueVerified !== undefined && venueVerificationStatus === null) ||
+    ((verificationInput !== undefined && venueVerificationStatus === null) ||
       (venueRecommended !== undefined && typeof venueRecommended !== "boolean") ||
       (venueSponsored !== undefined && typeof venueSponsored !== "boolean"))
   ) {

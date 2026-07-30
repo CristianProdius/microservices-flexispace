@@ -108,6 +108,12 @@ export const CreateBookingSchema = z.object({
   // send it (the value is ignored server-side; the superRefine below only uses
   // it to give an earlier validation hint when present).
   isHourly: z.boolean().optional(),
+  // Flexible pricing: the explicit mode the guest picked (a tab per offered rate).
+  // The server prices exactly this mode, which disambiguates daily vs monthly for
+  // a space offering both as a full-day date range. Optional for back-compat:
+  // when absent the server infers the mode as before (times -> hourly, plan/
+  // monthly-only -> monthly, else daily).
+  bookingMode: z.enum(["hourly", "daily", "monthly"]).optional(),
   message: z.string().optional(),
   monthlyPlanId: z.number().int().positive().optional(),
 }).superRefine((value, ctx) => {

@@ -701,6 +701,85 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // Zero-price (flexible pricing): a mode priced at 0 books as a request-to-book
+  // on a non-instant space, but is rejected on an instant-book space (never a
+  // free auto-confirmed hold).
+  const freeDailyOpenAllWeek = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    endTime: "23:59",
+    isOpen: true,
+    startTime: "00:00",
+  }));
+
+  it("creates a request-to-book at 0 on a non-instant space (bookingMode=daily)", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: freeDailyOpenAllWeek,
+      maxBookingHours: null,
+      instantBook: false,
+      pricePerHour: null,
+      pricePerDay: 0, // free — request-to-book
+      pricingTiers: [],
+      pricingType: "DAILY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        bookingMode: "daily",
+        endDate: monday,
+        guests: 1,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ subtotal: 0, status: "PENDING" }),
+      }),
+    );
+    await app.close();
+  });
+
+  it("rejects a 0-price booking on an instant-book space", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: freeDailyOpenAllWeek,
+      maxBookingHours: null,
+      instantBook: true,
+      pricePerHour: null,
+      pricePerDay: 0,
+      pricingTiers: [],
+      pricingType: "DAILY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        bookingMode: "daily",
+        endDate: monday,
+        guests: 1,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {

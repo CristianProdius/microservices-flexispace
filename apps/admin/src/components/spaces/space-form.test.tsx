@@ -43,9 +43,6 @@ const getPricingSelect = (container: HTMLElement) =>
     Array.from(select.options).some((option) => option.value === "MONTHLY"),
   );
 
-const optionValues = (select: HTMLSelectElement) =>
-  Array.from(select.options).map((option) => option.value);
-
 describe("SpaceForm monthly pricing", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -89,56 +86,37 @@ describe("SpaceForm monthly pricing", () => {
     });
   };
 
-  it("excludes Both and includes Monthly for office categories", async () => {
+  // Flexible pricing: all three rate inputs are always shown (each optional) and
+  // there is no single pricing-type dropdown — the offered modes are derived from
+  // whichever rates the host fills in.
+  it("shows all three rate inputs for an office category", async () => {
     await renderForm({
       ...createEmptySpaceFormValues(),
       spaceType: "OFFICE_DESK",
-      pricingType: "MONTHLY",
     });
 
-    const pricingSelect = getPricingSelect(container);
-    expect(pricingSelect).toBeDefined();
-    expect(optionValues(pricingSelect!)).toEqual(["HOURLY", "DAILY", "MONTHLY"]);
-    expect(optionValues(pricingSelect!)).not.toContain("BOTH");
+    expect(container.textContent).toContain("Price Per Hour");
+    expect(container.textContent).toContain("Price Per Day");
+    expect(container.textContent).toContain("Price Per Month");
   });
 
-  it("repairs a stuck BOTH pricing type to Monthly for office categories", async () => {
-    await renderForm({
-      ...createEmptySpaceFormValues(),
-      spaceType: "OFFICE_DESK",
-      pricingType: "BOTH",
-    });
-
-    const pricingSelect = getPricingSelect(container);
-    expect(pricingSelect).toBeDefined();
-    expect(pricingSelect!.value).toBe("MONTHLY");
-  });
-
-  it("shows the Price per month input when pricingType is MONTHLY", async () => {
-    await renderForm({
-      ...createEmptySpaceFormValues(),
-      spaceType: "OFFICE_DESK",
-      pricingType: "MONTHLY",
-    });
-
-    expect(container.textContent).toContain("Price per month");
-  });
-
-  it("keeps Both and hides the monthly input for non-office categories", async () => {
+  it("shows all three rate inputs for a non-office category too", async () => {
     await renderForm({
       ...createEmptySpaceFormValues(),
       spaceType: "MEETING_ROOM",
-      pricingType: "BOTH",
     });
 
-    const pricingSelect = getPricingSelect(container);
-    expect(pricingSelect).toBeDefined();
-    expect(optionValues(pricingSelect!)).toEqual([
-      "HOURLY",
-      "DAILY",
-      "MONTHLY",
-      "BOTH",
-    ]);
-    expect(container.textContent).not.toContain("Price per month");
+    expect(container.textContent).toContain("Price Per Hour");
+    expect(container.textContent).toContain("Price Per Day");
+    expect(container.textContent).toContain("Price Per Month");
+  });
+
+  it("no longer renders a pricing-type dropdown", async () => {
+    await renderForm({
+      ...createEmptySpaceFormValues(),
+      spaceType: "MEETING_ROOM",
+    });
+
+    expect(getPricingSelect(container)).toBeUndefined();
   });
 });

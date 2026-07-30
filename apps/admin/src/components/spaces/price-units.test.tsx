@@ -23,12 +23,22 @@ describe("price units", () => {
       })
     ).toBe("$1/hr");
 
+    // Flexible pricing: every offered rate is shown inline.
     expect(
       getPriceDisplay({
         pricingType: "BOTH",
         pricePerHour: 15,
         pricePerDay: 120,
       })
-    ).toBe("From $15/hr");
+    ).toBe("$15/hr · $120/day");
+
+    expect(
+      getPriceDisplay({
+        pricingType: "BOTH",
+        pricePerHour: 15,
+        pricePerDay: 120,
+        pricePerMonth: 900,
+      })
+    ).toBe("$15/hr · $120/day · $900/mo");
   });
 });

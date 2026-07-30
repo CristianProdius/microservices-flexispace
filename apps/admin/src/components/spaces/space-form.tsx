@@ -633,95 +633,69 @@ const SpaceForm = ({
               </select>
             </div>
 
-            <div>
-              <label className={labelClassName}>Pricing Type</label>
-              <select
-                required
-                value={formData.pricingType}
-                onChange={(event) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    pricingType: event.target
-                      .value as SpaceFormValues["pricingType"],
-                  }))
-                }
-                className={fieldClassName}
-              >
-                {pricingTypeOptionsForCategory(formData.spaceType).map(
-                  (type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
+            {/* Flexible pricing: enter any combination of hourly / daily /
+                monthly rates — each is optional. The public page shows a booking
+                tab per rate you fill in. Leave a field blank to not offer that
+                mode; enter 0 to accept a request-to-book at no charge. */}
+            <p className="text-sm text-muted-foreground">
+              Fill any combination of the rates below — each is optional. The
+              listing shows a booking tab per rate you set.
+            </p>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {(formData.pricingType === "HOURLY" ||
-                formData.pricingType === "BOTH") && (
-                <div>
-                  <label className={labelClassName}>Price Per Hour</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.pricePerHour}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        pricePerHour: event.target.value,
-                      }))
-                    }
-                    className={fieldClassName}
-                    placeholder="$"
-                  />
-                </div>
-              )}
+              <div>
+                <label className={labelClassName}>Price Per Hour</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.pricePerHour}
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      pricePerHour: event.target.value,
+                    }))
+                  }
+                  className={fieldClassName}
+                  placeholder="—"
+                />
+              </div>
 
-              {(formData.pricingType === "DAILY" ||
-                formData.pricingType === "BOTH") && (
-                <div>
-                  <label className={labelClassName}>Price Per Day</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.pricePerDay}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        pricePerDay: event.target.value,
-                      }))
-                    }
-                    className={fieldClassName}
-                    placeholder="$"
-                  />
-                </div>
-              )}
+              <div>
+                <label className={labelClassName}>Price Per Day</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.pricePerDay}
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      pricePerDay: event.target.value,
+                    }))
+                  }
+                  className={fieldClassName}
+                  placeholder="—"
+                />
+              </div>
 
-              {formData.pricingType === "MONTHLY" && (
-                <div>
-                  <label className={labelClassName}>Price per month</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    step="0.01"
-                    value={formData.pricePerMonth}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        pricePerMonth: event.target.value,
-                      }))
-                    }
-                    className={fieldClassName}
-                    placeholder="$"
-                  />
-                </div>
-              )}
+              <div>
+                <label className={labelClassName}>Price Per Month</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.pricePerMonth}
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      pricePerMonth: event.target.value,
+                    }))
+                  }
+                  className={fieldClassName}
+                  placeholder="—"
+                />
+              </div>
             </div>
 
             {/* Monthly subscription plans can be offered on ANY space type — a

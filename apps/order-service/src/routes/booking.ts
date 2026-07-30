@@ -606,10 +606,12 @@ export const spaceSupportsHourly = (space: {
 // hourly+daily), MONTHLY is its own pricingType. A space supports monthly iff it
 // has a positive pricePerMonth AND its pricingType is MONTHLY — mirroring the
 // positive-rate gating used everywhere else so a null/zero rate fails closed.
+// Flexible pricing: monthly is offered whenever a positive base monthly rate is
+// set (named plans are handled separately in the handler). No longer gated on the
+// legacy pricingType.
 export const spaceSupportsMonthly = (space: {
-  pricingType: string;
   pricePerMonth?: number | null;
-}): boolean => (space.pricePerMonth ?? 0) > 0 && space.pricingType === "MONTHLY";
+}): boolean => (space.pricePerMonth ?? 0) > 0;
 
 // MONTHLY: add `months` whole calendar months to a UTC date. Mirrors date-fns
 // addMonths semantics (clamp the day-of-month to the last day of the target
@@ -714,10 +716,15 @@ export const calculateBookingPrice = (
   startTime: string | null,
   endTime: string | null,
   hostCommissionRate: number | null | undefined = null,
-  // MONTHLY PLANS: when a MONTHLY space's booking selects a plan, the plan's
-  // monthly rate is passed here and used in place of space.pricePerMonth for
-  // the calendar-month proration. Ignored for every non-MONTHLY pricing path.
-  monthlyRateOverride?: number
+  // MONTHLY PLANS: when a booking selects a named plan, the plan's monthly rate is
+  // passed here and used in place of space.pricePerMonth for the calendar-month
+  // proration.
+  monthlyRateOverride?: number,
+  // Flexible pricing: the explicit mode the guest chose (a tab per offered rate).
+  // When set, ONLY that mode is priced (no cross-mode min) and a 0 rate is a valid
+  // request-to-book price. When absent, the legacy min-across-modes behavior with
+  // strict positive-rate gating applies.
+  bookingMode?: "hourly" | "daily" | "monthly"
 ): { subtotal: number; cleaningFee: number; serviceFee: number; total: number } => {
   // Calculate total minutes for the booking
   const days = differenceInDays(endDate, startDate) + 1;
@@ -740,8 +747,16 @@ export const calculateBookingPrice = (
   // selected a named monthly plan (via monthlyRateOverride) on a mixed space.
   // In both cases price SOLELY by the monthly rate: skip tier/hourly/daily
   // candidates so a cheaper short-term rate can't undercut the subscription.
+  const explicit = bookingMode;
   const isMonthlyBooking =
-    space.pricingType === "MONTHLY" || typeof monthlyRateOverride === "number";
+    explicit === "monthly" ||
+    typeof monthlyRateOverride === "number" ||
+    (explicit === undefined && space.pricingType === "MONTHLY");
+  // With an explicit mode a 0 rate is a valid request-to-book price; the legacy
+  // (no-mode) path keeps the strict > 0 gate so a misconfigured 0 can't silently
+  // create a free, slot-blocking hold. null (unset) is never offered.
+  const rateOffered = (r: number | null | undefined): boolean =>
+    r != null && (explicit !== undefined ? r >= 0 : r > 0);
   for (const tier of isMonthlyBooking ? [] : space.pricingTiers ?? []) {
     // M6: skip a zero/negative-priced tier the same way the zero-hour hourly
     // candidate is guarded below. A "first hour free" (price <= 0) tier would
@@ -764,16 +779,19 @@ export const calculateBookingPrice = (
   // When the booking is monthly (MONTHLY space or a selected plan), the
   // hourly/daily/tier candidates are suppressed so only the monthly rate prices
   // it — mirroring the tier suppression above.
+  // Flexible pricing: gate on the RATE being offered (not the legacy pricingType).
+  // With an explicit mode only that mode contributes a candidate, so a 0 rate can
+  // price a request without an unrelated mode undercutting it.
   const wantsHourly = Boolean(startTime && endTime);
   const allowsHourly =
     !isMonthlyBooking &&
+    (explicit === undefined || explicit === "hourly") &&
     wantsHourly &&
-    (space.pricePerHour ?? 0) > 0 &&
-    (space.pricingType === "HOURLY" || space.pricingType === "BOTH");
+    rateOffered(space.pricePerHour);
   const allowsDaily =
     !isMonthlyBooking &&
-    (space.pricePerDay ?? 0) > 0 &&
-    (space.pricingType === "DAILY" || space.pricingType === "BOTH");
+    (explicit === undefined || explicit === "daily") &&
+    rateOffered(space.pricePerDay);
   // MONTHLY: a monthly space contributes a calendar-month, pro-rated candidate.
   // Gated on a strictly-positive pricePerMonth exactly like the daily/hourly
   // rates, so a null/zero/negative monthly rate contributes no candidate and the
@@ -787,10 +805,14 @@ export const calculateBookingPrice = (
   const effectiveMonthlyRate =
     typeof monthlyRateOverride === "number"
       ? monthlyRateOverride
-      : space.pricingType === "MONTHLY"
+      : isMonthlyBooking
         ? space.pricePerMonth ?? 0
         : 0;
-  const allowsMonthly = effectiveMonthlyRate > 0 && isMonthlyBooking;
+  const allowsMonthly =
+    isMonthlyBooking &&
+    (typeof monthlyRateOverride === "number"
+      ? effectiveMonthlyRate >= 0
+      : rateOffered(space.pricePerMonth));
 
   if (allowsHourly) {
     // BOOKSVC-009: per-day intersection with availability windows.
@@ -921,7 +943,7 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // H1: the client `isHourly` is intentionally NOT destructured/used here.
       // It is derived server-side below so the blocked window equals the priced
       // window (see `isHourly` derivation after the space is loaded).
-      const { spaceId, startDate, endDate, startTime, endTime, guests, message, monthlyPlanId } = result.data;
+      const { spaceId, startDate, endDate, startTime, endTime, guests, message, monthlyPlanId, bookingMode } = result.data;
       const requestedStartDate = dateFromInput(startDate);
       const requestedEndDate = dateFromInput(endDate);
 
@@ -959,6 +981,12 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // hourly/daily). A plan is REQUIRED only for a MONTHLY-typed space that
       // offers plans; on any other type the plan is optional — selecting one
       // switches the booking to monthly pricing, omitting it books short-term.
+      // Flexible pricing: the guest wants a monthly booking when they picked the
+      // monthly tab (bookingMode) or — for legacy clients that don't send a mode —
+      // the space is monthly-typed with no short-term path.
+      const wantsMonthly =
+        bookingMode === "monthly" ||
+        (bookingMode === undefined && space.pricingType === "MONTHLY");
       let selectedMonthlyPlan:
         | { id: number; name: string; pricePerMonth: number }
         | null = null;
@@ -972,21 +1000,22 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
             });
           }
           selectedMonthlyPlan = plan;
-        } else if (space.pricingType === "MONTHLY") {
-          // A MONTHLY-typed space with plans has no base short-term path, so a
-          // selection is mandatory. A mixed space (HOURLY/DAILY/BOTH) with plans
-          // may instead be booked short-term, so omitting the id is allowed.
+        } else if (wantsMonthly) {
+          // A monthly booking on a space that offers named plans must pick one.
+          // Booking a different mode (hourly/daily) doesn't require a plan.
           return reply.status(400).send({
             message: "monthlyPlanId is required for this space",
           });
         }
       }
 
-      // A monthly booking (MONTHLY space or a selected plan) is a full-period
+      // A monthly booking (chosen monthly mode or a selected plan) is a full-period
       // rental — relax the per-day open-hours and hour-cap checks (only blocked
       // dates apply).
       const isMonthlyBooking =
-        selectedMonthlyPlan !== null || spaceSupportsMonthly(space);
+        selectedMonthlyPlan !== null ||
+        wantsMonthly ||
+        (bookingMode === undefined && spaceSupportsMonthly(space));
       const availabilityError = validateAvailabilityRules(
         space,
         requestedStartDate,
@@ -1013,12 +1042,15 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
       // while pricing sums only the per-day availability intersection, so the
       // block window can exceed the priced window (phantom blocking, not
       // underpricing). Tracked in docs/bug-audit-2026-07.md follow-ups.
-      // A monthly-plan booking is a full-day rental even on a BOTH/HOURLY space,
-      // so it is never treated as hourly (the plan was resolved above).
-      const isHourly =
-        !selectedMonthlyPlan &&
-        Boolean(startTime && endTime) &&
-        spaceSupportsHourly(space);
+      // A booking is hourly only in the hourly mode with a real time window. An
+      // explicit non-hourly mode (or a selected plan / monthly booking) is a
+      // full-day rental. Falls back to the server-derived signal for legacy
+      // clients that don't send a mode.
+      const isHourly = isMonthlyBooking
+        ? false
+        : bookingMode !== undefined
+          ? bookingMode === "hourly" && Boolean(startTime && endTime)
+          : Boolean(startTime && endTime) && spaceSupportsHourly(space);
 
       // Calculate pricing
       let pricing: ReturnType<typeof calculateBookingPrice>;
@@ -1030,15 +1062,25 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           startTime || null,
           endTime || null,
           space.host?.commissionRate ?? null,
-          selectedMonthlyPlan?.pricePerMonth
+          selectedMonthlyPlan?.pricePerMonth,
+          bookingMode
         );
       } catch (err) {
-        // H1: no applicable price for the requested window (e.g. an hourly-only
-        // space booked as a free full day). Reject rather than pricing 0.
+        // H1: no applicable price for the requested window (e.g. a mode the space
+        // doesn't offer). Reject rather than pricing 0.
         if (err instanceof NoApplicablePriceError) {
           return reply.status(400).send({ message: err.message });
         }
         throw err;
+      }
+
+      // Zero-price: a mode priced at 0 is a request-to-book lead the host approves
+      // — allowed only for a non-instant space. Never auto-CONFIRM a free,
+      // slot-blocking booking (preserves the H1 protection).
+      if (pricing.subtotal === 0 && space.instantBook) {
+        return reply.status(400).send({
+          message: "This space can't be booked instantly at no charge",
+        });
       }
 
       let exchangeRate: number;

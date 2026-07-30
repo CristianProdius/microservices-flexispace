@@ -478,6 +478,61 @@ describe("venue controller contract", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  // The admin venue form posts `venueVerificationStatus` (enum), not the legacy
+  // `venueVerified` boolean. The endpoint must persist it — otherwise the badge
+  // silently never saves (recommended/sponsored do, because their names match).
+  it("persists venueVerificationStatus sent as the enum string", async () => {
+    mocks.venueFindUnique
+      .mockResolvedValueOnce({ id: 9, hostId: "host-1" })
+      .mockResolvedValueOnce({ id: 9 });
+    mocks.venueUpdate.mockResolvedValue({ id: 9 });
+    const req = {
+      params: { id: "9" },
+      body: {
+        venueVerificationStatus: "VERIFIED",
+        venueRecommended: true,
+        venueSponsored: false,
+      },
+      userId: "admin-1",
+      user: { role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(mocks.venueUpdate).toHaveBeenCalledWith({
+      where: { id: 9 },
+      data: expect.objectContaining({
+        venueVerificationStatus: "VERIFIED",
+        venueRecommended: true,
+        venueSponsored: false,
+      }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("clears the verified badge when venueVerificationStatus is UNVERIFIED", async () => {
+    mocks.venueFindUnique
+      .mockResolvedValueOnce({ id: 9, hostId: "host-1" })
+      .mockResolvedValueOnce({ id: 9 });
+    mocks.venueUpdate.mockResolvedValue({ id: 9 });
+    const req = {
+      params: { id: "9" },
+      body: { venueVerificationStatus: "UNVERIFIED" },
+      userId: "admin-1",
+      user: { role: "ADMIN" },
+    } as unknown as Request;
+    const res = createResponse();
+
+    await updateVenue(req, res);
+
+    expect(mocks.venueUpdate).toHaveBeenCalledWith({
+      where: { id: 9 },
+      data: expect.objectContaining({ venueVerificationStatus: "UNVERIFIED" }),
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it("rejects venue listing badge changes from hosts", async () => {
     mocks.venueFindUnique.mockResolvedValueOnce({ id: 9, hostId: "host-1" });
     const req = {

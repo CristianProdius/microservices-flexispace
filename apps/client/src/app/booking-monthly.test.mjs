@@ -19,39 +19,39 @@ const bookingStore = readFileSync(
   "utf8",
 );
 
-test("monthly availability is derived from the pricing type OR named plans", () => {
-  // Monthly plans can now be offered on ANY space type, so a space is bookable
-  // monthly when it is MONTHLY-typed or it simply carries at least one plan.
+test("offered booking modes are derived from the filled rates (flexible pricing)", () => {
+  // A tab per offered mode (hourly/daily/monthly), derived from which rates the
+  // host set — not the legacy single pricingType.
+  assert.match(
+    bookingForm,
+    /const modes = offeredModes\(space\)/,
+    "the form should derive offered modes from the shared helper",
+  );
   assert.match(
     bookingForm,
     /const hasMonthlyPlans = \(space\.monthlyPlans\?\.length \?\? 0\) > 0/,
     "hasMonthlyPlans should be true whenever the space carries plans",
   );
+});
+
+test("mode defaults to the first offered mode", () => {
   assert.match(
     bookingForm,
-    /const monthlyAvailable = space\.pricingType === "MONTHLY" \|\| hasMonthlyPlans/,
-    "monthlyAvailable should union the MONTHLY type with plan presence",
+    /useState<BookingMode>\(availableModes\[0\] \?\? "hourly"\)/,
+    "the initial mode should be the first offered mode",
   );
 });
 
-test("mode defaults to monthly only when there is no short-term path or the type is MONTHLY", () => {
+test("daily and monthly use the full-day date range; only hourly renders time inputs", () => {
   assert.match(
     bookingForm,
-    /!canBookShortTerm \|\| space\.pricingType === "MONTHLY"\s*\?\s*"monthly"\s*:\s*"shortTerm"/,
-    "default mode should be short-term for a mixed space, monthly otherwise",
-  );
-});
-
-test("a monthly booking reuses the full-day date-range path (no hourly time inputs)", () => {
-  assert.match(
-    bookingForm,
-    /const isDateRange = isMonthly \|\| bookingType === "daily"/,
-    "monthly mode should force the check-in/check-out date range",
+    /const isDateRange = mode === "daily" \|\| mode === "monthly"/,
+    "daily and monthly both use the check-in/check-out range",
   );
   assert.match(
     bookingForm,
-    /const isHourlyUI = !isMonthly && bookingType === "hourly"/,
-    "monthly mode should never render the hourly time inputs",
+    /const isHourlyUI = mode === "hourly"/,
+    "only hourly mode renders the time inputs",
   );
 });
 
@@ -145,11 +145,11 @@ test("booking form only renders the plan selector when the space has plans", () 
   );
 });
 
-test("mode tabs render only for a mixed space (short-term AND monthly)", () => {
+test("mode tabs render one tab per offered mode, only when more than one exists", () => {
   assert.match(
     bookingForm,
-    /const showModeTabs = canBookShortTerm && monthlyAvailable/,
-    "tabs should show only when both a short-term and a monthly path exist",
+    /const showModeTabs = availableModes\.length > 1/,
+    "tabs show only when more than one mode is offered",
   );
   assert.match(
     bookingForm,
@@ -158,8 +158,21 @@ test("mode tabs render only for a mixed space (short-term AND monthly)", () => {
   );
   assert.match(
     bookingForm,
-    /onClick=\{\(\) => setMode\("monthly"\)\}/,
-    "a tab should switch the box into monthly mode",
+    /availableModes\.map\(\(m\) =>/,
+    "a tab is rendered per available mode",
+  );
+  assert.match(
+    bookingForm,
+    /onClick=\{\(\) => setMode\(m\)\}/,
+    "clicking a tab switches to that mode",
+  );
+});
+
+test("checkout POST forwards the chosen bookingMode when set", () => {
+  assert.match(
+    checkoutPage,
+    /\.\.\.\(draft\.bookingMode \? \{ bookingMode: draft\.bookingMode \} : \{\}\)/,
+    "the booking-create body should spread bookingMode when present",
   );
 });
 

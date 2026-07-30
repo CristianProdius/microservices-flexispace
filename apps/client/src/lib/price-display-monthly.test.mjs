@@ -20,16 +20,32 @@ test("PriceLabels exposes a perMonth label defaulting to /mo", () => {
   );
 });
 
-test("getPriceDisplay renders the per-month rate for MONTHLY spaces", () => {
+test("getPriceDisplay shows every offered mode inline (flexible pricing)", () => {
+  // A mode is included when its rate is set (non-null), so all filled options
+  // render joined together rather than a single pricingType branch.
   assert.match(
     source,
-    /pricingType === "MONTHLY" && space\.pricePerMonth/,
-    "MONTHLY branch should read pricePerMonth",
+    /space\.pricePerHour != null/,
+    "hourly is shown when the rate is set",
   );
-  // The label may carry a `?? "/mo"` fallback for callers that omit perMonth.
   assert.match(
     source,
-    /formatPrice\(space\.pricePerMonth, c\)\}\$\{labels\.perMonth(\s*\?\?\s*"\/mo")?\}/,
-    "MONTHLY branch should format pricePerMonth with the perMonth label",
+    /space\.pricePerDay != null/,
+    "daily is shown when the rate is set",
+  );
+  assert.match(
+    source,
+    /space\.pricePerMonth != null/,
+    "monthly is shown when the base rate is set",
+  );
+  assert.match(
+    source,
+    /formatPrice\(space\.pricePerMonth, c\)\}\$\{perMonth\}/,
+    "monthly formats pricePerMonth with the perMonth label",
+  );
+  assert.match(
+    source,
+    /parts\.join\(" · "\)/,
+    "offered modes are joined into one headline",
   );
 });
