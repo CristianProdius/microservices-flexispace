@@ -99,27 +99,36 @@ export const compactPriceLabels: PriceLabels = {
   contactForPricing: "Contact",
 };
 
+// Flexible pricing: a space may offer any combination of hourly/daily/monthly,
+// so the headline shows EVERY option the host filled in (e.g. "$5/hr · $30/day ·
+// $500/mo") rather than a single pricingType-driven branch. A mode is shown when
+// its rate is set (non-null, including 0 — a 0 is a request-to-book listing).
+// Monthly falls back to the cheapest named plan when there's no base rate.
 export const getPriceDisplay = (
   space: {
-    pricingType: Space["pricingType"] | string;
+    pricingType?: Space["pricingType"] | string;
     pricePerHour: number | null;
     pricePerDay: number | null;
     pricePerMonth?: number | null;
+    monthlyPlans?: Array<{ pricePerMonth: number }> | null;
     currency?: string;
   },
   labels: PriceLabels = defaultPriceLabels,
 ): string => {
   const c = (space as any).currency;
-  if (space.pricingType === "HOURLY" && space.pricePerHour)
-    return `${formatPrice(space.pricePerHour, c)}${labels.perHr}`;
-  if (space.pricingType === "DAILY" && space.pricePerDay)
-    return `${formatPrice(space.pricePerDay, c)}${labels.perDay}`;
-  if (space.pricingType === "MONTHLY" && space.pricePerMonth)
-    return `${formatPrice(space.pricePerMonth, c)}${labels.perMonth ?? "/mo"}`;
-  if (space.pricingType === "BOTH") {
-    if (space.pricePerHour)
-      return `${labels.from}${labels.from ? " " : ""}${formatPrice(space.pricePerHour, c)}${labels.perHr}`;
-    return `${formatPrice(space.pricePerDay, c)}${labels.perDay}`;
+  const perMonth = labels.perMonth ?? "/mo";
+  const parts: string[] = [];
+  if (space.pricePerHour != null)
+    parts.push(`${formatPrice(space.pricePerHour, c)}${labels.perHr}`);
+  if (space.pricePerDay != null)
+    parts.push(`${formatPrice(space.pricePerDay, c)}${labels.perDay}`);
+  if (space.pricePerMonth != null) {
+    parts.push(`${formatPrice(space.pricePerMonth, c)}${perMonth}`);
+  } else if ((space.monthlyPlans?.length ?? 0) > 0) {
+    const min = Math.min(...space.monthlyPlans!.map((p) => p.pricePerMonth));
+    const fromPrefix = labels.from ? `${labels.from} ` : "";
+    parts.push(`${fromPrefix}${formatPrice(min, c)}${perMonth}`);
   }
-  return labels.contactForPricing;
+  if (parts.length === 0) return labels.contactForPricing;
+  return parts.join(" · ");
 };

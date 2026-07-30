@@ -946,21 +946,22 @@ describe("createSpace - H2 numeric base-rate validation", () => {
     expect(prisma.space.create).toHaveBeenCalled();
   });
 
-  it("rejects a zero or negative pricePerMonth with 400", async () => {
+  it("rejects a negative pricePerMonth but allows 0 (request-to-book)", async () => {
     const negRes = buildRes();
     await createSpace(
       buildReq({ body: buildCreateBody({ pricePerMonth: -5 }) }),
       negRes as never,
     );
     expect(negRes.statusCode).toBe(400);
+    expect(prisma.space.create).not.toHaveBeenCalled();
 
+    // Flexible pricing: a 0 rate is a valid request-to-book / free listing.
     const zeroRes = buildRes();
     await createSpace(
       buildReq({ body: buildCreateBody({ pricePerMonth: 0 }) }),
       zeroRes as never,
     );
-    expect(zeroRes.statusCode).toBe(400);
-    expect(prisma.space.create).not.toHaveBeenCalled();
+    expect(zeroRes.statusCode).toBe(201);
   });
 
   it("accepts a positive pricePerMonth on a MONTHLY space", async () => {
@@ -1173,16 +1174,23 @@ describe("createSpace - monthly plans persistence (T3)", () => {
     expect(prisma.monthlyPlan.createMany).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects a MONTHLY space with neither pricePerMonth nor plans", async () => {
+  it("allows a space with no rate at all (lists as 'Contact for pricing')", async () => {
+    // Flexible pricing: no single-type minimum. An unpriced space is a valid
+    // "Contact for pricing" listing rather than a 400.
     const res = buildRes();
     await createSpace(
       buildReq({
-        body: buildCreateBody({ pricingType: "MONTHLY" }),
+        body: buildCreateBody({
+          pricingType: "MONTHLY",
+          pricePerHour: null,
+          pricePerDay: null,
+          pricePerMonth: null,
+        }),
       }),
       res as never,
     );
-    expect(res.statusCode).toBe(400);
-    expect(prisma.space.create).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(201);
+    expect(prisma.space.create).toHaveBeenCalledTimes(1);
   });
 
   it("persists plans for a non-MONTHLY space (subscriptions alongside hourly/daily)", async () => {

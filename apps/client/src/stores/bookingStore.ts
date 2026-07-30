@@ -15,6 +15,9 @@ export interface BookingDraft {
   pricePerHour?: number;
   pricePerDay?: number;
   isHourly: boolean;
+  // The explicit chosen booking mode. Disambiguates daily vs monthly for a space
+  // offering both as a full-day date range; the server prices exactly this mode.
+  bookingMode?: "hourly" | "daily" | "monthly";
   subtotal: number;
   cleaningFee: number;
   serviceFee: number;

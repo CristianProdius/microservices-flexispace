@@ -645,37 +645,99 @@ describe("calculateBookingPrice no-intersection zero-hour candidate (PRICE-004)"
   });
 });
 
-describe("spaceSupportsMonthly (MONTHLY)", () => {
-  it("is true only for MONTHLY with a positive per-month rate", () => {
-    expect(
-      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: 1200 })
-    ).toBe(true);
+describe("spaceSupportsMonthly (flexible pricing)", () => {
+  it("is true whenever a positive per-month rate is set, regardless of type", () => {
+    // Flexible pricing: monthly is offered by the rate, not the legacy type. A
+    // mixed space (hourly/daily + monthly) supports a monthly booking.
+    expect(spaceSupportsMonthly({ pricePerMonth: 1200 })).toBe(true);
   });
 
-  it("is false for MONTHLY with a null / zero / negative rate", () => {
-    expect(spaceSupportsMonthly({ pricingType: "MONTHLY" })).toBe(false);
-    expect(
-      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: null })
-    ).toBe(false);
-    expect(
-      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: 0 })
-    ).toBe(false);
-    expect(
-      spaceSupportsMonthly({ pricingType: "MONTHLY", pricePerMonth: -500 })
-    ).toBe(false);
+  it("is false with a null / zero / negative rate", () => {
+    expect(spaceSupportsMonthly({})).toBe(false);
+    expect(spaceSupportsMonthly({ pricePerMonth: null })).toBe(false);
+    expect(spaceSupportsMonthly({ pricePerMonth: 0 })).toBe(false);
+    expect(spaceSupportsMonthly({ pricePerMonth: -500 })).toBe(false);
+  });
+});
+
+describe("calculateBookingPrice flexible pricing (mode-explicit)", () => {
+  const base = {
+    pricingType: "BOTH",
+    pricePerHour: 10,
+    pricePerDay: 50,
+    pricePerMonth: 2000,
+    cleaningFee: 0,
+    currency: "USD",
+    pricingTiers: [],
+    availability: [],
+  };
+
+  it("prices ONLY the chosen daily mode on a space that also offers monthly", () => {
+    const r = calculateBookingPrice(
+      base,
+      date("2026-05-18"),
+      date("2026-05-19"), // 2 days
+      null,
+      null,
+      0,
+      undefined,
+      "daily"
+    );
+    expect(r.subtotal).toBe(100); // 2 * $50; the monthly rate must not undercut
   });
 
-  it("is false for non-MONTHLY types even with a positive per-month rate", () => {
-    // BOTH stays hourly+daily; MONTHLY is its own type and must be opted into.
-    expect(
-      spaceSupportsMonthly({ pricingType: "BOTH", pricePerMonth: 1200 })
-    ).toBe(false);
-    expect(
-      spaceSupportsMonthly({ pricingType: "DAILY", pricePerMonth: 1200 })
-    ).toBe(false);
-    expect(
-      spaceSupportsMonthly({ pricingType: "HOURLY", pricePerMonth: 1200 })
-    ).toBe(false);
+  it("prices the chosen monthly mode from pricePerMonth", () => {
+    const r = calculateBookingPrice(
+      base,
+      date("2026-05-18"),
+      date("2026-06-17"), // exactly one calendar month
+      null,
+      null,
+      0,
+      undefined,
+      "monthly"
+    );
+    expect(r.subtotal).toBe(2000);
+  });
+
+  it("allows a 0 rate as a request-to-book price in an explicit mode (no throw)", () => {
+    const freeDaily = {
+      ...base,
+      pricePerDay: 0,
+      pricePerHour: null,
+      pricePerMonth: null,
+    };
+    const r = calculateBookingPrice(
+      freeDaily,
+      date("2026-05-18"),
+      date("2026-05-18"),
+      null,
+      null,
+      0,
+      undefined,
+      "daily"
+    );
+    expect(r.subtotal).toBe(0);
+  });
+
+  it("does not let a 0 rate in an unchosen mode undercut the chosen mode", () => {
+    const space = {
+      ...base,
+      pricePerDay: 50,
+      pricePerMonth: 0, // free monthly must NOT undercut a daily booking
+      pricePerHour: null,
+    };
+    const r = calculateBookingPrice(
+      space,
+      date("2026-05-18"),
+      date("2026-05-19"),
+      null,
+      null,
+      0,
+      undefined,
+      "daily"
+    );
+    expect(r.subtotal).toBe(100); // 2 * $50, monthly 0 not a candidate for daily
   });
 });
 

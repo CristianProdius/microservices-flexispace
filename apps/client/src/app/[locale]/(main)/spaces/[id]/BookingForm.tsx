@@ -10,10 +10,13 @@ import useAuthStore from "@/stores/authStore";
 import { useTranslations } from "next-intl";
 import { formatPrice, formatPriceFull } from "@/lib/utils";
 import { calculateBookingPricing } from "@/lib/booking-pricing";
+import { offeredModes } from "@/lib/pricing-availability";
 import {
   resolveMonthlyRate,
   calculateMonthlyEstimate,
 } from "@/lib/monthly-estimate";
+
+type BookingMode = "hourly" | "daily" | "monthly";
 
 interface BookingFormProps {
   space: SpaceWithHost;
@@ -26,28 +29,26 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const t = useTranslations("booking");
   const tCommon = useTranslations("common");
 
-  const canBookHourly = space.pricingType === "HOURLY" || space.pricingType === "BOTH";
-  const canBookDaily = space.pricingType === "DAILY" || space.pricingType === "BOTH";
-  const canBookShortTerm = canBookHourly || canBookDaily;
-  // Monthly plans can be offered on ANY space type. A space is bookable monthly
-  // when it is MONTHLY-typed OR it carries at least one named plan (e.g. a
-  // coworking space bookable by the hour that also sells monthly memberships).
+  // Flexible pricing: the offered modes are derived from which rates the host
+  // filled in (not the legacy single pricingType). A tab is shown per offered
+  // mode; each drives its own booking flow.
+  const modes = offeredModes(space);
   const hasMonthlyPlans = (space.monthlyPlans?.length ?? 0) > 0;
-  const monthlyAvailable = space.pricingType === "MONTHLY" || hasMonthlyPlans;
-  // Show the "Per hour/day" vs "Monthly" tabs only when BOTH a short-term and a
-  // monthly path exist; otherwise the single available mode renders untabbed.
-  const showModeTabs = canBookShortTerm && monthlyAvailable;
+  const availableModes = (
+    [
+      modes.hourly ? "hourly" : null,
+      modes.daily ? "daily" : null,
+      modes.monthly ? "monthly" : null,
+    ] as Array<BookingMode | null>
+  ).filter((m): m is BookingMode => m !== null);
+  const showModeTabs = availableModes.length > 1;
 
-  // The active booking mode. A monthly booking reuses the daily date-range UI
-  // (no time window) and shows the per-month rate. Default to short-term when a
-  // short-term path exists and the space isn't monthly-typed; otherwise monthly.
-  const [mode, setMode] = useState<"shortTerm" | "monthly">(
-    !canBookShortTerm || space.pricingType === "MONTHLY" ? "monthly" : "shortTerm"
-  );
+  const [mode, setMode] = useState<BookingMode>(availableModes[0] ?? "hourly");
+  const isHourlyUI = mode === "hourly";
   const isMonthly = mode === "monthly";
-  const [bookingType, setBookingType] = useState<"hourly" | "daily">(
-    space.pricingType === "DAILY" ? "daily" : "hourly"
-  );
+  // Both daily and monthly use a full-day check-in/check-out range (no times).
+  const isDateRange = mode === "daily" || mode === "monthly";
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
@@ -55,10 +56,9 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const [guests, setGuests] = useState(1);
   const [selectedMonthlyPlanId, setSelectedMonthlyPlanId] = useState<number | null>(null);
 
-  // In monthly mode the date UI is a full-day range (check-in/out) and never
-  // hourly, regardless of the short-term hourly/daily toggle.
-  const isDateRange = isMonthly || bookingType === "daily";
-  const isHourlyUI = !isMonthly && bookingType === "hourly";
+  // calculateBookingPricing only distinguishes hourly vs daily; monthly uses the
+  // monthly estimate below.
+  const bookingType: "hourly" | "daily" = isHourlyUI ? "hourly" : "daily";
 
   // A plans-only listing is allowed to have a null base pricePerMonth, so the
   // headline falls back to the cheapest plan ("from {min}/mo") instead of
@@ -149,6 +149,9 @@ const BookingForm = ({ space }: BookingFormProps) => {
       pricePerHour: space.pricePerHour || undefined,
       pricePerDay: space.pricePerDay || undefined,
       isHourly: isHourlyUI,
+      // The explicit chosen mode disambiguates daily vs monthly for a space that
+      // offers both as a full-day date range; the server prices exactly this mode.
+      bookingMode: mode,
       subtotal: activePricing.subtotal,
       cleaningFee: activePricing.cleaningFee,
       serviceFee: activePricing.serviceFee,
@@ -169,37 +172,27 @@ const BookingForm = ({ space }: BookingFormProps) => {
 
   return (
     <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
-      {/* Booking Mode Tabs — only for a mixed space that supports BOTH a
-          short-term (hourly/daily) path AND a monthly path (subscription or
-          plans). Switching the mode reshapes the box below. */}
+      {/* Booking Mode Tabs — one tab per offered mode (Hourly / Daily / Monthly),
+          derived from which rates the host filled in. Switching reshapes the box
+          below. Hidden when only one mode is offered. */}
       {showModeTabs && (
         <div className="flex gap-2 mb-6" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!isMonthly}
-            onClick={() => setMode("shortTerm")}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              !isMonthly
-                ? "bg-primary text-white shadow-md shadow-primary/20"
-                : "bg-subtle text-muted hover:bg-border"
-            }`}
-          >
-            {tCommon("perHourDay")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={isMonthly}
-            onClick={() => setMode("monthly")}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              isMonthly
-                ? "bg-primary text-white shadow-md shadow-primary/20"
-                : "bg-subtle text-muted hover:bg-border"
-            }`}
-          >
-            {tCommon("monthly")}
-          </button>
+          {availableModes.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={mode === m}
+              onClick={() => setMode(m)}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === m
+                  ? "bg-primary text-white shadow-md shadow-primary/20"
+                  : "bg-subtle text-muted hover:bg-border"
+              }`}
+            >
+              {tCommon(m)}
+            </button>
+          ))}
         </div>
       )}
 
@@ -224,7 +217,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
               <span className="text-muted">/mo</span>
             </>
           )
-        ) : isHourlyUI && space.pricePerHour ? (
+        ) : isHourlyUI ? (
           <>
             <span className="text-2xl font-bold text-foreground">
               {formatPrice(space.pricePerHour, (space as any).currency)}
@@ -284,32 +277,6 @@ const BookingForm = ({ space }: BookingFormProps) => {
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* Booking Type Toggle — short-term only (hidden in monthly mode) */}
-      {!isMonthly && canBookHourly && canBookDaily && (
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setBookingType("hourly")}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              bookingType === "hourly"
-                ? "bg-primary text-white shadow-md shadow-primary/20"
-                : "bg-subtle text-muted hover:bg-border"
-            }`}
-          >
-            {tCommon("hourly")}
-          </button>
-          <button
-            onClick={() => setBookingType("daily")}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-              bookingType === "daily"
-                ? "bg-primary text-white shadow-md shadow-primary/20"
-                : "bg-subtle text-muted hover:bg-border"
-            }`}
-          >
-            {tCommon("daily")}
-          </button>
         </div>
       )}
 

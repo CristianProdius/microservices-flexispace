@@ -55,6 +55,7 @@ const CheckoutPage = () => {
             endTime: draft.endTime,
             guests: draft.guests,
             isHourly: draft.isHourly,
+            ...(draft.bookingMode ? { bookingMode: draft.bookingMode } : {}),
             ...(draft.monthlyPlanId != null ? { monthlyPlanId: draft.monthlyPlanId } : {}),
           }),
         }
