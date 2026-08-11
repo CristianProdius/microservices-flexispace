@@ -167,7 +167,19 @@
     "registrationFailed": "Ошибка регистрации",
     "passwordsDoNotMatch": "Пароли не совпадают",
     "passwordMinLength": "Пароль должен содержать не менее 6 символов",
-    "sessionExpired": "Ваша сессия истекла. Пожалуйста, войдите снова."
+    "sessionExpired": "Ваша сессия истекла. Пожалуйста, войдите снова.",
+    "verifyEmailTitle": "Подтвердите email",
+    "verifyEmailChecking": "Подтверждаем ваш email…",
+    "verifyEmailSuccess": "Email успешно подтверждён.",
+    "verifyEmailSuccessHint": "Теперь вы можете войти и запрашивать бронирования.",
+    "verifyEmailMissingToken": "В ссылке подтверждения нет токена. Откройте ссылку из письма ещё раз.",
+    "verifyEmailFailed": "Ссылка подтверждения недействительна или истекла.",
+    "verifyEmailFailedHint": "Запросите новое письмо подтверждения на странице входа и попробуйте снова.",
+    "verifyEmailGoToLogin": "Перейти ко входу",
+    "emailNotVerified": "Адрес email не подтверждён. Проверьте входящие или запросите новое письмо подтверждения.",
+    "resendVerification": "Отправить письмо подтверждения снова",
+    "resendingVerification": "Отправка…",
+    "resendVerificationSent": "Если аккаунт с этим email существует и ещё не подтверждён, новое письмо подтверждения отправлено."
   },
   "spaces": {
     "title": "Обзор Пространств",

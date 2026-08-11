@@ -167,7 +167,19 @@
     "registrationFailed": "Registration failed",
     "passwordsDoNotMatch": "Passwords do not match",
     "passwordMinLength": "Password must be at least 6 characters",
-    "sessionExpired": "Your session has expired. Please sign in again."
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "verifyEmailTitle": "Verify your email",
+    "verifyEmailChecking": "Confirming your email address…",
+    "verifyEmailSuccess": "Your email has been verified successfully.",
+    "verifyEmailSuccessHint": "You can now sign in and request bookings.",
+    "verifyEmailMissingToken": "This verification link is missing a token. Open the link from your email again.",
+    "verifyEmailFailed": "This verification link is invalid or has expired.",
+    "verifyEmailFailedHint": "Request a new verification email from the sign-in page, then try again.",
+    "verifyEmailGoToLogin": "Continue to sign in",
+    "emailNotVerified": "Email address has not been verified. Please check your inbox or request a new verification email.",
+    "resendVerification": "Resend verification email",
+    "resendingVerification": "Sending…",
+    "resendVerificationSent": "If an account exists for that email and is not yet verified, a new verification message has been sent."
   },
   "spaces": {
     "title": "Browse Spaces",

@@ -888,11 +888,13 @@ router.post("/verify-email", async (req, res) => {
 // ---------------------------------------------------------------------------
 router.post("/resend-verification", resendVerificationLimiter, async (req, res) => {
   try {
-    const { email } = req.body || {};
-    if (!email || typeof email !== "string") {
+    const { email: rawEmail } = req.body || {};
+    if (!rawEmail || typeof rawEmail !== "string") {
       return res.status(400).json({ message: "Email is required" });
     }
 
+    // Same normalization as login/register so mixed-case addresses still match.
+    const email = normalizeEmail(rawEmail);
     const user = await prisma.user.findFirst({
       where: { email, deletedAt: null },
     });

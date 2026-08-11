@@ -35,6 +35,30 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+/** Structured auth API failure so UI can branch on codes like EMAIL_NOT_VERIFIED. */
+export class AuthApiError extends Error {
+  readonly code?: string;
+  readonly status: number;
+
+  constructor(message: string, opts?: { code?: string; status?: number }) {
+    super(message);
+    this.name = "AuthApiError";
+    this.code = opts?.code;
+    this.status = opts?.status ?? 0;
+  }
+}
+
+async function throwAuthError(res: Response, fallback: string): Promise<never> {
+  const error = await res.json().catch(() => ({} as { message?: string; code?: string }));
+  throw new AuthApiError(
+    typeof error.message === "string" && error.message ? error.message : fallback,
+    {
+      code: typeof error.code === "string" ? error.code : undefined,
+      status: res.status,
+    },
+  );
+}
+
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const res = await fetchAuth("/auth/login", {
     method: "POST",
@@ -43,8 +67,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Login failed");
+    await throwAuthError(res, "Login failed");
   }
 
   return res.json();
@@ -63,11 +86,42 @@ export async function register(
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Registration failed");
+    await throwAuthError(res, "Registration failed");
   }
 
   return res.json();
+}
+
+/**
+ * Confirm email via the token from EMAIL_VERIFICATION_LINK_BASE emails.
+ * Hits GET /auth/verify-email so a plain browser link works once the client
+ * page forwards the token (auth-service already accepts GET + POST).
+ */
+export async function verifyEmail(
+  token: string,
+): Promise<{ message: string; emailVerified: boolean }> {
+  const res = await fetchAuth(`/auth/verify-email?token=${encodeURIComponent(token)}`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    await throwAuthError(res, "Verification failed");
+  }
+
+  return res.json();
+}
+
+/** Request a fresh verification email. Always 200 from API when email shape is valid. */
+export async function resendVerification(email: string): Promise<void> {
+  const res = await fetchAuth("/auth/resend-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    await throwAuthError(res, "Could not resend verification email");
+  }
 }
 
 export async function logout(refreshToken: string): Promise<void> {

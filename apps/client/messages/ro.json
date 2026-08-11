@@ -167,7 +167,19 @@
     "registrationFailed": "Inregistrare esuata",
     "passwordsDoNotMatch": "Parolele nu se potrivesc",
     "passwordMinLength": "Parola trebuie sa aiba cel putin 6 caractere",
-    "sessionExpired": "Sesiunea ta a expirat. Te rugăm să te autentifici din nou."
+    "sessionExpired": "Sesiunea ta a expirat. Te rugăm să te autentifici din nou.",
+    "verifyEmailTitle": "Verifica emailul",
+    "verifyEmailChecking": "Se confirma adresa de email…",
+    "verifyEmailSuccess": "Emailul a fost verificat cu succes.",
+    "verifyEmailSuccessHint": "Acum te poti autentifica si solicita rezervari.",
+    "verifyEmailMissingToken": "Linkul de verificare nu contine token. Deschide din nou linkul din email.",
+    "verifyEmailFailed": "Linkul de verificare este invalid sau a expirat.",
+    "verifyEmailFailedHint": "Cere un email nou de verificare din pagina de autentificare, apoi incearca din nou.",
+    "verifyEmailGoToLogin": "Continua la autentificare",
+    "emailNotVerified": "Adresa de email nu a fost verificata. Verifica inboxul sau cere un email nou de verificare.",
+    "resendVerification": "Retrimite emailul de verificare",
+    "resendingVerification": "Se trimite…",
+    "resendVerificationSent": "Daca exista un cont pentru acest email care nu e verificat, un mesaj nou de verificare a fost trimis."
   },
   "spaces": {
     "title": "Exploreaza Spatii",
