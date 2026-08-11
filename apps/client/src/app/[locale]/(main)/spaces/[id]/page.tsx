@@ -125,7 +125,7 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
     : t("contactHostForDetails");
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 min-w-0">
       {/* Image Gallery */}
       <ImageGallery images={images} spaceName={space.name} />
 
@@ -135,9 +135,9 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 min-w-0">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 min-w-0 order-2 lg:order-1">
           {/* Header */}
           <div>
             <div className="flex items-center gap-2 text-sm text-muted mb-2">
@@ -343,9 +343,10 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
           <ReviewSection spaceId={space.id} />
         </div>
 
-        {/* Booking Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-20">
+        {/* Booking Sidebar — full-width on mobile, sticky only from lg up so
+            the form isn't clipped under the navbar on short viewports. */}
+        <div className="lg:col-span-1 min-w-0 w-full order-1 lg:order-2">
+          <div className="lg:sticky lg:top-20 lg:max-h-[calc(100dvh-5.5rem)] lg:overflow-y-auto lg:overscroll-contain">
             {hasBookablePrice(space) ? (
               <BookingForm space={space} />
             ) : (

@@ -51,18 +51,33 @@ export default function DatePicker({
       <Popover.Trigger
         id={id}
         className={cn(
-          "flex w-full items-center gap-2 pl-10 pr-4 py-3 border border-border rounded-lg",
-          "text-left text-sm transition-colors",
+          "relative flex w-full min-w-0 max-w-full items-center gap-2 pl-10 pr-3 sm:pr-4 py-3 border border-border rounded-lg bg-white",
+          "text-left text-base sm:text-sm transition-colors",
           "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
           !value && "text-muted",
         )}
       >
-        <Calendar className="absolute left-3 w-5 h-5 text-muted" />
-        {value ? format(toDate(value), "MMM d, yyyy") : placeholder}
+        <Calendar
+          className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 shrink-0 text-muted"
+          aria-hidden
+        />
+        <span className="min-w-0 truncate">
+          {value ? format(toDate(value), "MMM d, yyyy") : placeholder}
+        </span>
       </Popover.Trigger>
       <Popover.Portal>
-        <Popover.Positioner side="bottom" align="start" sideOffset={4}>
-          <Popover.Popup className="bg-white border border-border rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] p-3 z-50">
+        <Popover.Positioner
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          collisionPadding={12}
+        >
+          <Popover.Popup
+            className={cn(
+              "z-50 max-w-[min(100vw-1.5rem,20rem)] overflow-x-auto",
+              "bg-white border border-border rounded-[var(--radius-md)] shadow-[var(--shadow-lg)] p-2 sm:p-3",
+            )}
+          >
             <DayPicker
               mode="single"
               selected={selected}
@@ -70,23 +85,25 @@ export default function DatePicker({
               defaultMonth={defaultMonth}
               disabled={disabled}
               classNames={{
-                root: "text-sm",
+                root: "text-sm w-full min-w-0",
                 months: "flex flex-col",
-                month: "space-y-3",
-                month_caption: "flex justify-center items-center h-8",
+                month: "space-y-3 w-full",
+                month_caption:
+                  "relative flex justify-center items-center h-9 px-8",
                 caption_label: "text-sm font-medium text-foreground",
-                nav: "flex items-center justify-between absolute inset-x-0 top-0 px-1",
+                nav: "absolute inset-x-0 top-0 flex items-center justify-between px-0",
                 button_previous:
                   "size-8 flex items-center justify-center rounded-md text-muted hover:text-foreground hover:bg-subtle transition-colors",
                 button_next:
                   "size-8 flex items-center justify-center rounded-md text-muted hover:text-foreground hover:bg-subtle transition-colors",
                 weekdays: "grid grid-cols-7 mb-1",
-                weekday: "text-muted text-xs font-medium text-center w-9",
+                weekday:
+                  "text-muted text-xs font-medium text-center w-full min-w-0",
                 weeks: "space-y-1",
                 week: "grid grid-cols-7",
-                day: "text-center",
+                day: "text-center min-w-0",
                 day_button: cn(
-                  "size-9 rounded-md text-sm transition-colors",
+                  "mx-auto size-8 sm:size-9 rounded-md text-sm transition-colors",
                   "hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30",
                 ),
                 selected:

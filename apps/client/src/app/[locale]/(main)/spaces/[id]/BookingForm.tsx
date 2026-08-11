@@ -170,13 +170,21 @@ const BookingForm = ({ space }: BookingFormProps) => {
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+  const fieldClass =
+    "w-full min-w-0 max-w-full pl-10 pr-9 py-3 border border-border rounded-lg bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none";
+
   return (
-    <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
+    <div className="w-full min-w-0 max-w-full bg-white border border-border rounded-2xl p-4 sm:p-6 shadow-[var(--shadow-lg)]">
       {/* Booking Mode Tabs — one tab per offered mode (Hourly / Daily / Monthly),
           derived from which rates the host filled in. Switching reshapes the box
           below. Hidden when only one mode is offered. */}
       {showModeTabs && (
-        <div className="flex gap-2 mb-6" role="tablist">
+        <div
+          className={`grid gap-2 mb-4 sm:mb-6 min-w-0 ${
+            availableModes.length === 3 ? "grid-cols-3" : "grid-cols-2"
+          }`}
+          role="tablist"
+        >
           {availableModes.map((m) => (
             <button
               key={m}
@@ -184,7 +192,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
               role="tab"
               aria-selected={mode === m}
               onClick={() => setMode(m)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`min-w-0 py-2.5 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-medium transition-all truncate ${
                 mode === m
                   ? "bg-primary text-white shadow-md shadow-primary/20"
                   : "bg-subtle text-muted hover:bg-border"
@@ -197,10 +205,10 @@ const BookingForm = ({ space }: BookingFormProps) => {
       )}
 
       {/* Price Display */}
-      <div className="flex items-baseline gap-1 mb-6">
+      <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 mb-4 sm:mb-6 min-w-0">
         {isMonthly ? (
           hasMonthlyPlans ? (
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-xl sm:text-2xl font-bold text-foreground break-words">
               {t("fromPerMonth", {
                 price:
                   formatPrice(
@@ -211,7 +219,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
             </span>
           ) : (
             <>
-              <span className="text-2xl font-bold text-foreground">
+              <span className="text-xl sm:text-2xl font-bold text-foreground break-words">
                 {formatPrice(space.pricePerMonth, (space as any).currency)}
               </span>
               <span className="text-muted">/mo</span>
@@ -219,14 +227,14 @@ const BookingForm = ({ space }: BookingFormProps) => {
           )
         ) : isHourlyUI ? (
           <>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-xl sm:text-2xl font-bold text-foreground break-words">
               {formatPrice(space.pricePerHour, (space as any).currency)}
             </span>
             <span className="text-muted">{tCommon("perHour")}</span>
           </>
         ) : (
           <>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-xl sm:text-2xl font-bold text-foreground break-words">
               {formatPrice(space.pricePerDay, (space as any).currency)}
             </span>
             <span className="text-muted">{tCommon("perDay")}</span>
@@ -236,7 +244,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
 
       {/* Monthly Plan Selector — in monthly mode when the space offers plans. */}
       {isMonthly && hasMonthlyPlans && (
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6 min-w-0">
           <p className="block text-sm font-medium text-muted mb-2">
             {t("choosePlan")}
           </p>
@@ -246,7 +254,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
               return (
                 <label
                   key={plan.id}
-                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all min-w-0 ${
                     selected
                       ? "border-primary ring-2 ring-primary/30 bg-primary/5"
                       : "border-border hover:border-primary/40"
@@ -258,17 +266,19 @@ const BookingForm = ({ space }: BookingFormProps) => {
                     value={plan.id}
                     checked={selected}
                     onChange={() => setSelectedMonthlyPlanId(plan.id)}
-                    className="mt-1 accent-primary"
+                    className="mt-1 accent-primary shrink-0"
                   />
-                  <span className="flex-1">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium text-foreground">{plan.name}</span>
-                      <span className="text-sm font-semibold text-foreground">
+                  <span className="flex-1 min-w-0">
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                      <span className="font-medium text-foreground break-words">
+                        {plan.name}
+                      </span>
+                      <span className="text-sm font-semibold text-foreground shrink-0">
                         {formatPrice(plan.pricePerMonth, (space as any).currency)}/mo
                       </span>
                     </span>
                     {plan.description && (
-                      <span className="block text-xs text-muted mt-0.5">
+                      <span className="block text-xs text-muted mt-0.5 text-pretty">
                         {plan.description}
                       </span>
                     )}
@@ -281,50 +291,49 @@ const BookingForm = ({ space }: BookingFormProps) => {
       )}
 
       {/* Date Selection */}
-      <div className="space-y-4 mb-6">
-        <div>
+      <div className="space-y-4 mb-4 sm:mb-6 min-w-0">
+        <div className="min-w-0">
           <label htmlFor="booking-start-date" className="block text-sm font-medium text-muted mb-1">
             {isHourlyUI ? t("date") : t("checkIn")}
           </label>
-          <div className="relative">
-            <DatePicker
-              id="booking-start-date"
-              value={startDate}
-              minDate={minDate}
-              placeholder={isHourlyUI ? t("date") : t("checkIn")}
-              onChange={(date) => {
-                setStartDate(date);
-                if (!endDate || date > endDate) setEndDate(date);
-              }}
-            />
-          </div>
+          <DatePicker
+            id="booking-start-date"
+            value={startDate}
+            minDate={minDate}
+            placeholder={isHourlyUI ? t("date") : t("checkIn")}
+            onChange={(date) => {
+              setStartDate(date);
+              if (!endDate || date > endDate) setEndDate(date);
+            }}
+          />
         </div>
 
         {isDateRange && (
-          <div>
+          <div className="min-w-0">
             <label htmlFor="booking-end-date" className="block text-sm font-medium text-muted mb-1">
               {t("checkOut")}
             </label>
-            <div className="relative">
-              <DatePicker
-                id="booking-end-date"
-                value={endDate}
-                minDate={startDate || minDate}
-                placeholder={t("checkOut")}
-                onChange={(date) => setEndDate(date)}
-              />
-            </div>
+            <DatePicker
+              id="booking-end-date"
+              value={endDate}
+              minDate={startDate || minDate}
+              placeholder={t("checkOut")}
+              onChange={(date) => setEndDate(date)}
+            />
           </div>
         )}
 
         {isHourlyUI && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 min-w-0">
+            <div className="min-w-0">
               <label htmlFor="booking-start-time" className="block text-sm font-medium text-muted mb-1">
                 {t("startTime")}
               </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+              <div className="relative min-w-0">
+                <Clock
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
                 <select
                   id="booking-start-time"
                   value={startTime}
@@ -342,7 +351,7 @@ const BookingForm = ({ space }: BookingFormProps) => {
                       );
                     }
                   }}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+                  className={fieldClass}
                 >
                   {/* CLIENT-014: start can be up to 23:00 so users can book a
                       late-evening slot that ends at midnight (23:59). */}
@@ -352,20 +361,26 @@ const BookingForm = ({ space }: BookingFormProps) => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <label htmlFor="booking-end-time" className="block text-sm font-medium text-muted mb-1">
                 {t("endTime")}
               </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+              <div className="relative min-w-0">
+                <Clock
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
                 <select
                   id="booking-end-time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+                  className={fieldClass}
                 >
                   {/* CLIENT-014: include a 23:59 sentinel so a 22:00 or 23:00
                       start can end at midnight without crossing days. */}
@@ -381,24 +396,30 @@ const BookingForm = ({ space }: BookingFormProps) => {
                     23:59
                   </option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
               </div>
             </div>
           </div>
         )}
 
         {/* Guests */}
-        <div>
+        <div className="min-w-0">
           <label htmlFor="booking-guests" className="block text-sm font-medium text-muted mb-1">
             {t("numberOfGuests")}
           </label>
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+          <div className="relative min-w-0">
+            <Users
+              className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
             <select
               id="booking-guests"
               value={guests}
               onChange={(e) => setGuests(parseInt(e.target.value))}
-              className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+              className={fieldClass}
             >
               {Array.from({ length: space.capacity }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -406,33 +427,42 @@ const BookingForm = ({ space }: BookingFormProps) => {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
           </div>
         </div>
       </div>
 
       {/* Pricing Breakdown */}
       {activePricing && startDate && (
-        <div className="border-t border-border pt-4 mb-6 space-y-2">
-          <div className="flex justify-between text-muted">
-            <span>
+        <div className="border-t border-border pt-4 mb-4 sm:mb-6 space-y-2 min-w-0 text-sm sm:text-base">
+          <div className="flex justify-between gap-3 text-muted min-w-0">
+            <span className="min-w-0 break-words">
               {subtotalLabel}
             </span>
-            <span>{formatPriceFull(activePricing.subtotal, (space as any).currency)}</span>
+            <span className="shrink-0">
+              {formatPriceFull(activePricing.subtotal, (space as any).currency)}
+            </span>
           </div>
-          <div className="flex justify-between text-muted">
+          <div className="flex justify-between gap-3 text-muted">
             <span>{tCommon("cleaningFee")}</span>
-            <span>{formatPriceFull(activePricing.cleaningFee, (space as any).currency)}</span>
+            <span className="shrink-0">
+              {formatPriceFull(activePricing.cleaningFee, (space as any).currency)}
+            </span>
           </div>
-          <div className="flex justify-between font-semibold text-foreground pt-2 border-t border-border">
+          <div className="flex justify-between gap-3 font-semibold text-foreground pt-2 border-t border-border">
             <span>{tCommon("total")}</span>
-            <span>{formatPriceFull(activePricing.totalAmount, (space as any).currency)}</span>
+            <span className="shrink-0">
+              {formatPriceFull(activePricing.totalAmount, (space as any).currency)}
+            </span>
           </div>
           {isMonthly && (
             // The monthly subtotal here is a rough client estimate (rate spread
             // over ~30 days); the server prices it per calendar month (pro-rated),
             // so make clear the final total is confirmed at booking.
-            <p className="text-xs text-muted pt-1">
+            <p className="text-xs text-muted pt-1 text-pretty">
               Estimated — the final monthly total is calculated at booking.
             </p>
           )}
@@ -447,13 +477,13 @@ const BookingForm = ({ space }: BookingFormProps) => {
           (isDateRange && !endDate) ||
           (isMonthly && hasMonthlyPlans && !selectedMonthlyPlanId)
         }
-        className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
+        className="w-full min-w-0 py-3.5 px-3 bg-primary text-white text-sm sm:text-base font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
       >
         {space.instantBook ? t("bookNow") : t("requestToBook")}
       </button>
 
       {!space.instantBook && (
-        <p className="text-center text-sm text-muted mt-2">
+        <p className="text-center text-sm text-muted mt-2 text-pretty">
           {t("depositDisclaimer")}
         </p>
       )}
