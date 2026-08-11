@@ -26,6 +26,12 @@ export interface BookingDraft {
   // Set only for a MONTHLY space that offers named plans; the server requires
   // it in that case and prices from the chosen plan.
   monthlyPlanId?: number;
+  // Optional note from the guest (required on contact-for-pricing inquiries).
+  // Persisted as Booking.guestMessage on create.
+  message?: string;
+  // True when the space has no published rates — checkout shows "Contact for
+  // pricing" instead of a $0 total, and the request is a quote inquiry.
+  contactForPricing?: boolean;
 }
 
 interface BookingState {

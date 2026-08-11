@@ -1052,6 +1052,16 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
           ? bookingMode === "hourly" && Boolean(startTime && endTime)
           : Boolean(startTime && endTime) && spaceSupportsHourly(space);
 
+      // Contact-for-pricing: space has no rate fields set at all (all null, no
+      // plans). Guests still need a way to inquire — accept a 0-price PENDING
+      // request so the host can quote and approve. Instant-book free holds are
+      // still rejected below (same H1 protection as a 0-rate mode).
+      const isContactForPricing =
+        space.pricePerHour == null &&
+        space.pricePerDay == null &&
+        space.pricePerMonth == null &&
+        monthlyPlans.length === 0;
+
       // Calculate pricing
       let pricing: ReturnType<typeof calculateBookingPrice>;
       try {
@@ -1067,16 +1077,27 @@ export const bookingRoute = async (fastify: FastifyInstance) => {
         );
       } catch (err) {
         // H1: no applicable price for the requested window (e.g. a mode the space
-        // doesn't offer). Reject rather than pricing 0.
+        // doesn't offer). Contact-for-pricing inquiries are the one exception —
+        // they become a 0-price PENDING request so the guest can ask for a quote.
         if (err instanceof NoApplicablePriceError) {
-          return reply.status(400).send({ message: err.message });
+          if (isContactForPricing) {
+            pricing = {
+              subtotal: 0,
+              cleaningFee: 0,
+              serviceFee: 0,
+              total: 0,
+            };
+          } else {
+            return reply.status(400).send({ message: err.message });
+          }
+        } else {
+          throw err;
         }
-        throw err;
       }
 
-      // Zero-price: a mode priced at 0 is a request-to-book lead the host approves
-      // — allowed only for a non-instant space. Never auto-CONFIRM a free,
-      // slot-blocking booking (preserves the H1 protection).
+      // Zero-price: a mode priced at 0 (or a contact-for-pricing inquiry) is a
+      // request-to-book lead the host approves — allowed only for a non-instant
+      // space. Never auto-CONFIRM a free, slot-blocking booking (H1 preserved).
       if (pricing.subtotal === 0 && space.instantBook) {
         return reply.status(400).send({
           message: "This space can't be booked instantly at no charge",

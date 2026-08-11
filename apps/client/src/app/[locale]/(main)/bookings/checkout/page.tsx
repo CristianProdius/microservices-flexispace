@@ -57,6 +57,7 @@ const CheckoutPage = () => {
             isHourly: draft.isHourly,
             ...(draft.bookingMode ? { bookingMode: draft.bookingMode } : {}),
             ...(draft.monthlyPlanId != null ? { monthlyPlanId: draft.monthlyPlanId } : {}),
+            ...(draft.message ? { message: draft.message } : {}),
           }),
         }
       );
@@ -174,20 +175,41 @@ const CheckoutPage = () => {
             </div>
           </div>
 
-          {/* Price Breakdown */}
+          {/* Guest message (contact-for-pricing / optional note) */}
+          {draft.message ? (
+            <div className="border-t border-gray-200 mt-4 pt-4">
+              <p className="text-sm font-medium text-gray-900 mb-1">
+                {t("messageToHost")}
+              </p>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {draft.message}
+              </p>
+            </div>
+          ) : null}
+
+          {/* Price Breakdown — contact-for-pricing shows a quote label, not $0 */}
           <div className="border-t border-gray-200 mt-4 pt-4 space-y-2">
-            <div className="flex justify-between text-gray-600">
-              <span>{tCommon("subtotal")}</span>
-              <span>{formatPriceFull(draft.subtotal, draft.currency)}</span>
-            </div>
-            <div className="flex justify-between text-gray-600">
-              <span>{tCommon("cleaningFee")}</span>
-              <span>{formatPriceFull(draft.cleaningFee, draft.currency)}</span>
-            </div>
-            <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
-              <span>{tCommon("total")}</span>
-              <span>{formatPriceFull(draft.totalAmount, draft.currency)}</span>
-            </div>
+            {draft.contactForPricing ? (
+              <div className="flex justify-between font-semibold text-gray-900">
+                <span>{tCommon("total")}</span>
+                <span>{tCommon("contactForPricing")}</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between text-gray-600">
+                  <span>{tCommon("subtotal")}</span>
+                  <span>{formatPriceFull(draft.subtotal, draft.currency)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>{tCommon("cleaningFee")}</span>
+                  <span>{formatPriceFull(draft.cleaningFee, draft.currency)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
+                  <span>{tCommon("total")}</span>
+                  <span>{formatPriceFull(draft.totalAmount, draft.currency)}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 

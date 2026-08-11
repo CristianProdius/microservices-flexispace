@@ -780,6 +780,89 @@ describe("booking routes", () => {
     await app.close();
   });
 
+  // Contact-for-pricing: no rates set at all — still accept a PENDING quote
+  // request so the guest can ask the host for pricing (0 subtotal + message).
+  it("creates a quote request when the space has no rates (contact-for-pricing)", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: freeDailyOpenAllWeek,
+      maxBookingHours: null,
+      instantBook: false,
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: null,
+      monthlyPlans: [],
+      pricingTiers: [],
+      pricingType: "DAILY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+    mocks.bookingCreate.mockResolvedValue(createdBooking);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        bookingMode: "daily",
+        endDate: monday,
+        guests: 2,
+        message:
+          "Looking to rent the hall on this date — please send exact pricing.",
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(mocks.bookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          guestMessage:
+            "Looking to rent the hall on this date — please send exact pricing.",
+          status: "PENDING",
+          subtotal: 0,
+          totalAmount: 0,
+        }),
+      }),
+    );
+    await app.close();
+  });
+
+  it("rejects contact-for-pricing on an instant-book space", async () => {
+    const app = await createApp();
+    mocks.spaceFindUnique.mockResolvedValue({
+      ...baseSpace,
+      availability: freeDailyOpenAllWeek,
+      maxBookingHours: null,
+      instantBook: true,
+      pricePerHour: null,
+      pricePerDay: null,
+      pricePerMonth: null,
+      monthlyPlans: [],
+      pricingTiers: [],
+      pricingType: "DAILY",
+    });
+    mocks.bookingFindMany.mockResolvedValue([]);
+
+    const response = await app.inject({
+      headers: { authorization: `Bearer ${createUserToken()}` },
+      method: "POST",
+      payload: {
+        bookingMode: "daily",
+        endDate: monday,
+        guests: 1,
+        spaceId: 42,
+        startDate: monday,
+      },
+      url: "/bookings",
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(mocks.bookingCreate).not.toHaveBeenCalled();
+    await app.close();
+  });
+
   // BOOKSVC-008: round2 keeps float drift from leaking into totals.
   describe("round2 helper", () => {
     it("rounds 0.1 + 0.2 to a clean 0.3 cents", () => {

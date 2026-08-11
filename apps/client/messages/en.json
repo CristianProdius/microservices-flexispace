@@ -242,7 +242,11 @@
     "browseMoreSpaces": "Browse More Spaces",
     "choosePlan": "Choose a plan",
     "selectPlanFirst": "Select a plan to continue",
-    "fromPerMonth": "From {price}/mo"
+    "fromPerMonth": "From {price}/mo",
+    "contactPricingHint": "Tell the host when you need the space and what you're planning — they'll reply with exact pricing.",
+    "messageToHost": "Message to host",
+    "messageToHostPlaceholder": "e.g. I'd like to rent this hall for a conference on these dates. Can you confirm availability and send the exact price?",
+    "messageToHostHint": "At least 10 characters. Include dates, event type, and any special requirements."
   },
   "bookings": {
     "title": "My Bookings",
