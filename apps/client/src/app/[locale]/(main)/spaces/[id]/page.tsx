@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import BookingForm from "./BookingForm";
+import ContactPricingForm from "./ContactPricingForm";
 import ReviewSection from "./ReviewSection";
 import LocationMapLoader from "./LocationMapLoader";
 import { getTranslations } from "next-intl/server";
@@ -348,17 +349,9 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
             {hasBookablePrice(space) ? (
               <BookingForm space={space} />
             ) : (
-              // A 0/absent hourly-daily rate means the host listed this as
-              // "Contact for pricing" — show a contact panel instead of a
-              // booking widget that would only fail on submit.
-              <div className="rounded-2xl border border-border bg-white p-6 text-center shadow-sm">
-                <p className="text-lg font-semibold text-foreground mb-1">
-                  {tCommon("contactForPricing")}
-                </p>
-                <p className="text-sm text-muted text-pretty">
-                  {t("contactHostForDetails")}
-                </p>
-              </div>
+              // No rates set at all → inquiry form (dates + message + Request
+              // to book). Creates a 0-price PENDING booking the host can quote.
+              <ContactPricingForm space={space} />
             )}
           </div>
         </div>

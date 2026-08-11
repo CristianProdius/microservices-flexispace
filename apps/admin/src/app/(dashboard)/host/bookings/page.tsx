@@ -39,6 +39,7 @@ interface Booking {
   isHourly: boolean;
   totalAmount: number;
   currency?: string | null;
+  guestMessage?: string | null;
   createdAt: string;
   space: {
     id: number;
@@ -559,9 +560,22 @@ const HostBookingsPage = () => {
                       </div>
 
                       <span className="font-medium text-foreground">
-                        {formatMoney(booking.totalAmount, booking.currency)}
+                        {booking.totalAmount === 0
+                          ? "Contact for pricing"
+                          : formatMoney(booking.totalAmount, booking.currency)}
                       </span>
                     </div>
+
+                    {booking.guestMessage ? (
+                      <div className="mt-3 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+                        <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                          Guest message
+                        </p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {booking.guestMessage}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 

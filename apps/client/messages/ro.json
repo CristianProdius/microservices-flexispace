@@ -242,7 +242,11 @@
     "browseMoreSpaces": "Exploreaza Mai Multe Spatii",
     "choosePlan": "Alege un plan",
     "selectPlanFirst": "Selecteaza un plan pentru a continua",
-    "fromPerMonth": "De la {price}/luna"
+    "fromPerMonth": "De la {price}/luna",
+    "contactPricingHint": "Spune gazdei cand ai nevoie de spatiu si ce planuiesti — iti va raspunde cu pretul exact.",
+    "messageToHost": "Mesaj pentru gazda",
+    "messageToHostPlaceholder": "ex. As dori sa inchiriez sala pentru o conferinta in aceste date. Puteti confirma disponibilitatea si trimite pretul exact?",
+    "messageToHostHint": "Minim 10 caractere. Include datele, tipul evenimentului si orice cerinte speciale."
   },
   "bookings": {
     "title": "Rezervarile Mele",
