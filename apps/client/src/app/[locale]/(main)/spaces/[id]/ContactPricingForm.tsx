@@ -83,10 +83,13 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+  const fieldClass =
+    "w-full min-w-0 max-w-full pl-10 pr-9 py-3 border border-border rounded-lg bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none";
+
   return (
-    <div className="bg-white border border-border rounded-2xl p-6 shadow-[var(--shadow-lg)]">
-      <div className="mb-6 text-center">
-        <p className="text-lg font-semibold text-foreground mb-1">
+    <div className="w-full min-w-0 max-w-full bg-white border border-border rounded-2xl p-4 sm:p-6 shadow-[var(--shadow-lg)]">
+      <div className="mb-4 sm:mb-6 text-center">
+        <p className="text-base sm:text-lg font-semibold text-foreground mb-1 text-balance">
           {tCommon("contactForPricing")}
         </p>
         <p className="text-sm text-muted text-pretty">
@@ -95,7 +98,10 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
       </div>
 
       {/* Hourly / Daily tabs so the guest can describe the window they want */}
-      <div className="flex gap-2 mb-6" role="tablist">
+      <div
+        className="grid grid-cols-2 gap-2 mb-4 sm:mb-6 min-w-0"
+        role="tablist"
+      >
         {(["daily", "hourly"] as const).map((m) => (
           <button
             key={m}
@@ -103,7 +109,7 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
             role="tab"
             aria-selected={mode === m}
             onClick={() => setMode(m)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`min-w-0 py-2.5 px-2 rounded-lg text-sm font-medium transition-all truncate ${
               mode === m
                 ? "bg-primary text-white shadow-md shadow-primary/20"
                 : "bg-subtle text-muted hover:bg-border"
@@ -114,8 +120,8 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
         ))}
       </div>
 
-      <div className="space-y-4 mb-6">
-        <div>
+      <div className="space-y-4 mb-4 sm:mb-6 min-w-0">
+        <div className="min-w-0">
           <label
             htmlFor="inquiry-start-date"
             className="block text-sm font-medium text-muted mb-1"
@@ -135,7 +141,7 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
         </div>
 
         {!isHourlyUI && (
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="inquiry-end-date"
               className="block text-sm font-medium text-muted mb-1"
@@ -153,16 +159,19 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
         )}
 
         {isHourlyUI && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-3 min-w-0">
+            <div className="min-w-0">
               <label
                 htmlFor="inquiry-start-time"
                 className="block text-sm font-medium text-muted mb-1"
               >
                 {t("startTime")}
               </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+              <div className="relative min-w-0">
+                <Clock
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
                 <select
                   id="inquiry-start-time"
                   value={startTime}
@@ -178,7 +187,7 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
                       );
                     }
                   }}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+                  className={fieldClass}
                 >
                   {Array.from({ length: 24 }, (_, i) => (
                     <option key={i} value={`${i.toString().padStart(2, "0")}:00`}>
@@ -186,23 +195,29 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="inquiry-end-time"
                 className="block text-sm font-medium text-muted mb-1"
               >
                 {t("endTime")}
               </label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+              <div className="relative min-w-0">
+                <Clock
+                  className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
                 <select
                   id="inquiry-end-time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+                  className={fieldClass}
                 >
                   {Array.from({ length: 23 - startHour }, (_, i) => {
                     const hour = startHour + 1 + i;
@@ -219,26 +234,32 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
                     23:59
                   </option>
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+                  aria-hidden
+                />
               </div>
             </div>
           </div>
         )}
 
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="inquiry-guests"
             className="block text-sm font-medium text-muted mb-1"
           >
             {t("numberOfGuests")}
           </label>
-          <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+          <div className="relative min-w-0">
+            <Users
+              className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
             <select
               id="inquiry-guests"
               value={guests}
               onChange={(e) => setGuests(parseInt(e.target.value))}
-              className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+              className={fieldClass}
             >
               {Array.from({ length: Math.max(space.capacity, 1) }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -246,11 +267,14 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="inquiry-message"
             className="block text-sm font-medium text-muted mb-1"
@@ -264,9 +288,11 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
             rows={4}
             maxLength={2000}
             placeholder={t("messageToHostPlaceholder")}
-            className="w-full px-3 py-3 border border-border rounded-lg text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-y min-h-[100px]"
+            className="w-full min-w-0 max-w-full px-3 py-3 border border-border rounded-lg text-base sm:text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-y min-h-[100px]"
           />
-          <p className="text-xs text-muted mt-1">{t("messageToHostHint")}</p>
+          <p className="text-xs text-muted mt-1 text-pretty">
+            {t("messageToHostHint")}
+          </p>
         </div>
       </div>
 
@@ -274,12 +300,12 @@ const ContactPricingForm = ({ space }: ContactPricingFormProps) => {
         type="button"
         onClick={handleRequest}
         disabled={!canSubmit}
-        className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
+        className="w-full min-w-0 py-3.5 px-3 bg-primary text-white text-sm sm:text-base font-semibold rounded-xl hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
       >
         {t("requestToBook")}
       </button>
 
-      <p className="text-center text-sm text-muted mt-2">
+      <p className="text-center text-sm text-muted mt-2 text-pretty">
         {tSpaces("contactHostForDetails")}
       </p>
     </div>
