@@ -1,4 +1,4 @@
-import { SpaceWithHost } from "@repo/types";
+import { SpaceWithHost, hostProfileHref } from "@repo/types";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import {
@@ -198,8 +198,8 @@ const SpaceDetailPage = async ({ params }: SpaceDetailPageProps) => {
           {/* Host Info */}
           {space.host?.id ? (
             <Link
-              href={`/hosts/${space.host.id}`}
-              className="group -m-2 flex items-center gap-4 rounded-xl p-2 transition-colors hover:bg-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              href={hostProfileHref(space.host)}
+              className="group -mx-2 flex items-center gap-4 rounded-xl p-2 transition-colors hover:bg-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {space.host.image ? (
                 <div className="relative size-14 rounded-full overflow-hidden ring-2 ring-primary/20">

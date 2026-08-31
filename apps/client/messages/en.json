@@ -547,10 +547,16 @@
       "backToHosts": "Back to hosts",
       "venues": "Venues",
       "noVenues": "This host has no public venues yet.",
-      "viewVenue": "View venue"
+      "viewVenue": "View venue",
+      "metaTitle": "{name} | Spacefly.ai",
+      "metaDescription": "{name} hosts {count, plural, one {# venue} other {# venues}} on Spacefly.ai."
     },
     "empty": "No hosts to show yet.",
     "loadError": "We couldn't load hosts.",
+    "showingResults": "{shown} of {total} venues",
+    "loadingMore": "Loading more venues...",
+    "loadMoreError": "Loading failed. Try again",
+    "noMoreResults": "You've seen all results",
     "filters": {
       "searchPlaceholder": "Search hosts",
       "allCities": "All cities",

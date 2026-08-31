@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Check, Megaphone, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { HostSummary } from "@repo/types";
+import { hostProfileHref, type HostSummary } from "@repo/types";
 
 const HostCard = ({ host }: { host: HostSummary }) => {
   const t = useTranslations("hosts.card");
@@ -38,7 +38,7 @@ const HostCard = ({ host }: { host: HostSummary }) => {
   return (
     <div className="group">
       {/* IMAGE — links to the host profile */}
-      <Link href={`/hosts/${host.id}`} className="block">
+      <Link href={hostProfileHref(host)} className="block">
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-subtle">
           {heroImage ? (
             <Image
@@ -75,7 +75,7 @@ const HostCard = ({ host }: { host: HostSummary }) => {
 
       {/* DETAILS */}
       <div className="pt-3 flex flex-col gap-0.5">
-        <Link href={`/hosts/${host.id}`} className="min-w-0">
+        <Link href={hostProfileHref(host)} className="min-w-0">
           <h3 className="font-semibold text-foreground line-clamp-1 hover:underline">
             {displayName}
           </h3>

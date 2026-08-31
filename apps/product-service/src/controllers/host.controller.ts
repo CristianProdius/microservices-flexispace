@@ -230,60 +230,70 @@ export const getHosts = async (req: Request, res: Response) => {
   });
 };
 
+const HOST_DETAIL_SELECT = {
+  id: true,
+  name: true,
+  username: true,
+  image: true,
+  bio: true,
+  hostingSince: true,
+  hostVerificationStatus: true,
+  hostRecommended: true,
+  hostSponsored: true,
+  venues: {
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" as const },
+    select: {
+      id: true,
+      name: true,
+      shortDescription: true,
+      city: true,
+      country: true,
+      images: true,
+      isActive: true,
+      venueVerificationStatus: true,
+      venueRecommended: true,
+      venueSponsored: true,
+      spaces: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          spaceType: true,
+          capacity: true,
+          pricePerHour: true,
+          pricePerDay: true,
+          pricingType: true,
+          currency: true,
+          images: true,
+          isActive: true,
+          // city/country live on the parent Venue (DB-010), not on Space, so
+          // they can't be selected here — they're mapped on from the venue below.
+          instantBook: true,
+        },
+        orderBy: { createdAt: "asc" as const },
+      },
+      _count: { select: { spaces: { where: { isActive: true } } } },
+    },
+  },
+} satisfies Prisma.UserSelect;
+
 export const getHost = async (req: Request, res: Response) => {
   const hostId = req.params.id;
   if (!hostId) return res.status(400).json({ message: "Invalid host id" });
 
-  const host = await prisma.user.findFirst({
-    where: { id: hostId, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      image: true,
-      bio: true,
-      hostingSince: true,
-      hostVerificationStatus: true,
-      hostRecommended: true,
-      hostSponsored: true,
-      venues: {
-        where: { isActive: true },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          name: true,
-          shortDescription: true,
-          city: true,
-          country: true,
-          images: true,
-          isActive: true,
-          venueVerificationStatus: true,
-          venueRecommended: true,
-          venueSponsored: true,
-          spaces: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              name: true,
-              spaceType: true,
-              capacity: true,
-              pricePerHour: true,
-              pricePerDay: true,
-              pricingType: true,
-              currency: true,
-              images: true,
-              isActive: true,
-              // city/country live on the parent Venue (DB-010), not on Space, so
-              // they can't be selected here — they're mapped on from the venue below.
-              instantBook: true,
-            },
-            orderBy: { createdAt: "asc" },
-          },
-          _count: { select: { spaces: { where: { isActive: true } } } },
-        },
-      },
-    },
-  });
+  // Public profile URLs use username (`/hosts/regus`). Old CUID links still
+  // work: look up by id first, then username, so a colliding username cannot
+  // shadow another host's id.
+  const host =
+    (await prisma.user.findFirst({
+      where: { id: hostId, deletedAt: null },
+      select: HOST_DETAIL_SELECT,
+    })) ??
+    (await prisma.user.findFirst({
+      where: { username: hostId, deletedAt: null },
+      select: HOST_DETAIL_SELECT,
+    }));
 
   if (!host || host.venues.length === 0) {
     return res.status(404).json({ message: "Host not found" });

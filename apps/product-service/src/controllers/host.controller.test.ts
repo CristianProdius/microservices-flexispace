@@ -266,7 +266,60 @@ describe("host controller", () => {
 
     await getHost(req, res);
 
+    expect(mocks.userFindFirst).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ where: { id: "missing", deletedAt: null } })
+    );
+    expect(mocks.userFindFirst).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { username: "missing", deletedAt: null } })
+    );
     expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it("resolves a host by username when id does not match", async () => {
+    mocks.userFindFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "u1",
+        name: "Alice",
+        username: "alice",
+        image: null,
+        bio: "Bio",
+        hostingSince: new Date("2024-01-01"),
+        hostVerificationStatus: "VERIFIED",
+        hostRecommended: true,
+        hostSponsored: false,
+        venues: [
+          {
+            id: 1,
+            name: "Hub",
+            city: "Chisinau",
+            country: "Moldova",
+            images: ["/v.jpg"],
+            isActive: true,
+            spaces: [{ id: 10, name: "Room A", isActive: true }],
+            _count: { spaces: 1 },
+          },
+        ],
+      });
+    const req = { params: { id: "alice" } } as unknown as Request;
+    const res = createResponse();
+
+    await getHost(req, res);
+
+    expect(mocks.userFindFirst).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ where: { id: "alice", deletedAt: null } })
+    );
+    expect(mocks.userFindFirst).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: { username: "alice", deletedAt: null } })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    const payload = res.json.mock.calls[0]![0];
+    expect(payload).toMatchObject({ id: "u1", username: "alice" });
+    expect(payload.venues).toHaveLength(1);
   });
 
   it("returns host with venues and active space lists", async () => {

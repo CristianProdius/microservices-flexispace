@@ -1598,6 +1598,25 @@ describe("getSpaces - AUD-B6 totalReviews key", () => {
   });
 });
 
+describe("getSpace - public host projection", () => {
+  it("selects host.username so listing pages can link to /hosts/{username}", async () => {
+    const res = buildRes();
+    (prisma.space.findFirst as AnyMock).mockResolvedValueOnce(null);
+
+    await getSpace(buildReq({ params: { id: "5" } }), res as never);
+
+    const call = (prisma.space.findFirst as AnyMock).mock.calls[0]?.[0];
+    expect(call?.include?.host?.select).toMatchObject({
+      id: true,
+      name: true,
+      username: true,
+      image: true,
+      bio: true,
+      hostingSince: true,
+    });
+  });
+});
+
 describe("getSpace - AUD-B6 totalReviews key", () => {
   it("emits totalReviews (not reviewCount) with the review count", async () => {
     const res = buildRes();

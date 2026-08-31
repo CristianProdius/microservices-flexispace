@@ -547,10 +547,16 @@
       "backToHosts": "Înapoi la gazde",
       "venues": "Locale",
       "noVenues": "Această gazdă nu are localuri publice.",
-      "viewVenue": "Vezi localul"
+      "viewVenue": "Vezi localul",
+      "metaTitle": "{name} | Spacefly.ai",
+      "metaDescription": "{name} găzduiește {count, plural, one {# local} other {# locale}} pe Spacefly.ai."
     },
     "empty": "Nu există gazde de afișat.",
     "loadError": "Nu am putut încărca gazdele.",
+    "showingResults": "{shown} din {total} locale",
+    "loadingMore": "Se încarcă mai multe locale...",
+    "loadMoreError": "Încărcarea a eșuat. Încearcă din nou",
+    "noMoreResults": "Ai văzut toate rezultatele",
     "filters": {
       "searchPlaceholder": "Caută gazde",
       "allCities": "Toate orașele",

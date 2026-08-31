@@ -547,10 +547,16 @@
       "backToHosts": "К списку хостов",
       "venues": "Заведения",
       "noVenues": "У этого хоста пока нет публичных заведений.",
-      "viewVenue": "Открыть заведение"
+      "viewVenue": "Открыть заведение",
+      "metaTitle": "{name} | Spacefly.ai",
+      "metaDescription": "{name} размещает {count, plural, one {# заведение} few {# заведения} other {# заведений}} на Spacefly.ai."
     },
     "empty": "Хостов пока нет.",
     "loadError": "Не удалось загрузить хостов.",
+    "showingResults": "{shown} из {total} заведений",
+    "loadingMore": "Загрузка заведений...",
+    "loadMoreError": "Загрузка не удалась. Попробуйте ещё раз",
+    "noMoreResults": "Вы просмотрели все результаты",
     "filters": {
       "searchPlaceholder": "Поиск хостов",
       "allCities": "Все города",

@@ -948,6 +948,7 @@ export const getSpace = async (req: Request, res: Response) => {
         select: {
           id: true,
           name: true,
+          username: true,
           image: true,
           bio: true,
           hostingSince: true,

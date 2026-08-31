@@ -9,7 +9,7 @@ import ImageGallery from "@/components/ImageGallery";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import SpaceCard from "@/components/SpaceCard";
 import WorkingHoursDisplay from "@/components/WorkingHoursDisplay";
-import type { VenueDetail } from "@repo/types";
+import { hostProfileHref, type VenueDetail } from "@repo/types";
 
 type VenueDetailResponse = VenueDetail;
 
@@ -200,7 +200,7 @@ export default async function VenueDetailPage({ params }: PageProps) {
             <p className="text-sm text-muted whitespace-pre-line">{venue.host.bio}</p>
           )}
           <Link
-            href={`/hosts/${venue.host.id}`}
+            href={hostProfileHref(venue.host)}
             className="inline-flex items-center justify-center w-full px-3 py-2 border border-border rounded-lg text-sm font-medium hover:bg-subtle transition-colors"
           >
             {t("viewHost")}

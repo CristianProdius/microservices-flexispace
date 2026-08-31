@@ -3,7 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
 import HostFilter from "@/components/HostFilter";
-import VenueCard, { type VenueListItem } from "@/components/VenueCard";
+import VenueListBrowse from "@/components/VenueListBrowse";
+import type { VenueListItem } from "@/components/VenueCard";
 
 interface VenuesResponse {
   venues: VenueListItem[];
@@ -20,27 +21,34 @@ interface HostsPageProps {
   }>;
 }
 
+function buildVenuesQuery(
+  params: Awaited<HostsPageProps["searchParams"]>
+): URLSearchParams {
+  const qs = new URLSearchParams({ limit: "24" });
+  if (params.city) qs.set("city", params.city);
+  if (params.verified === "true") qs.set("verified", "true");
+  if (params.search) qs.set("search", params.search);
+  if (params.sort) qs.set("sort", params.sort);
+  return qs;
+}
+
 // Product decision: the "Browse Hosts" page now renders one card per venue and
 // links directly to /venues/{id}. Most hosts have one venue, so the previous
 // host→venue detour was redundant clicks. The /hosts/[slug] detail route still
 // exists for deep links and SEO.
 async function getVenues(
   params: Awaited<HostsPageProps["searchParams"]>
-): Promise<{ error: boolean; data: VenuesResponse | null }> {
-  const qs = new URLSearchParams({ limit: "24" });
-  if (params.city) qs.set("city", params.city);
-  if (params.verified === "true") qs.set("verified", "true");
-  if (params.search) qs.set("search", params.search);
-  if (params.sort) qs.set("sort", params.sort);
+): Promise<{ error: boolean; data: VenuesResponse | null; apiParams: string }> {
+  const qs = buildVenuesQuery(params);
 
   try {
     const res = await fetch(`${PRODUCT_SERVICE_URL}/venues?${qs.toString()}`, {
       next: { revalidate: 60 },
     });
-    if (!res.ok) return { error: true, data: null };
-    return { error: false, data: await res.json() };
+    if (!res.ok) return { error: true, data: null, apiParams: qs.toString() };
+    return { error: false, data: await res.json(), apiParams: qs.toString() };
   } catch {
-    return { error: true, data: null };
+    return { error: true, data: null, apiParams: qs.toString() };
   }
 }
 
@@ -81,15 +89,11 @@ export default async function HostsPage({ searchParams }: HostsPageProps) {
 
       <HostFilter availableCities={result.data.availableCities} />
 
-      {result.data.venues.length === 0 ? (
-        <p className="text-muted py-12 text-center">{t("empty")}</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {result.data.venues.map((venue) => (
-            <VenueCard key={venue.id} venue={venue} />
-          ))}
-        </div>
-      )}
+      <VenueListBrowse
+        initialVenues={result.data.venues}
+        initialPagination={result.data.pagination}
+        initialApiParams={result.apiParams}
+      />
     </div>
   );
 }

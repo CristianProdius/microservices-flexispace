@@ -1,29 +1,50 @@
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Check, RefreshCw, AlertCircle, Megaphone, Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PRODUCT_SERVICE_URL } from "@/lib/config";
 import VenueSpaceCard from "@/components/VenueSpaceCard";
-import type { HostDetail } from "@repo/types";
+import { hostProfileHref, type HostDetail } from "@repo/types";
 
-async function getHost(
+const getHost = cache(async (
   id: string
-): Promise<{ notFound: boolean; error: boolean; host: HostDetail | null }> {
+): Promise<{ notFound: boolean; error: boolean; host: HostDetail | null }> => {
   try {
-    const res = await fetch(`${PRODUCT_SERVICE_URL}/hosts/${id}`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(
+      `${PRODUCT_SERVICE_URL}/hosts/${encodeURIComponent(id)}`,
+      { next: { revalidate: 60 } }
+    );
     if (res.status === 404) return { notFound: true, error: false, host: null };
     if (!res.ok) return { notFound: false, error: true, host: null };
     return { notFound: false, error: false, host: await res.json() };
   } catch {
     return { notFound: false, error: true, host: null };
   }
-}
+});
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id, locale } = await params;
+  const result = await getHost(id);
+  if (result.notFound || result.error || !result.host) {
+    return {};
+  }
+
+  const host = result.host;
+  const displayName = host.name ?? host.username;
+  const t = await getTranslations({ locale, namespace: "hosts.profile" });
+
+  return {
+    title: t("metaTitle", { name: displayName }),
+    description: t("metaDescription", { name: displayName, count: host.venueCount }),
+    alternates: { canonical: hostProfileHref(host) },
+  };
 }
 
 export default async function HostProfilePage({ params }: PageProps) {
@@ -53,6 +74,10 @@ export default async function HostProfilePage({ params }: PageProps) {
   }
 
   const host = result.host;
+  if (id === host.id && host.username && host.username !== host.id) {
+    permanentRedirect(hostProfileHref(host));
+  }
+
   const displayName = host.name ?? host.username;
   const initials = displayName.slice(0, 1).toUpperCase();
   const hostingYear = host.hostingSince ? new Date(host.hostingSince).getFullYear() : null;
